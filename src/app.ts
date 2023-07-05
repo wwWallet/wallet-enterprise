@@ -10,7 +10,7 @@ import { authorizationRouter } from './authorization/router';
 import AppDataSource from './AppDataSource';
 import { openid4vciRouter } from './openid4vci/router';
 import locale from './locale';
-import { issuersConfigurations, vidIssuer } from './configuration/IssuersConfiguration';
+import { issuersConfigurations, uoaIssuer } from './configuration/IssuersConfiguration';
 import createHttpError, { HttpError} from 'http-errors';
 import { JWK } from 'jose';
 
@@ -38,7 +38,7 @@ app.use(UserSessionMiddleware);
 app.get('/', async (req: Request, res: Response) => {
 	res.render('index', {
 		title: "Index",
-		credentialIssuerIdentifier: vidIssuer.credentialIssuerIdentifier,
+		credentialIssuerIdentifier: uoaIssuer.credentialIssuerIdentifier,
 		lang: req.lang,
 		locale: locale[req.lang]
 	})

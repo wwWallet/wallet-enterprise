@@ -5,6 +5,7 @@ import { batchCredentialEndpoint, credentialEndpoint, verifyAccessToken } from "
 import locale from "../locale";
 import qs from "qs";
 import { issuersConfigurations } from "../configuration/IssuersConfiguration";
+import qrcode from 'qrcode';
 
 const openid4vciRouter = Router();
 
@@ -41,14 +42,20 @@ openid4vciRouter.get('/init/view/:client_type', async (req: Request, res: Respon
 	console.log("parsed = ", parsed)
 	// credentialOfferURL.searchParams.append("credential_offer", qs.stringify(credentialOfferObject));
 	
+
+
 	switch (client_type) {
 	case "DESKTOP":
-		return res.render('issuer/init', {
-			url: credentialOfferURL,
-			qrcode: "",
-			lang: req.lang,
-			locale: locale[req.lang]
+		return qrcode.toDataURL(credentialOfferURL, (err, url) => {
+			if (err) throw err;
+			return res.render('issuer/init', {
+				url: credentialOfferURL,
+				qrcode: url,
+				lang: req.lang,
+				locale: locale[req.lang]
+			})
 		})
+
 	case "MOBILE":
 		return res.redirect(credentialOfferURL);
 	default:

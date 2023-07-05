@@ -84,9 +84,15 @@ export const verificationCallbackEndpoint = (sdk: EnterpriseCoreSDK) => {
 	
 	
 		sdk.store.get(`urn:enterprise-core:session:${userSessionId}`, (err, session) => {
-			if (err) throw err;
+			if (err) {
+				console.error("Error : ", err);
+				return;
+			}
 	
-			if (!session) throw "No session found";
+			if (!session) {
+				console.error("No session found")
+				return;
+			};
 	
 			const { state } = session as any;
 
