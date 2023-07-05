@@ -1,0 +1,23 @@
+#CreateDefinition .university-selection {
+	margin-top: 20px;
+}
+
+#CreateDefinition .select-scopes-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#CreateDefinition .SchemaScopes {
+	margin-top: 30px;
+}
+
+#CreateDefinition ul.ScopeList {
+  list-style-type: none; /* Remove bullets */
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margins */
+}
+
+#CreateDefinition .ScopeName {
+	margin-left: 10px;
+}

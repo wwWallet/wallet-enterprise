@@ -1,0 +1,29 @@
+extends ../layout.pug
+block layout-content
+	
+	.gunet-container
+		#Login
+			.login-flex
+				.login-flex.login-box.item
+					h1.item #{locale.Login.title}
+					p.item #{locale.Login.description1}
+					form(name="login" method="post")
+						input#csrf-token(type="hidden" name="csrf-token" value="")
+
+						.input-wrap.item
+							input.input-field#username(type='text' name='username' placeholder='Username')
+						.input-wrap.item
+							input.input-field#password(type='password' name='password' placeholder='Password')
+
+						p.invalid-feedback#invalid-username #{locale.Login.Error.emptyUsername}
+						p.invalid-feedback#invalid-password #{locale.Login.Error.emptyPassword}
+						p.invalid-feedback#invalid-credentials #{locale.Login.Error.invalidCredentials}
+						p.invalid-feedback#network-error #{locale.Login.Error.networkError}
+
+						.login-flex
+							button.Btn.Large
+								| #{locale.Login.local}
+
+	link(rel="stylesheet" href="/styles/login.css")
+	script(src="/js/alert.js")
+	script(src="/js/login.js")

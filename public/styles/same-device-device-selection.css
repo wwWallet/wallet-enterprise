@@ -1,0 +1,18 @@
+
+#SameDeviceDeviceSelection .Query {
+	display: flex;
+	gap: 25px;
+	
+}
+
+
+#SameDeviceDeviceSelection .SmallBtnStable {
+	width: 80px;
+	text-align: center;
+}
+
+
+#SameDeviceDeviceSelection .QueryNo {
+  background-color: #A0A0A0;
+	color: #fff;
+}

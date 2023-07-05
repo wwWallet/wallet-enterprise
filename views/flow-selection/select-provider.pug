@@ -1,0 +1,38 @@
+extends ../layout.pug
+block layout-content
+
+
+	#ProviderSelection
+		.gunet-container
+			form(name='selectProvider' method="post")
+				h2 Wallet providers
+				section.ProvidersGeneralLayout
+					//- div
+					//- 	#custom-proviver.Form
+					//- 		label(for="provider-hostname") Enter a wallet provider hostname:
+					//- 			input#provider-hostname.Form.CustomProviderHostname(name="provider_hostname" type="text")
+					//- 			span 
+					//- 				button(type="submit" name="is_custom_provider" value="true") Navigate
+					//- 			.small-text
+					//- 				| ex. mywallet-ebsi.ediplomas.gr
+					div 
+						input(type='hidden' name='selected_provider_id' id='selected_provider_id' value="")
+						section.GridLayout
+							//- .header
+							//- 	h2 Wallet providers
+							for provider in walletProviders
+								.item(id='provider-'+provider.id)
+									.box
+										.box-interior-container
+											.box-interior-item
+												h5 #{provider.name}
+											.box-interior-item
+												img(src=provider.iconUrl width="150" height="150")
+											.box-interior-item
+												p.small 
+
+
+	script(src="/js/select-provider.js")
+
+	link(rel="stylesheet" href="/styles/select-provider.css")
+	link(rel="stylesheet" href="/styles/form.css")

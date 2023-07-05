@@ -1,0 +1,87 @@
+.table-container {
+	width: 80%;
+	font-size: 20px;
+	display: block;
+	margin: 0 auto;
+	margin-top: 60px;
+}
+
+.striped {
+	width: 100%;
+	display: table;
+	border-collapse: collapse;
+	border-spacing: 0
+}
+
+.striped tr {
+	border-bottom: none;
+}
+
+.striped tr:nth-child(2n+1) {
+	background-color: rgba(242, 242, 242, 0.5);
+}
+
+.striped td,
+.striped th {
+	padding: 8px 10px;
+	display: table-cell;
+	text-align: left;
+	vertical-align: middle;
+}
+
+.striped th {
+	background-color: #f1f1f1;
+}
+
+table.striped tr.double {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	;
+}
+
+table.striped tr.single {
+	display: grid;
+	grid-template-columns: 1fr 3fr;
+}
+
+form table.striped td {
+	display: flex;
+	width: 100%;
+}
+
+form table.striped td:nth-last-of-type(2) {
+	display: table-cell;
+	align-self: center;
+}
+
+@media screen and (max-width: 470px) {
+	.striped {
+		font-size: 15px;
+		display: block;
+		overflow-x: auto;
+	}
+}
+
+/* .striped:not(#org-info):not(#client-info):not(.invitation-results) tr:hover {
+  background-color: #f1f1f1;
+} */
+
+.idCol,
+.statusCol {
+	display: none
+}
+
+.striped .idCol,
+.striped .statusCol {
+	display: none
+}
+
+.applications-table {
+	margin: auto;
+	max-height: 700px;
+	overflow-y: auto;
+}
+
+.spaced-table {
+	margin-bottom: 4%;
+}

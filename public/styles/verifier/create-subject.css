@@ -1,0 +1,94 @@
+#CreateSubject .form-step {
+	display: none;
+}
+
+#CreateSubject .form-step.current {
+	display: block;
+}
+
+#CreateSubject.step-buttons {
+	margin-left: 10px;
+}
+
+#CreateSubject #createNewDefinition {
+	display: block;
+	margin-top: 0.5rem;
+}
+
+#CreateSubject .step-buttons > button {
+	background-color: #fff;
+	/* color: rgb(0, 162, 255); */
+	color: rgb(0, 162, 255);
+	transition: 0.4s;
+	border: none;
+	/* width: 100%; */
+	cursor: pointer;
+  line-height: 1.5;
+  margin: 0;
+	font-size: 16px;
+}
+
+#CreateSubject .step-buttons > button:hover {
+	opacity: 0.5;
+}
+
+
+.next {
+	float: right;
+}
+
+.prev {
+	float: left;
+}
+
+.next-icon {
+	margin-left: 5px;
+	transition: 0.4s;
+}
+
+.prev-icon {
+	margin-right: 5px;
+	/* margin-left: 10px; */
+	transition: 0.4s;
+}
+
+/* select what next-icon will do when we hover over proceed class */
+#CreateSubject .next:hover .next-icon {
+	margin-left: 10px;
+}
+
+#CreateSubject .prev:hover .prev-icon {
+	margin-left: 5px;
+	margin-right: 10px;
+}
+
+#CreateSubject button#submit.hidden {
+	display: none;
+}
+
+#CreateSubject .step-buttons > button.hidden {
+	animation: none;
+	display: none;
+}
+
+#CreateSubject #presentationDefinition.invalid {
+	transition: 0.3s;
+	border: 2px solid var(--error-red);
+}
+
+#CreateSubject .hidden {
+	display: none
+}
+
+#CreateSubject li {
+	list-style-type: none; /* Remove bullets */
+}
+
+#CreateSubject .ScopeName {
+	margin-left: 10px;
+}
+
+#CreateSubject .Btn.Small {
+	float: right;
+}
+

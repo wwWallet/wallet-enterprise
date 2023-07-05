@@ -1,0 +1,89 @@
+
+#FlowSelection .container {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: center;
+  align-items: auto;
+  align-content: start
+}
+
+
+#FlowSelection .item {
+  flex: 0 0 auto;
+  margin: 16px;
+}
+
+a {
+	text-decoration: none;
+	color: #848484;
+	text-align: center;
+}
+
+#FlowSelection .box {
+	width: 420px;
+	height: 480px;
+	border-radius: 16px;
+	border: solid rgb(194, 194, 194);
+	border-width: thin;
+	transition: 0.3s;
+	/* box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px; */
+	box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+}
+
+
+#FlowSelection .box:hover {
+	border: solid #2164bb;
+	border-width: thin;
+	cursor: pointer;
+	opacity: 0.7;
+}
+
+
+#FlowSelection p.small {
+	font-size: 15px;
+	margin-left: 10px;
+	margin-right: 10px;
+}
+
+
+
+#FlowSelection .box-interior-container {
+
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+  align-content: stretch
+
+}
+
+#FlowSelection .box-interior-item {
+  flex: 0 0 auto;
+  margin: 10px;
+}
+
+@media only screen and (max-width: 500px) {
+	
+	#FlowSelection .item {
+		width: 100%;
+	}
+
+	#FlowSelection .box {
+		width: 100%;
+	}
+}
+
+@media only screen and (max-width: 250px) {
+	
+	#FlowSelection .flow-img {
+		width: 75px;
+		height: 75px;
+	}
+}
+
+
+#FlowSelection .selectedBox {
+
+}

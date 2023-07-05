@@ -1,0 +1,29 @@
+
+export enum AuthorizationRequestError {
+	WRONG_RESPONSE_TYPE = "WRONG_RESPONSE_TYPE",
+}
+
+export enum TokenRequestError {
+	NO_CODE = "NO_CODE",
+	WRONG_PKCE = "WRONG_PKCE",
+	WRONG_REDIRECT_URI = "WRONG_REDIRECT_URI",
+	WRONG_GRANT_TYPE = "WRONG_GRANT_TYPE"
+}
+
+
+export type AuthorizationRequestCallbackFn = () => Promise<{userIdentifier: string}>
+
+
+
+export enum CredentialRequestError {
+	UNSUPPORTED_PROOF_TYPE = "UNSUPPORTED_PROOF_TYPE",
+	INVALID_TOKEN = "INVALID_TOKEN",
+	TOKEN_EXPIRED = "TOKEN_EXPIRED",
+	C_NONCE_EXPIRED = "C_NONCE_EXPIRED",
+	WRONG_PUB_KEY = "WRONG_PUB_KEY",
+	INVALID_C_NONCE = "INVALID_C_NONCE",
+	INVALID_PROOF_SIG = "INVALID_PROOF_SIG",
+	UNDEFINED_PROOF = "UNDEFINED_PROOF",
+	NO_PUB_KEY = "NO_PUB_KEY"
+
+}

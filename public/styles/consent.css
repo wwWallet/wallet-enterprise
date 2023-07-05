@@ -1,0 +1,194 @@
+/* TODO: Turn these to variables
+	Credit Card Dimensions for VCs
+	Card Dimensions: 85.6mm x 53.98mm
+	Card Aspect Ratio: 1.586
+	Card Aspect Ratio (inverse): 0.630
+*/
+
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	border-radius: 3.18mm;
+	border-width: 1px;
+	border-color: lightgray;
+}
+
+section.MainLayout {
+  width: 100%;
+  display: flex;
+	flex-direction: row;
+  gap: 100px;
+  flex-wrap: wrap;
+}
+
+.DetailsArea section.DetailsLayout {
+	/* width: 100%; */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.CredentialsArea {
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: row;
+	
+	gap: 20px;
+}
+
+.credential {
+	width: 85.6mm;	/* fallback width */
+	width: clamp(120px, 85.6mm, 80vw);
+	height: 53.98mm; /* fallback height */
+	height: clamp(75.6px, 53.98mm, calc(0.630 * 80vw));
+	border-radius: 3.18mm;
+	background-color: lightgray;
+	margin-bottom: 5px;
+	background-size: cover;
+
+	display: flex;
+	flex-direction: column;
+	transition: transform 0.5s;
+	text-decoration: none;
+	justify-content: flex-end;
+	align-items: flex-end;
+}
+
+.credential .top-row {
+	height: calc(33% - min(20px, 7%));
+	/* height: calc(68px - 1 * 20px); */
+	/* padding: 20px 20px 0 20px; */
+	padding: min(20px, 7%);
+	padding-bottom: 0;
+	display: flex;
+	justify-content: space-between;
+	font-size: 3vw;
+	font-size: clamp(0.2rem, 4vw, 1rem);
+}
+
+.credential .mid-row {
+	/* height: 68px; */
+	/* height: inherit; */
+	height: 33%;
+}
+
+.credential .bot-row {
+	/* height: calc(68px - 2 * 10px); */
+	padding: 10px;
+	padding: min(10px, 3.5%);
+
+	display: flex;
+	justify-content: flex-start;
+	/* height: min(42px, 33.3%); */
+	height: calc(33% - 2 * min(10px, 3.5%));
+}
+
+.credential .bot-row img {
+	width: 100%;
+	height: 42px;
+	height: clamp(10px, 100%, 42px)
+}
+
+.credential:hover {
+	transform: scale(1.1);
+}
+
+.layout.multi .credential:hover {
+	transform: none;
+	opacity: 0.8;
+}
+
+
+.arrowDown {
+	text-align: center;
+	display: none;
+}
+
+.details {
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	border-radius: 3.18mm;
+	width: clamp(120px, 85.6mm, 80vw);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out; /* Set the animation duration and easing */
+}
+
+.ConsentDetails {
+	width: clamp(120px, 85.6mm, 80vw);
+  overflow: hidden;
+  transition: max-height 0.3s ease-out; /* Set the animation duration and easing */
+}
+
+.AuthorizationBtn {
+	width: 100% !important;
+}
+
+.AuthorizeArrow {
+	margin-left: 15px;
+}
+
+.container-header {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	justify-content: space-between;
+}
+
+.is-selected {
+	margin-bottom: 10px;
+	margin-right: 10px;
+	font-size: 20px;
+	color: white;
+	display: none;
+}
+
+.GetMultiBtn {
+	display: none;
+}
+
+/* CSS actions when multi-select is toggled on */
+
+.layout.multi .credential {
+	opacity: 0.6;
+}
+
+.layout.multi .credential.selected {
+	opacity: 1;
+}
+
+.layout.multi .credential.selected .is-selected {
+	display: block;
+}
+
+.layout.multi .GetMultiBtn {
+	display: block;
+}
+
+.GetMultiBtn:disabled {
+	opacity: 0.6;
+}
+
+@media only screen and (max-width: 600px) {
+
+	.layout.multi .GetMultiBtn {
+		display: none;
+	}
+
+	.multi .GetMultiBtn#BarBtn {
+		display: block;
+		position: fixed;
+		bottom: 10px;
+		width: calc(100% - 2*10px);
+		border-radius: 14px !important;
+		margin: 0 10px;
+	}
+
+	.credential:hover {
+		transform: none;
+	}
+
+}

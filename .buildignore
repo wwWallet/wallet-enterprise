@@ -1,0 +1,13 @@
+.vscode
+.npmrc
+*.log
+.gitignore
+nodemon.json
+*.md
+.git
+tsconfig.json
+.buildignore
+*.gz
+*.tar
+yarn.lock
+semantic.json

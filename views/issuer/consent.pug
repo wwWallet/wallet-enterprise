@@ -1,0 +1,56 @@
+extends ../layout.pug
+block layout-content
+
+	.gunet-container
+		form#DiplomaSelection(method="POST")
+
+			section.layout
+				section.container-header
+					h1 Consent
+					button.Btn.Small.SelectMultiBtn(type="button") Select
+				section.consent-description Inspect your credentials by clicking on them and authorize the sharing of them with the client
+
+				section.MainLayout
+					section.CredentialsArea
+						//- form.diplomas(name='selectDiplomas' method="post")
+						for credential in credentialViewList
+							.card
+								input(type="hidden" name="selected_credential_id_list[]" value=credential.credential_id disabled)
+								a.credential.toggle-details(id=credential.credential_id style=`
+									background-image: url(${credential.credential_logo_url});
+								`)
+									i.is-selected.fa.fa-check-circle-o(aria-hidden="true")
+								.details
+									i.arrowDown.fa.fa-angle-down(aria-hidden="true")
+									//- button.Btn.Small.GetSingleBtn(type="submit") Get credential
+									table
+										for row of credential.view.rows
+											tr
+												td
+													b #{row.name}
+												td
+													div #{row.value}
+				.GetMultiBtnArea
+					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
+					button.Btn.Small.GetMultiBtn(type="submit" disabled) Get credentials
+				.DetailsArea
+					section.DetailsLayout
+						h4 Details of authorization
+						.ConsentDetails
+							table
+								tr
+									td
+										b Wallet client
+									td
+										div eDiplomas Wallet
+								tr
+									td
+										b Expiration
+									td
+										div 1 year
+	.BarBtnContainer
+		button#BarBtn.Btn.Large.GetMultiBtn(type="button" disabled) Get credentials
+
+	link(rel="stylesheet" href="/styles/consent.css")
+	link(rel="stylesheet" href="/styles/inspect.css")
+	script(src='/js/consent.js')

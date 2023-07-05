@@ -1,0 +1,52 @@
+
+#InstitutionSelection .university-selection {
+	width: 75%;
+}
+
+
+#InstitutionSelection .proceed {
+	background-color: #fff;
+	color: rgb(0, 162, 255);
+	transition: 0.4s;
+	border: none;
+	/* width: 100%; */
+	cursor: pointer;
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
+
+#InstitutionSelection .arrow {
+	margin-left: 22px;
+	color: rgb(0, 162, 255);
+}
+
+#InstitutionSelection .proceed:hover {
+	opacity: 0.5;
+	text-decoration: underline;
+}
+
+#InstitutionSelection .next-icon {
+	margin-left: 5px;
+	transition: 0.4s;
+}
+
+/* select what next-icon will do when we hover over proceed class */
+#InstitutionSelection .proceed:hover .next-icon {
+	margin-left: 10px;
+}
+
+
+#InstitutionSelection .navigation {
+	margin-top: 80px;
+}
+
+
+
+#InstitutionSelection .warning {
+	color: rgb(255, 34, 34);
+	opacity: 0.8;
+	transition: 1s;
+}
+

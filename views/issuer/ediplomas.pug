@@ -1,0 +1,13 @@
+extends ../layout.pug
+block layout-content
+
+	#Index
+		.gunet-container
+			section.layout
+				h1 #{locale.Index.header}
+				p #{locale.Index.description1}
+				p #{locale.Index.description2}
+				.demo-text #{locale.Index.description3}
+				button.Large.Btn.Rect(onclick="window.location.href = '" + initiationURL + "'") Get my VID from the National Verifiable ID Issuer
+
+	//- link(rel="stylesheet" href="/styles/index.css")

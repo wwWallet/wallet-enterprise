@@ -1,0 +1,78 @@
+#Subjects {
+	display: flex;
+}
+
+#Subjects .subject-card {
+	position: relative;
+	background-color: white;
+	background-clip: padding-box;
+	border: none;
+	outline: 0;
+	box-shadow: 0 3px 15px rgb(0 0 0 / 20%);
+	width: 45%;
+	min-width: 400px;
+	max-height: 800px;
+	overflow-y: auto;
+	box-sizing: inherit;
+	margin: 15px 0;
+}
+
+#Subjects .subjects-container {
+	display: block;
+	margin: 2% 5% 5% 5%;
+}
+
+#Subjects .subject-header {
+	background-color: var(--light-gray);
+	padding: 15px;
+	border-bottom: 1px solid #e5e5e5;
+	box-sizing: inherit;
+	display: flex;
+	justify-content: space-between;
+}
+
+#Subjects .subject-details {
+	position: relative;
+	padding: 15px;
+	min-height: 150px;
+	box-sizing: inherit;
+}
+
+#Subjects .subject-p-definition {
+	width: fit-content;
+	cursor: pointer;
+	text-decoration: underline;
+	color: var(--primary-color);
+}
+
+#Subjects a {
+	color: #4183C4;
+	text-decoration: none;
+}
+
+#Subjects .subject-details > div {
+	margin: 5px;
+}
+
+#Subjects .exp-date {
+	font-style: italic;
+}
+
+#Subjects .expired-text {
+	color: red;
+}
+
+#Subjects .form-toggle {
+	cursor: pointer;
+}
+
+#Subjects #form-container {
+	display: none;
+}
+
+@media only screen and (max-width: 500px)  {
+	#Subjects .subject-card {
+		width: 100%;
+		min-width: 0;
+	}
+}

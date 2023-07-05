@@ -1,0 +1,47 @@
+#Error {
+
+}
+
+
+
+
+#Error .Back {
+	background-color: #fff;
+	color: rgb(0, 162, 255);
+	transition: 0.4s;
+	border: none;
+	/* width: 100%; */
+	cursor: pointer;
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
+
+#Error .arrow {
+	margin-left: 22px;
+	color: rgb(0, 162, 255);
+}
+
+#Error .Back:hover {
+	opacity: 0.5;
+	/* text-decoration: underline; */
+}
+
+#Error .next-icon {
+	margin-left: 5px;
+	transition: 0.4s;
+	color: rgb(0, 162, 255);
+}
+
+/* select what next-icon will do when we hover over proceed class */
+#Error .Back:hover .next-icon {
+	margin-right: 10px;
+	opacity: 0.5;
+}
+
+
+#Error .navigation {
+	margin-top: 80px;
+}
+

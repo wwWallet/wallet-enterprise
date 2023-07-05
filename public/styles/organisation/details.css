@@ -1,0 +1,77 @@
+.details-header {
+	display: block;
+	font-size: 20px;
+	text-align: left;
+	padding: 0 5%;
+  margin: 0;
+	width: auto;
+}
+
+.details-header h2 {
+	margin-left: 0;
+	margin-bottom: 1%;
+}
+
+.details-header table{
+  width: 80%;
+}
+
+.subtitle {
+	opacity: 1;
+	color: var(--secondary-color);
+	font-weight: 600;
+	padding: 2% 0 10px 5%;
+  font-size: 26px;
+}
+
+.subtitle.big {
+	font-size: 28px;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.subtitle#contact {
+  padding: 2% 0 1% 0;
+}
+
+.fa {
+	margin-left: 10px;
+}
+
+.details-form {
+	padding: 0 5%;
+}
+
+.details-form input[type=text] {
+  /* line-height: 28px; */
+	background: none;
+	border: 1px solid lightgray;
+  border-radius: 4px;
+  font-size: 1em;
+}
+
+.details-form input[type=text]:focus-visible {
+	outline: 1px solid var(--secondary-color);
+}
+
+.details-form ::placeholder {
+  color: gray;
+  font-size: 1em;
+}
+
+.err-feedback {
+	color: rgb(139, 0, 0);
+	display: none;
+	font-size: 14px;
+}
+
+.hidden {
+	display: none;
+}
+
+@media screen and (max-width: 800px){
+  .details.header {
+    width: 80%;
+  }
+}

@@ -1,0 +1,18 @@
+extends ../layout.pug
+block layout-content
+	
+	.gunet-container
+		#Login
+			.login-flex
+				.login-flex.login-box.item
+					h1.item Login
+					form(name="login" method="post")
+						.login-flex
+							//- button.Btn.Large(onclick="window.location.href = '/authorization/vid/init';")
+							br
+							a.link(href='/authorization/vid/init')
+								| Login With National Verifiable ID
+
+	link(rel="stylesheet" href="/styles/login.css")
+	script(src="/js/alert.js")
+	script(src="/js/login.js")

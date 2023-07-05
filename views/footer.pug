@@ -1,0 +1,42 @@
+div.Footer
+	span.left.content
+		#services
+			h3.header #{locale.Footer.services}
+			ul
+				li
+					span.fa.fa-code &nbsp;
+					a(href='/organisations') #{locale.Footer.documentation}
+				li
+					span.fa.fa-check-circle &nbsp;
+					a(href='/admin/') #{locale.Footer.adminLogin}
+		#info
+			h3.header #{locale.Footer.information}
+			ul
+				li
+					span.fa.fa-university &nbsp;
+					a(href='https://ediplomas.gr/institutions' target='_blank' rel='noopener noreferrer') #{locale.Footer.participatingInst}
+				li
+					span.fa.fa-handshake-o &nbsp;
+					a(href='https://ediplomas.gr/terms' target='_blank' rel='noopener noreferrer') #{locale.Footer.termsOfUse}
+		#contact
+			h3.header #{locale.Footer.contact}
+			ul
+				li
+					span.strong.subheader
+					span.fa.fa-globe &nbsp;
+						|&nbsp;
+					a(href='https://www.gunet.gr' target='_blank' rel='noopener noreferrer') https://www.gunet.gr
+				li
+					span.strong.subheader
+					span.fa.fa-briefcase &nbsp;
+						|&nbsp;
+					a(href='mailto:info@gunet.gr') info@gunet.gr
+				li
+					.copyright-area
+						img#FooterLogo(src='/images/gunet.svg' alt='GUnet Logo')
+						#copyright-tag
+							small
+								span.fa.fa-copyright
+									|  2022 | GUnet
+
+	link(rel="stylesheet" href="/styles/footer.css")

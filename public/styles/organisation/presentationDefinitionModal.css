@@ -1,0 +1,16 @@
+.scopeList {
+	padding: 0;
+}
+
+.scopeList ul, .scopeList li {
+	list-style-type: none; /* Remove bullets */
+	padding-left: 0;
+}
+
+.scopeList .ScopeName {
+	margin-left: 10px;
+}
+
+.schemaList {
+	margin: 15px;
+}

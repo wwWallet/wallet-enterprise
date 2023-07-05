@@ -1,0 +1,27 @@
+extends layout.pug
+block layout-content
+
+	#Index
+		section.IssuerOrVerifierLayout
+			div.item.IssuerSection
+				.ItemLayout
+					i.fa.fa-id-card-o.LargeIcon
+					p I am a Greek citizen
+					button.Btn.Large.Landing(id="mainBtn") Proceed
+					input(type="hidden" id="credentialIssuerIdentifier" value=credentialIssuerIdentifier)
+			//- div.item.VerifierSection
+			//- 	.ItemLayout
+			//- 		i.fa.fa-university.LargeIcon
+			//- 		p #{locale.Index.rightSideDesc}
+			//- 		button.Large.Btn.Rect(onclick=" window.location.href = '/view/admin-login' ") #{locale.Index.proceedButtonText} 
+
+		.gunet-container
+			h1 National Verifiable ID Issuer
+			p This is a portal where Greek citizen can receive their digital Verifiable ID in their wallet. To proceed you must first have an EBSI conformant digital wallet. This Verifiable ID will contain a the Social Security Number as a personal identifier.
+			.demo-text This is a National VID implementation for demonstration puproses. It has been developed in the framework of EBSI Early Adopters Program and the Multi University Pilot, with the endorsement of the Greek Ministry of Education. The purpose of this application is to issue a Verifiable ID for authentication puproses.
+
+	block footer
+	include footer.pug
+
+	link(rel="stylesheet" href="/styles/index.css")
+	script(src="/js/index.js")

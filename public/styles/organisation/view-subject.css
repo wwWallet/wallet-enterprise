@@ -1,0 +1,42 @@
+.error-strikethrough,
+input[type=text].error-strikethrough:focus-visible {
+	text-decoration: line-through var(--error-red);
+	outline: 1px solid var(--error-red);
+}
+
+.radio {
+	list-style: none;
+	padding: 0;
+}
+
+.link {
+	text-decoration: underline;
+	color: var(--secondary-color);
+}
+
+#PresentationContainer {
+	padding: 0 5%;
+}
+
+.subtitle.presentations {
+	padding-bottom: 0;
+	margin-bottom: 0;
+}
+
+.subtitle-filters {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 0;
+}
+
+.subtitle-filters form {
+	height: fit-content;
+}
+
+.subtitle-filters .Btn.red {
+	background-color: var(--error-red);
+}
+
+.subtitle-filters .Btn.selected {
+	background-color: gray;
+}

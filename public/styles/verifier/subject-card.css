@@ -1,0 +1,80 @@
+#SubjectCards {
+	display: flex;
+	gap: 10px;
+	flex-direction: column;
+}
+
+#SubjectCards i {
+	margin: 0px;
+	display: flex;
+	align-items: center;
+}
+
+#SubjectCards .subject-card {
+	position: relative;
+	background-color: white;
+	background-clip: padding-box;
+	border: none;
+	outline: 0;
+	box-shadow: 0 3px 15px rgb(0 0 0 / 20%);
+	width: 100%;
+	min-width: 300px;
+	overflow-y: auto;
+	box-sizing: inherit;
+	margin: 15px 0;
+	height: 200px;
+	overflow: hidden;
+	border-radius: 7px;
+	border: solid rgb(189, 189, 189);
+	border-width: 1px;
+}
+
+
+
+
+@media screen and (max-width: 400px) {
+	#SubjectCards .subject-card {
+		height: 300px;
+	}
+}
+
+#SubjectCards .subject-card .subject-header {
+	background-color: var(--light-gray);
+	padding: 10px 30px;
+	border-bottom: 1px solid #e5e5e5;
+	box-sizing: inherit;
+	display: flex;
+	justify-content: space-between;
+}
+
+.subject-header .subject-title {
+	flex-grow: 1;
+}
+
+#SubjectCards .subject-card .subject-details {
+	position: relative;
+	padding: 20px 50px; 
+	box-sizing: inherit;
+}
+
+#SubjectCards .subject-card .subject-details .subject-p-definition {
+	width: fit-content;
+	cursor: pointer;
+	text-decoration: underline;
+	color: var(--secondary-color);
+}
+
+#SubjectCards .subject-card .subject-details > div {
+	margin: 5px;
+}
+
+#SubjectCards .subject-card .subject-details .exp-date {
+	font-style: italic;
+}
+
+#SubjectCards button.fa {
+	cursor: pointer;
+	border: none;
+	background: none;
+	margin: 0;
+}
