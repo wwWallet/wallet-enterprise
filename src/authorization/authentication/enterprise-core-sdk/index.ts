@@ -13,11 +13,15 @@ export type UserInfoProfileResponse = {
 	}[]
 }
 
+
+const VP_TOKEN_SCOPE = "ver_test:vp_token";
+const ID_TOKEN_SCOPE = "ver_test:id_token";
+
 export type EnterpriseCoreSDK = {
 	enterpriseCoreBaseUrl: string,
 	enterpriseCoreUser: string,
 	enterpriseCoreSecret: string,
-	presentationDefinitionName: string,
+	presentationDefinitionName?: string,
 	callbackUrl: string,
 	store: Store,
 	authguardCallback: (req: Request, res: Response, next: NextFunction, userinfo: UserInfoProfileResponse) => void,
@@ -34,15 +38,19 @@ export const initiateVerificationFlowEndpoint = (sdk: EnterpriseCoreSDK, initiat
 		sdk.store.set(`urn:enterprise-core:session:${userSessionId}`, {state: state} as any);
 	
 		// session management
-		const initiationEndpointUrl = `${sdk.enterpriseCoreBaseUrl}/verify/initiate`;
+		const initiationEndpointBaseUrl = sdk.presentationDefinitionName ?
+			`${sdk.enterpriseCoreBaseUrl}/verify/initiate/${sdk.presentationDefinitionName}` :
+			`${sdk.enterpriseCoreBaseUrl}/verify/initiate`;
+
 		const basicB64Token = Buffer.from(sdk.enterpriseCoreUser+":"+sdk.enterpriseCoreSecret).toString("base64");
-		const body = {
-			presentationDefinitionName: sdk.presentationDefinitionName,
-			verificationCallbackUrl: sdk.callbackUrl,
-			state: state
-		};
+
+		const initiationEndpointUrl = new URL(initiationEndpointBaseUrl);
+		initiationEndpointUrl.searchParams.append("verificationCallbackUrl", sdk.callbackUrl);
+		initiationEndpointUrl.searchParams.append("state", state);
+		initiationEndpointUrl.searchParams.append("scope", "openid " + (sdk.presentationDefinitionName ? VP_TOKEN_SCOPE : ID_TOKEN_SCOPE));
+
 		try {
-			const result = await axios.post(initiationEndpointUrl, body, { headers: {
+			const result = await axios.get(initiationEndpointUrl.toString(), { headers: {
 				authorization: `Basic ${basicB64Token}`
 			}})
 			const { url } = result.data;
@@ -84,9 +92,15 @@ export const verificationCallbackEndpoint = (sdk: EnterpriseCoreSDK) => {
 	
 	
 		sdk.store.get(`urn:enterprise-core:session:${userSessionId}`, (err, session) => {
-			if (err) throw err;
+			if (err) {
+				console.error("Error : ", err);
+				return;
+			}
 	
-			if (!session) throw "No session found";
+			if (!session) {
+				console.error("No session found")
+				return;
+			};
 	
 			const { state } = session as any;
 

@@ -5,6 +5,7 @@
 export type AdditionalSessionData = {
 	
 	// authentication component variables
-	taxisid?: string;
+	subject?: string; // DID of the holder received from SIOP
 
+	taxisid?: string;
 }
