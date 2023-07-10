@@ -12,7 +12,8 @@ import { openid4vciRouter } from './openid4vci/router';
 import locale from './locale';
 import { issuersConfigurations, vidIssuer } from './configuration/IssuersConfiguration';
 import createHttpError, { HttpError} from 'http-errors';
-import { JWK } from 'jose';
+import { appContainer } from './services/inversify.config';
+import { FilesystemKeystoreService } from './services/FilesystemKeystoreService';
 
 AppDataSource // used for the initizlization of the DB
 
@@ -32,8 +33,22 @@ app.set('view engine', 'pug');
 // __dirname is "/path/to/dist/src"
 // public is located at "/path/to/dist/src"
 app.set('views', path.join(__dirname, '../../views'));
+
+
+const walletKeystore = appContainer.resolve(FilesystemKeystoreService);
+
+
+// expose all public keys
+app.get('/jwks', async (_req: Request, res: Response) => {
+	const { jwks } = await walletKeystore.getAllPublicKeys();
+	res.send(jwks);
+})
+
+
 app.use(LanguageMiddleware);
 app.use(UserSessionMiddleware);
+
+
 
 app.get('/', async (req: Request, res: Response) => {
 	res.render('index', {
@@ -48,18 +63,10 @@ app.use('/authorization', authorizationRouter);
 app.use('/openid4vci', openid4vciRouter);
 
 
-const jwks: JWK[] = []
+
 for (const [_, v] of issuersConfigurations) {
 	v.exposeConfiguration(app);
-	jwks.push()
-
-	const publicKeyJwk = v.legalPersonWallet.keys.ES256?.publicKeyJwk;
-	jwks.push({ kid: v.legalPersonWallet.keys.ES256?.id, ...publicKeyJwk });
 }
-app.get('/jwks', async (_req: Request, res: Response) => {
-	res.send(jwks);
-})
-
 
 
 
@@ -98,7 +105,8 @@ app.get('/.well-known/openid-configuration', async (_req: Request, res: Response
 
 
 // catch 404 and forward to error handler
-app.use((_req, _res, next) => {
+app.use((req, _res, next) => {
+	console.error("URL path not found: ", req.url)
   next(createHttpError(404));
 });
 
@@ -107,7 +115,6 @@ app.use((err: HttpError, req: Request, res: Response) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
-
   // render the error page
   res.status(err.status || 500);
   res.render('error', {

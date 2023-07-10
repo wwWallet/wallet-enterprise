@@ -7,8 +7,11 @@ import { VIDEntry, getVIDByTaxisId } from "../../lib/resourceServer";
 import { CredentialIssuerConfig } from "../../lib/CredentialIssuerConfig/CredentialIssuerConfig";
 import { SupportedCredentialProtocol } from "../../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
 import { SignVerifiableCredentialJWT } from "@gunet/ssi-sdk";
-import { JWK, importJWK } from 'jose';
 import { randomUUID } from 'node:crypto';
+import { appContainer } from "../../services/inversify.config";
+import { FilesystemKeystoreService } from "../../services/FilesystemKeystoreService";
+
+const keystoreService = appContainer.resolve(FilesystemKeystoreService);
 
 export class VIDSupportedCredential implements SupportedCredentialProtocol {
 
@@ -79,22 +82,20 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
 			dateOfBirth: selectedCategorizedCredential.rawData.birthdate
 		} as any;
 
-    const jwt = await new SignVerifiableCredentialJWT()
-      .setProtectedHeader({ alg: "ES256", kid: this.getCredentialIssuerConfig().legalPersonWallet.keys.ES256?.id })
+    const nonSignedJwt = new SignVerifiableCredentialJWT()
       .setJti(selectedCategorizedCredential.credential_id)
 			.setSubject(holderDID)
       .setIssuedAt()
       .setExpirationTime('1y')
       .setContext([])
       .setType(this.getTypes())
-      .setIssuer(this.getCredentialIssuerConfig().legalPersonWallet.did)
       .setCredentialSubject(vid)
-      .setCredentialSchema("https://api-pilot.ebsi.eu/trusted-schemas-registry/v2/schemas/z8Y6JJnebU2UuQQNc2R8GYqkEiAMj3Hd861rQhsoNWxsM")
-      .sign(await importJWK(this.getCredentialIssuerConfig().legalPersonWallet.keys.ES256?.privateKeyJwk as JWK, "ES256"));
-    
-      const response = {
+      .setCredentialSchema("https://api-pilot.ebsi.eu/trusted-schemas-registry/v2/schemas/z8Y6JJnebU2UuQQNc2R8GYqkEiAMj3Hd861rQhsoNWxsM");    
+
+		const { credential } = await keystoreService.signVcJwt(this.getCredentialIssuerConfig().walletId, nonSignedJwt);
+    const response = {
       format: this.getFormat(),
-      credential: jwt
+      credential: credential
     };
 
     return response;

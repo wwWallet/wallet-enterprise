@@ -1,6 +1,5 @@
 
 import { CredentialIssuerMetadata } from "../../types/oid4vci";
-import { LegalPersonWallet } from "../LegalPersonWallet.type";
 import { SupportedCredentialProtocol } from "./SupportedCredentialProtocol";
 import { Request, Response } from 'express';
 import * as _ from 'lodash';
@@ -8,8 +7,8 @@ import * as _ from 'lodash';
 export class CredentialIssuerConfig {
 
 	constructor(
-		public credentialIssuerIdentifier: string,
-		public legalPersonWallet: LegalPersonWallet,
+		public walletId: string,
+		public credentialIssuerIdentifier: string, // url
 		public authorizationServerURL: string,
 		public credentialEndpointURL: string,
 		public supportedCredentials: SupportedCredentialProtocol[] = []
