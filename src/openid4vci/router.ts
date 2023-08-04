@@ -1,10 +1,9 @@
 import { Request, Response, Router } from "express";
-import { authorizationEndpoint } from "./endpoints/authorizationEndpoint";
-import { tokenEndpoint } from "./endpoints/tokenEndpoint";
-import { batchCredentialEndpoint, credentialEndpoint, verifyAccessToken } from "./endpoints/credentialEndpoint";
 import locale from "../locale";
 import qs from "qs";
 import { issuersConfigurations } from "../configuration/IssuersConfiguration";
+import 'reflect-metadata';
+import { openidForCredentialIssuingService, openidForPresentationReceivingService } from "../services/instances";
 
 const openid4vciRouter = Router();
 
@@ -56,12 +55,29 @@ openid4vciRouter.get('/init/view/:client_type', async (req: Request, res: Respon
 	}
 })
 
-openid4vciRouter.get('/authorize', authorizationEndpoint);
 
-openid4vciRouter.post('/token', tokenEndpoint);
+openid4vciRouter.get('/authorize', async (req, res) => {
+	// openidForCredentialIssuingService.authorizationRequestHandler(req, res);
+	
+	openidForPresentationReceivingService.authorizationRequestHandler(req, res, req.userSession?.id as string);
 
-openid4vciRouter.post('/credential', verifyAccessToken, credentialEndpoint);
-openid4vciRouter.post('/batch_credential', verifyAccessToken, batchCredentialEndpoint);
+});
+
+openid4vciRouter.post('/token', async (req, res) => {
+	openidForCredentialIssuingService.tokenRequestHandler(req, res);
+});
+
+openid4vciRouter.post('/credential', async (req, res) => {
+	openidForCredentialIssuingService.credentialRequestHandler(req, res);
+});
+
+openid4vciRouter.post('/batch_credential', async (req, res) => {
+	openidForCredentialIssuingService.batchCredentialRequestHandler(req, res);
+});
+
+openid4vciRouter.post('/deferred', async (req, res) => {
+	openidForCredentialIssuingService.deferredCredentialRequestHandler(req, res);
+});
 
 export {
 	openid4vciRouter

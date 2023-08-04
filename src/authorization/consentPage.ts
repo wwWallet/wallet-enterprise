@@ -1,19 +1,29 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { UserSession, redisModule } from "../RedisModule";
 import { CredentialView } from "./types";
 import locale from "../locale";
 import { CategorizedRawCredential } from "../openid4vci/Metadata";
-import { generateAuthorizationResponse } from "../openid4vci/endpoints/authorizationEndpoint";
 import z from 'zod';
-import { issuersConfigurations } from "../configuration/IssuersConfiguration";
+import { defaultIssuer, issuersConfigurations } from "../configuration/IssuersConfiguration";
 import { CredentialIssuerConfig } from "../lib/CredentialIssuerConfig/CredentialIssuerConfig";
 import _ from "lodash";
-import config from "../../config";
+import { appContainer } from "../services/inversify.config";
+import { OpenidForCredentialIssuingService } from "../services/OpenidForCredentialIssuingService";
+import { AuthorizationDetailsSchemaType } from "../types/oid4vci";
+
+
+
+
 const consentSubmitSchema = z.object({
 	selected_credential_id_list: z.array(z.string())
 })
 
-export async function consent(req: Request, res: Response) {
+export async function consent(req: Request, res: Response, _next: NextFunction) {
+	if (req.userSession?.id) {
+		await loadCategorizedRawCredentialsToUserSession(req, req.userSession?.id as string);
+	}
+	
+	const openidForCredentialIssuingService = appContainer.resolve(OpenidForCredentialIssuingService);
 	if (!req.userSession || !req.userSession.authorizationDetails) {
 		res.render('error');
 		return;
@@ -23,13 +33,27 @@ export async function consent(req: Request, res: Response) {
 		try {
 			const { selected_credential_id_list } = consentSubmitSchema.parse(req.body);
 			console.log("Selected credential id list = ", req.body)
-			const { authorizationResponseURL } = await generateAuthorizationResponse(req.userSession, selected_credential_id_list);
 			if (!req.userSession.categorizedRawCredentials) {
-				return res.render('error');
+				const error = {
+					code: "undefined",
+					error: "No categorizedRawCredentials were found",
+					error_description: "On POST of consent page, categorizedRawCredentials is empty"
+				}
+				console.error(error);
+				return res.render('error', error);
 			}
-			req.userSession.categorizedRawCredentials = req.userSession.categorizedRawCredentials.filter(cred => selected_credential_id_list.includes(cred.credential_id));
+			req.userSession.categorizedRawCredentials = req.userSession.categorizedRawCredentials
+				.filter(cred => 
+					selected_credential_id_list.includes(cred.credential_id)
+				);
 			await redisModule.storeUserSession(req.userSession.id, req.userSession);
-			return res.redirect(authorizationResponseURL);
+			await openidForCredentialIssuingService.sendAuthorizationResponse(
+				req,
+				res,
+				req.userSession.id,
+				selected_credential_id_list
+			);
+
 		}
 		catch(err) {
 			console.log(err);
@@ -41,13 +65,54 @@ export async function consent(req: Request, res: Response) {
 		}
 	} // end of POST
 
+	const userSession = await redisModule.getUserSession(req.userSession.id);
+	const credViewList = userSession?.credViewList;
 
+	res.render('issuer/consent.pug', {
+		credentialViewList: credViewList,
+		title: 'Consent',
+		lang: req.lang,
+		locale: locale[req.lang],
+	});
+}
+
+/**
+ * This function could be called multiple times.
+ * Once on the ID Token Response
+ * and once at the end of the Authentication Components.
+ * @throws
+ * @param req 
+ */
+export async function loadCategorizedRawCredentialsToUserSession(req: Request, userSessionId: string) {
+	const userSession = await redisModule.getUserSession(userSessionId);
+
+	if (!userSession) {
+		console.log("User session = ", req.userSession)
+		throw new Error("Could not load categorized raw credentials to session")
+	}
 	const credentials: CategorizedRawCredential<any>[] = [ ];
 	const credViewList: CredentialView[] = [];
 
-	for (const authorizationDetail of req.userSession.authorizationDetails) {
+
+	// if no authorization details were found, then load all the supported credentials from the default issuer.
+	if (!userSession.authorizationDetails) {
+		const authorizationDetails = [ ...defaultIssuer.supportedCredentials.map((sc) => sc.exportCredentialSupportedObject()) ].map((sc) => {
+			return { 
+				type: "openid_credential",
+				types: sc.types ? [ ...sc.types ] : [],
+				format: sc.format,
+				locations: [ defaultIssuer.credentialIssuerIdentifier ]
+			}
+		}) as AuthorizationDetailsSchemaType;
+		userSession.authorizationDetails = authorizationDetails;
+	}
+
+	for (const authorizationDetail of userSession.authorizationDetails) {
 		// find the selected issuer by the locations parameter, else by the default credential issuer identifier
-		const credentialIssuerIdentifier = authorizationDetail.locations && authorizationDetail.locations.length ? authorizationDetail.locations[0] : config.url;
+		const credentialIssuerIdentifier = authorizationDetail.locations && authorizationDetail.locations.length 
+			? authorizationDetail.locations[0]
+			: defaultIssuer.credentialIssuerIdentifier;
+
 		const issuerConfiguration = issuersConfigurations.get(credentialIssuerIdentifier);
 		if (!issuerConfiguration)
 			continue;
@@ -71,22 +136,20 @@ export async function consent(req: Request, res: Response) {
 
 	}
 
-	req.userSession.categorizedRawCredentials = credentials;
+	userSession.categorizedRawCredentials = credentials;
+	userSession.credViewList = credViewList;
+
 	console.log("User session = ", req.userSession)
-	redisModule.storeUserSession(req.userSession.id, req.userSession).catch(err => {
-		console.log("Redis could not store userSession")
-		console.log(err)
-	});
+	// update on redis
+	try {
+		await redisModule.storeUserSession(userSession.id, userSession);
+		req.userSession = userSession; // update the object
+	}
+	catch(e) {
+		console.error("Failed to loadCategorizedRawCredentialsToUserSession in cache");
+	}
 
-
-	res.render('issuer/consent.pug', {
-		credentialViewList: credViewList,
-		title: 'Consent',
-		lang: req.lang,
-		locale: locale[req.lang],
-	});
 }
-
 
 function constructView(issuerConfiguration: CredentialIssuerConfig, credential: CategorizedRawCredential<any>): CredentialView {
 	const supportedCredential = issuerConfiguration.supportedCredentials.filter(sc => sc.getId() == credential.supportedCredentialIdentifier)[0];

@@ -1,5 +1,6 @@
 import { redisModule } from "../../RedisModule";
-import { TokenRequestBodySchemaForAuthorizationCodeGrantType, generateToken } from "../endpoints/tokenEndpoint";
+import { TokenRequestBodySchemaForAuthorizationCodeGrantType } from "../../types/oid4vci";
+import { generateAccessToken } from "../utils/generateAccessToken";
 
 export async function authorizationCodeGrantTokenEndpoint(body: TokenRequestBodySchemaForAuthorizationCodeGrantType, _authorizationHeader?: string) {
 	// TODO: validate the code verifier...
@@ -49,8 +50,11 @@ export async function authorizationCodeGrantTokenEndpoint(body: TokenRequestBody
 
 	
 	const userSession = await redisModule.getSessionByAuthorizationCode(body.code);
+
 	if (!userSession) {
 		throw `No user session was found for authorization code ${body.code}`
 	}
-	return generateToken(userSession);
+
+	
+	return generateAccessToken(userSession);
 }

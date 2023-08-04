@@ -11,6 +11,8 @@ export class CredentialIssuerConfig {
 		public credentialIssuerIdentifier: string, // url
 		public authorizationServerURL: string,
 		public credentialEndpointURL: string,
+		public batchCredentialEndpointURL: string,
+		public deferredCredentialEndpointURL: string,
 		public supportedCredentials: SupportedCredentialProtocol[] = []
 	) { }
 
@@ -43,6 +45,8 @@ export class CredentialIssuerConfig {
 			credential_issuer: this.credentialIssuerIdentifier,
 			authorization_server: this.authorizationServerURL,
 			credential_endpoint: this.credentialEndpointURL,
+			batch_credential_endpoint: this.batchCredentialEndpointURL,
+			deferred_credential_endpoint: this.deferredCredentialEndpointURL,
 			credentials_supported: this.supportedCredentials.map(sc => sc.exportCredentialSupportedObject())
 		}
 	}

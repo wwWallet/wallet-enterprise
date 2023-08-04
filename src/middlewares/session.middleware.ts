@@ -20,6 +20,7 @@ export async function UserSessionMiddleware(req: Request, res: Response, next: N
 			id: sessid,
 		}
 		await redisModule.storeUserSession(sessid, newUserSession);
+		req.userSession = newUserSession;
 		res.cookie('sessid', sessid);
 		// console.log("SESS = ", session)
 		next();

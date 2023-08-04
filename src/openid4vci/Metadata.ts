@@ -4,6 +4,10 @@ import { VerifiableCredentialFormat } from "../types/oid4vci";
 
 export type SignerFn = (userSession: UserSession, holderDID: string) => Promise<{ format: VerifiableCredentialFormat, credential: any }>;
 
+export enum IssuanceFlow {
+	DEFERRED,
+	IN_TIME
+}
 
 export type CategorizedRawCredentialViewRow = {
 	name: string;
@@ -19,8 +23,10 @@ export type CategorizedRawCredential<T> = {
 	credential_id: string;
 	supportedCredentialIdentifier: string;
 	credentialIssuerIdentifier: string; // a uri
-	rawData: T; 
-	view: CategorizedRawCredentialView
+	rawData?: T; 
+	view: CategorizedRawCredentialView;
+	issuanceFlow: IssuanceFlow;
+	readyToBeSigned: boolean;
 }
 
 export type ResourceCallbackFn = (userSession: UserSession) => Promise<CategorizedRawCredential<any>[]>; // returns an array of rawData

@@ -53,7 +53,7 @@ export function addLocalAuthMethod(entrypoint: string, authorizationRouter: any,
 	})
 	
 	authorizationRouter.post(entrypoint, 
-		passport.authenticate('local', { failureRedirect: '/authorization/login' }),
+		passport.authenticate('local', { failureRedirect: entrypoint }),
 		async (req: Request, res: Response) => {
 			const user = req.user as LocalAuthSchema;
 			console.log("USER = ", user)

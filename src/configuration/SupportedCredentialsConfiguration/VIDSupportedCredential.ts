@@ -1,6 +1,6 @@
 import config from "../../../config";
 import { UserSession } from "../../RedisModule";
-import { CategorizedRawCredential, CategorizedRawCredentialView, CategorizedRawCredentialViewRow } from "../../openid4vci/Metadata";
+import { CategorizedRawCredential, CategorizedRawCredentialView, CategorizedRawCredentialViewRow, IssuanceFlow } from "../../openid4vci/Metadata";
 import { VerifiableCredentialFormat, Display, CredentialSupportedJwtVcJson } from "../../types/oid4vci";
 import { CredentialSubject } from "../../lib/CredentialSubjectBuilders/CredentialSubject.type";
 import { VIDEntry, getVIDByTaxisId } from "../../lib/resourceServer";
@@ -16,6 +16,9 @@ const keystoreService = appContainer.resolve(FilesystemKeystoreService);
 export class VIDSupportedCredential implements SupportedCredentialProtocol {
 
   constructor(private credentialIssuerConfig: CredentialIssuerConfig) { }
+	issuanceFlow(): IssuanceFlow {
+		return IssuanceFlow.IN_TIME
+	}
   getCredentialIssuerConfig(): CredentialIssuerConfig {
     return this.credentialIssuerConfig;
   }
@@ -58,13 +61,15 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
 					credentialIssuerIdentifier: this.getCredentialIssuerConfig().credentialIssuerIdentifier,
 					supportedCredentialIdentifier: this.getId(),
 					rawData: vid,
-					view: view
+					view: view,
+					issuanceFlow: this.issuanceFlow(),
+					readyToBeSigned: true
 				}
 			})
 		return categorizedRawVIDs;
   }
   
-  async signCredential(userSession: UserSession, holderDID: string): Promise<{ format: VerifiableCredentialFormat; credential: any; }> {
+  async generateCredentialResponse(userSession: UserSession, holderDID: string): Promise<{ format: VerifiableCredentialFormat; credential: any;  }> {
 		console.log("User session = ", userSession);
     if (!userSession?.categorizedRawCredentials) {
 			throw "Categorized raw credentials not found";
@@ -73,6 +78,14 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
     const selectedCategorizedCredential: CategorizedRawCredential<VIDEntry> = userSession.categorizedRawCredentials
     .filter(crc => crc.supportedCredentialIdentifier == this.getId())
     [0];
+
+		if (!selectedCategorizedCredential) {
+			throw new Error("Could not generate credential response");
+		}
+		if (!selectedCategorizedCredential.rawData) {
+			console.error("Possibly raw data w not found")
+			throw new Error("Could not generate credential response");
+		}
 
 		const vid: CredentialSubject = {
 			familyName: selectedCategorizedCredential.rawData.familyName,

@@ -3,9 +3,9 @@ import { Err, Ok, Result } from 'ts-results';
 import config from '../config';
 import logger, { newLogerr } from './logger';
 import { CategorizedRawCredential } from './openid4vci/Metadata';
-import { AuthorizationDetailsSchemaType, AuthorizationRequestQueryParamsSchemaType } from './openid4vci/endpoints/authorizationEndpoint';
-import { GrantType } from './types/oid4vci';
+import { AuthorizationDetailsSchemaType, AuthorizationRequestQueryParamsSchemaType, GrantType } from './types/oid4vci';
 import { AdditionalSessionData } from './configuration/Session/AdditionalSessionData.type';
+import { CredentialView } from './authorization/types';
 
 export enum DeviceType {
 	SAME_DEVICE = "same_device",
@@ -52,7 +52,8 @@ export type UserSession = {
 
 	// not subject of change
 	categorizedRawCredentials?: CategorizedRawCredential<any>[];
-	selectedCredentialIdList?: string[]; // the credential id selected from the categorizedRawCredentials
+	credViewList?: CredentialView[];
+	selectedCredentialIdList?: string[]; // the credential IDs selected from the categorizedRawCredentials
 
 
 	additionalData?: AdditionalSessionData;
@@ -87,7 +88,7 @@ export class RedisModule {
 		try {
 			// set expiration time for the session
 			await this.redisClient.set('sessid:'+sessid, JSON.stringify(session), {
-				EX: 10000 // for 600 seconds = 10 minutes
+				EX: 10000000 // for 600 seconds = 10 minutes
 			});
 			return Ok(null);
 		}
@@ -186,31 +187,23 @@ export class RedisModule {
 		}
 	}
 
-
-
-		/**
-	 * 
-	 * @param accessToken 
-	 * @returns Returns the data associated with the token
-	 */
-		async getSessionByAccessToken(accessToken: string): Promise<Result<UserSession, 'REDIS_ERR' | 'KEY_NOT_FOUND'>> {
-			const key = 'oid4ci:token:' + accessToken;
-			try {
-				const sessionId = await this.redisClient.get(key) as string;
-				if (!sessionId) {
-					return Err('KEY_NOT_FOUND');
-				}
-				const userSession = await this.getUserSession(sessionId);
-				if (!userSession) {
-					return Err('KEY_NOT_FOUND');
-				}
-				return Ok(userSession);
+	async getSessionByAccessToken(accessToken: string): Promise<Result<UserSession, 'REDIS_ERR' | 'KEY_NOT_FOUND'>> {
+		const key = 'oid4ci:token:' + accessToken;
+		try {
+			const sessionId = await this.redisClient.get(key) as string;
+			if (!sessionId) {
+				return Err('KEY_NOT_FOUND');
 			}
-			catch(e) {
-				return Err('REDIS_ERR');
+			const userSession = await this.getUserSession(sessionId);
+			if (!userSession) {
+				return Err('KEY_NOT_FOUND');
 			}
+			return Ok(userSession);
 		}
-
+		catch(e) {
+			return Err('REDIS_ERR');
+		}
+	}
 	async storeAccessToken(accessToken: string, sessionId: string): Promise<Result<null, 'REDIS_FAILED_TOKEN_STORAGE'>> {
 		const key = 'oid4ci:token:'+accessToken;
 		try {
@@ -222,6 +215,72 @@ export class RedisModule {
 		}
 		catch(e) {
 			return Err('REDIS_FAILED_TOKEN_STORAGE');
+		}
+	}
+
+	async getSessionByAcceptanceToken(acceptanceToken: string): Promise<Result<UserSession, 'REDIS_ERR' | 'KEY_NOT_FOUND'>> {
+		const key = 'oid4ci:acceptance_token:' + acceptanceToken;
+		try {
+			const sessionId = await this.redisClient.get(key) as string;
+			if (!sessionId) {
+				return Err('KEY_NOT_FOUND');
+			}
+			const userSession = await this.getUserSession(sessionId);
+			if (!userSession) {
+				return Err('KEY_NOT_FOUND');
+			}
+			return Ok(userSession);
+		}
+		catch(e) {
+			return Err('REDIS_ERR');
+		}
+	}
+
+
+	async storeAcceptanceToken(acceptanceToken: string, sessionId: string): Promise<Result<null, 'REDIS_FAILED_ACCEPTANCE_TOKEN_STORAGE'>> {
+		const key = 'oid4ci:acceptance_token:'+acceptanceToken;
+		try {
+			// set expiration time for the session
+			await this.redisClient.set(key, sessionId, {
+				EX: 1000000000 // for 100 seconds = 1.5 minutes
+			});
+			return Ok(null);
+		}
+		catch(e) {
+			return Err('REDIS_FAILED_ACCEPTANCE_TOKEN_STORAGE');
+		}
+	}
+
+	async getSessionByPreAuthorizedCode(preAuthCode: string, userPin: string): Promise<Result<UserSession, 'REDIS_ERR' | 'KEY_NOT_FOUND'>> {
+		const key = 'oid4ci:pre_authorized_code:' + preAuthCode + ":" + userPin;
+		try {
+			const sessionId = await this.redisClient.get(key) as string;
+			if (!sessionId) {
+				return Err('KEY_NOT_FOUND');
+			}
+			const userSession = await this.getUserSession(sessionId);
+			if (!userSession) {
+				return Err('KEY_NOT_FOUND');
+			}
+			return Ok(userSession);
+		}
+		catch(e) {
+			return Err('REDIS_ERR');
+		}
+	}
+
+
+	async storePreAuthorizedCode(preAuthCode: string, userPin: string, sessionId: string): Promise<Result<null, 'REDIS_FAILED_PRE_AUTH_CODE_STORAGE'>> {
+		const key = 'oid4ci:pre_authorized_code:' + preAuthCode + ":" + userPin;
+		try {
+			// set expiration time for the session
+			await this.redisClient.set(key, sessionId, {
+				EX: 1000000000 // for 100 seconds = 1.5 minutes
+			});
+			return Ok(null);
+		}
+		catch(e) {
+			return Err('REDIS_FAILED_PRE_AUTH_CODE_STORAGE');
 		}
 	}
 }
