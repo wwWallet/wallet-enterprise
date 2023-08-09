@@ -1,9 +1,4 @@
-
-<<<<<<< HEAD
 name: Enterprise VID Issuer
-=======
-name: Enterprise Issuer
->>>>>>> master
 
 on:
   push:
@@ -30,8 +25,4 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-<<<<<<< HEAD
         tags: ghcr.io/gunet/enterprise-vid-issuer:latest
-=======
-        tags: ghcr.io/gunet/enterprise-issuer:latest
->>>>>>> master
