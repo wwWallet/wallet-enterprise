@@ -8,7 +8,9 @@ ssl_keys
 *.tar
 *.gz
 dump.rdb
+.npmrc
 
 keys/*
 ._.DS_Store
 cli/node_modules/
+.npmrc
