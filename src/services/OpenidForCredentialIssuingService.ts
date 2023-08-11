@@ -3,7 +3,7 @@ import { CredentialPool, OpenidForCredentialIssuingInterface, OpenidForPresentat
 import { AuthorizationDetailsSchemaType, AuthorizationRequestQueryParamsSchemaType, CredentialRequestBody, GrantType, authorizationDetailsSchema, authorizationRequestQueryParamsSchema, credentialRequestBodySchema, tokenRequestBodySchemaForAuthorizationCodeGrant, tokenRequestBodySchemaForPreAuthorizedCodeGrant } from "../types/oid4vci";
 import { randomUUID } from "node:crypto";
 import { UserSession, redisModule } from "../RedisModule";
-import { AUTHENTICATION_MECHANISM_USED, AuthenticationMechanism } from "../configuration/authentication/auth.config";
+import { DID_AUTHENTICATION_MECHANISM_USED, DIDAuthenticationMechanism } from "../configuration/authentication/auth.config";
 import { inject, injectable } from "inversify";
 import { TYPES } from "./types";
 import { AUTHORIZATION_ENTRYPOINT } from "../authorization/constants";
@@ -79,8 +79,9 @@ export class OpenidForCredentialIssuingService implements OpenidForCredentialIss
 			res.end();
 		};
 	
-		if (AUTHENTICATION_MECHANISM_USED == AuthenticationMechanism.OPENID4VP_ID_TOKEN ||
-				AUTHENTICATION_MECHANISM_USED == AuthenticationMechanism.OPENID4VP_VP_TOKEN) {
+
+		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_ID_TOKEN ||
+				DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
 	
 			await this.openidForPresentationReceivingService.authorizationRequestHandler(req, res, sessionid);
 			if (redirected) {
@@ -88,7 +89,8 @@ export class OpenidForCredentialIssuingService implements OpenidForCredentialIss
 			}
 			return;
 		}
-		else if (AUTHENTICATION_MECHANISM_USED == AuthenticationMechanism.LOCAL) {
+		else {
+			console.log("Redirecting...")
 			res.redirect(AUTHORIZATION_ENTRYPOINT);
 			return;
 		}

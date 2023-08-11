@@ -14,6 +14,10 @@ const keystoreService = appContainer.resolve(FilesystemKeystoreService);
 export class CTWalletSamePreAuthorisedSupportedCredential implements SupportedCredentialProtocol {
 
   constructor(private credentialIssuerConfig: CredentialIssuerConfig) { }
+	getAuthenticationComponentIds(): Array<string> {
+		return ["1-local"];
+	}
+
 	issuanceFlow(): IssuanceFlow {
 		return IssuanceFlow.IN_TIME;
 	}

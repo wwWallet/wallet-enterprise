@@ -54,6 +54,7 @@ app.get('/init', async (_req, res) => {
 	res.send({})
 })
 
+
 app.use(LanguageMiddleware);
 app.use(UserSessionMiddleware);
 

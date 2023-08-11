@@ -3,7 +3,7 @@ import locale from "../locale";
 import qs from "qs";
 import { issuersConfigurations } from "../configuration/IssuersConfiguration";
 import 'reflect-metadata';
-import { openidForCredentialIssuingService, openidForPresentationReceivingService } from "../services/instances";
+import { openidForCredentialIssuingService } from "../services/instances";
 
 const openid4vciRouter = Router();
 
@@ -57,9 +57,9 @@ openid4vciRouter.get('/init/view/:client_type', async (req: Request, res: Respon
 
 
 openid4vciRouter.get('/authorize', async (req, res) => {
-	// openidForCredentialIssuingService.authorizationRequestHandler(req, res);
+	openidForCredentialIssuingService.authorizationRequestHandler(req, res);
 	
-	openidForPresentationReceivingService.authorizationRequestHandler(req, res, req.userSession?.id as string);
+	// openidForPresentationReceivingService.authorizationRequestHandler(req, res, req.userSession?.id as string);
 
 });
 

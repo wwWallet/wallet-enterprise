@@ -1,7 +1,7 @@
-export enum AuthenticationMechanism {
+export enum DIDAuthenticationMechanism {
 	OPENID4VP_ID_TOKEN,
 	OPENID4VP_VP_TOKEN,
-	LOCAL,
+	NONE,
 }
 
-export const AUTHENTICATION_MECHANISM_USED = AuthenticationMechanism.OPENID4VP_ID_TOKEN;
+export const DID_AUTHENTICATION_MECHANISM_USED: DIDAuthenticationMechanism = DIDAuthenticationMechanism.NONE;
