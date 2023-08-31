@@ -1,8 +1,8 @@
-import { UserSession } from "../../RedisModule";
-import { base64url, importJWK, jwtVerify } from "jose";
+import { JWK, base64url, importJWK, jwtVerify } from "jose";
 import z from 'zod';
 import { ProofType } from "../../types/oid4vci";
-import { getPublicKeyFromDid } from "@gunet/ssi-sdk";
+import * as ed25519 from '@transmute/did-key-ed25519';
+import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 
 const proofHeaderSchema = z.object({
 	kid: z.string(),
@@ -33,7 +33,7 @@ type JwtProof = {
  * @returns 
  * @throws
  */
-export async function verifyProof(proof: Proof, session: UserSession): Promise<{ did: string }> {
+export async function verifyProof(proof: Proof, session: AuthorizationServerState): Promise<{ did: string }> {
 	switch (proof.proof_type) {
 	case ProofType.JWT:
 		return verifyJwtProof(proof as JwtProof, session);
@@ -46,7 +46,7 @@ export async function verifyProof(proof: Proof, session: UserSession): Promise<{
  * @throws
  * @param proof 
  */
-async function verifyJwtProof(proof: JwtProof, session: UserSession): Promise<{ did: string }> {
+async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState): Promise<{ did: string }> {
 	if (!proof.jwt) {
 		console.log("holder pub key or proof jwt are not existent")
 		throw "UNDEFINED_PROOF";
@@ -62,11 +62,12 @@ async function verifyJwtProof(proof: JwtProof, session: UserSession): Promise<{ 
 	const holderDID: string = proofPayload.iss; // did of the Holder
 
 
-	const holderPublicKeyJwk = await getPublicKeyFromDid(holderDID);
-	if (!holderPublicKeyJwk) {
-		console.log("holder pub key or proof jwt are not existent")
-		throw "NO PUB KEY";
-	}
+	const {
+		didDocument,
+	} = await ed25519.resolve(
+		holderDID,
+		{ accept: 'application/did+json' }
+	);
 
 	// const thumbprint = await calculateJwkThumbprint(holderPublicKeyJwk, "sha256");
 	// const subjectIdentifier: Buffer = Buffer.from(thumbprint, "base64");
@@ -82,19 +83,21 @@ async function verifyJwtProof(proof: JwtProof, session: UserSession): Promise<{ 
 	// 	console.log("Wrong pub key");
 	// 	throw "WRONG PUB KEY";
 	// }
+	const { publicKeyJwk } =  didDocument.verificationMethod[0] as { publicKeyJwk: JWK };
 
-
+	console.log("Session = ", session)
 	// c nonce check and proof signature
-	const holderPublicKey = await importJWK(holderPublicKeyJwk, proofHeader.alg);
+	const holderPublicKey = await importJWK(publicKeyJwk, proofHeader.alg);
 	try {
 		// check for audience (must be issuer url)
 		const { payload } = await jwtVerify(proof.jwt, holderPublicKey);
 		if (payload["nonce"] !== session.c_nonce) {
-			throw "INVALID C_NONCE";
+			throw new Error("INVALID C_NONCE");
 		}
 	}
 	catch(e) {
-		throw "INVALID PROOF SIGNATURE";
+		console.log("Error = ", e)
+		throw new Error("Error during the verification of proof");
 	}
 	return { did: holderDID };
 }

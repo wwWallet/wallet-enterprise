@@ -17,7 +17,7 @@ import { ParsedQs } from "qs";
 
 type VerifierState = {
 	authorizationRequest: AuthorizationRequestQueryParamsSchemaType,
-	userSessionID: string;
+	userSessionID?: number;
 }
 
 const verifierStates = new Map<string, VerifierState>();
@@ -31,6 +31,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 	constructor(
 		@inject(TYPES.VerifierConfigurationServiceInterface) private configurationService: VerifierConfigurationInterface,
+		// inject other verifier configurations
 		@inject(TYPES.FilesystemKeystoreService) private walletKeystoreService: WalletKeystore,
 	) {}
 
@@ -41,7 +42,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 
 
-	async authorizationRequestHandler(req: Request, res: Response, userSessionIdToBindWith: string): Promise<void> {
+	async authorizationRequestHandler(req: Request, res: Response, userSessionIdToBindWith?: number): Promise<void> {
 		const { success } = authorizationRequestQueryParamsSchema.safeParse(req.query);
 		if (!success) {
 			res.status(400).send({ error: "Authorization request params are incorrect" });
@@ -71,6 +72,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		}
 
 		const responseTypeSetting = scopeList.includes("ver_test:vp_token") ? "vp_token" : "id_token";
+		// TODO: parse scope list to select the correct verifier configuration (presentation_definition profile) 
 
 		let payload = {
 			client_id: this.configurationService.getConfiguration().client_id,
@@ -130,7 +132,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 
 
-	async responseHandler(req: Request, res: Response): Promise<{ verifierStateId: string, bindedUserSessionId: string }> {
+	async responseHandler(req: Request, res: Response): Promise<{ verifierStateId: string, bindedUserSessionId?: number }> {
 		console.log("Body = ", req.body)
 		const { id_token, vp_token, state, presentation_submission } = req.body;
 		let verifierStateId = null;

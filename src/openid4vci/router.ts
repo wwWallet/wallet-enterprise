@@ -1,9 +1,9 @@
 import { Request, Response, Router } from "express";
 import locale from "../locale";
 import qs from "qs";
-import { issuersConfigurations } from "../configuration/IssuersConfiguration";
 import 'reflect-metadata';
-import { openidForCredentialIssuingService } from "../services/instances";
+import { appContainer } from "../services/inversify.config";
+import { CredentialIssuersConfigurationService } from "../configuration/CredentialIssuersConfigurationService";
 
 const openid4vciRouter = Router();
 
@@ -15,7 +15,9 @@ openid4vciRouter.get('/init/view/:client_type', async (req: Request, res: Respon
 		return res.redirect('/');
 	}
 
-	const selectedCredentialIssuer = issuersConfigurations.get(credentialIssuerIdentifier);
+	const selectedCredentialIssuer = appContainer.resolve(CredentialIssuersConfigurationService)
+		.registeredCredentialIssuerRepository()
+		.getCredentialIssuer(credentialIssuerIdentifier);
 	if (!selectedCredentialIssuer) {
 		console.error("Credential issuer not map")
 		return res.redirect('/')
@@ -56,28 +58,6 @@ openid4vciRouter.get('/init/view/:client_type', async (req: Request, res: Respon
 })
 
 
-openid4vciRouter.get('/authorize', async (req, res) => {
-	openidForCredentialIssuingService.authorizationRequestHandler(req, res);
-	
-	// openidForPresentationReceivingService.authorizationRequestHandler(req, res, req.userSession?.id as string);
-
-});
-
-openid4vciRouter.post('/token', async (req, res) => {
-	openidForCredentialIssuingService.tokenRequestHandler(req, res);
-});
-
-openid4vciRouter.post('/credential', async (req, res) => {
-	openidForCredentialIssuingService.credentialRequestHandler(req, res);
-});
-
-openid4vciRouter.post('/batch_credential', async (req, res) => {
-	openidForCredentialIssuingService.batchCredentialRequestHandler(req, res);
-});
-
-openid4vciRouter.post('/deferred', async (req, res) => {
-	openidForCredentialIssuingService.deferredCredentialRequestHandler(req, res);
-});
 
 export {
 	openid4vciRouter

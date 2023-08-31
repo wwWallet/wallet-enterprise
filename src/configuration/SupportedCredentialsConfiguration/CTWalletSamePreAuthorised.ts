@@ -1,19 +1,18 @@
 import config from "../../../config";
-import { UserSession } from "../../RedisModule";
-import { CategorizedRawCredential, CategorizedRawCredentialViewRow, IssuanceFlow } from "../../openid4vci/Metadata";
+import { CategorizedRawCredentialViewRow, IssuanceFlow } from "../../openid4vci/Metadata";
 import { VerifiableCredentialFormat, Display, CredentialSupportedJwtVcJson } from "../../types/oid4vci";
-import { CredentialIssuerConfig } from "../../lib/CredentialIssuerConfig/CredentialIssuerConfig";
+import { CredentialIssuer } from "../../lib/CredentialIssuerConfig/CredentialIssuer";
 import { SupportedCredentialProtocol } from "../../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
 import { SignVerifiableCredentialJWT } from "@gunet/ssi-sdk";
 import { randomUUID } from 'node:crypto';
-import { appContainer } from "../../services/inversify.config";
-import { FilesystemKeystoreService } from "../../services/FilesystemKeystoreService";
+import { keystoreService } from "../../services/instances";
+import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
+import { CredentialView } from "../../authorization/types";
 
-const keystoreService = appContainer.resolve(FilesystemKeystoreService);
 
 export class CTWalletSamePreAuthorisedSupportedCredential implements SupportedCredentialProtocol {
 
-  constructor(private credentialIssuerConfig: CredentialIssuerConfig) { }
+  constructor(private credentialIssuerConfig: CredentialIssuer) { }
 	getAuthenticationComponentIds(): Array<string> {
 		return ["1-local"];
 	}
@@ -21,7 +20,7 @@ export class CTWalletSamePreAuthorisedSupportedCredential implements SupportedCr
 	issuanceFlow(): IssuanceFlow {
 		return IssuanceFlow.IN_TIME;
 	}
-  getCredentialIssuerConfig(): CredentialIssuerConfig {
+  getCredentialIssuerConfig(): CredentialIssuer {
     return this.credentialIssuerConfig;
   }
   getId(): string {
@@ -42,7 +41,7 @@ export class CTWalletSamePreAuthorisedSupportedCredential implements SupportedCr
   }
 
 
-  async getResources(userSession: UserSession): Promise<CategorizedRawCredential<any>[]> {
+  async getProfile(userSession: AuthorizationServerState): Promise<CredentialView | null> {
 		console.log("user session = ", userSession)
 
 		const rows: CategorizedRawCredentialViewRow[] = [
@@ -51,18 +50,15 @@ export class CTWalletSamePreAuthorisedSupportedCredential implements SupportedCr
 			{ name: "Personal Identifier", value: "" },
 			{ name: "Date of Birth", value: "" },
 		];
-		const categorizedCredential: CategorizedRawCredential<any> = {
+		const categorizedCredential: CredentialView = {
 			view: { rows },
-			credential_id: "ct:" + randomUUID(),
-			credentialIssuerIdentifier: this.getCredentialIssuerConfig().credentialIssuerIdentifier,
-			supportedCredentialIdentifier: this.getId(),
-			issuanceFlow: this.issuanceFlow(),
-			readyToBeSigned: true,
+			credential_id: this.getId(),
+			credential_supported_object: this.exportCredentialSupportedObject()
 		}
-		return [ categorizedCredential ];
+		return categorizedCredential;
   }
   
-  async generateCredentialResponse(userSession: UserSession, holderDID: string): Promise<{ format: VerifiableCredentialFormat; credential: any; }> {
+  async generateCredentialResponse(userSession: AuthorizationServerState, holderDID: string): Promise<{ format: VerifiableCredentialFormat; credential: any; }> {
 		console.log("User session = ", userSession);
 		console.dir(userSession, { depth: null })
     const nonSignedJwt = new SignVerifiableCredentialJWT()

@@ -1,1 +1,1 @@
-export const AUTHORIZATION_ENTRYPOINT = "/authorization/consent";
+export const CONSENT_ENTRYPOINT = "/authorization/consent";

@@ -1,14 +1,12 @@
-import { CategorizedRawCredential, CategorizedRawCredentialView } from "../openid4vci/Metadata";
+import { CategorizedRawCredentialView } from "../openid4vci/Metadata";
+import { CredentialSupported } from "../types/oid4vci";
 
 
 
 
 
-type CredentialView = {
-	credential_id: string;
-	credential_logo_url: string;
-	credentialSubject: any; // defines the structure of the viewed credential
-	data: CategorizedRawCredential<any>;
+export type CredentialView = {
+	credential_id: string,
+	credential_supported_object: CredentialSupported;
 	view: CategorizedRawCredentialView;
 }
-export { CredentialView }
