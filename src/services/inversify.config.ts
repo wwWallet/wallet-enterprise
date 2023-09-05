@@ -1,5 +1,5 @@
 import { Container } from "inversify";
-import { OpenidForPresentationsReceivingInterface, WalletKeystore, CredentialPool, VerifierConfigurationInterface, CredentialReceiving, OpenidForCredentialIssuingAuthorizationServerInterface } from "./interfaces";
+import { OpenidForPresentationsReceivingInterface, WalletKeystore, CredentialPool, VerifierConfigurationInterface, CredentialReceiving, OpenidForCredentialIssuingAuthorizationServerInterface, DidKeyResolverService } from "./interfaces";
 import { TYPES } from "./types";
 import { FilesystemKeystoreService } from "./FilesystemKeystoreService";
 import { OpenidForPresentationsReceivingService } from "./OpenidForPresentationReceivingService";
@@ -11,6 +11,9 @@ import { CredentialIssuersConfigurationService } from "../configuration/Credenti
 import { CredentialIssuersService } from "./CredentialIssuersService";
 import { ExpressAppService } from "./ExpressAppService";
 import { VerifierConfigurationV2Service } from "../configuration/verifier/VerifierConfigurationV2Service";
+import { W3CDidKeyResolverService } from "./W3CDidKeyResolverService";
+import { DidKeyMethodVersion, didKeyMethodVersion } from "../configuration/didKeyMethodVersion";
+import { EBSIDidKeyResolverService } from "./EBSIDidKeyResolverService";
 
 
 const appContainer = new Container();
@@ -47,5 +50,21 @@ appContainer.bind<CredentialIssuersService>(TYPES.CredentialIssuersService)
 
 appContainer.bind<ExpressAppService>(TYPES.ExpressAppService)
 	.to(ExpressAppService);
+
+
+switch (didKeyMethodVersion) {
+	case DidKeyMethodVersion.W3C:
+		appContainer.bind<DidKeyResolverService>(TYPES.DidKeyResolverService)
+			.to(W3CDidKeyResolverService);
+		break;
+	case DidKeyMethodVersion.EBSI:
+		appContainer.bind<DidKeyResolverService>(TYPES.DidKeyResolverService)
+			.to(EBSIDidKeyResolverService);
+		break;
+	default:
+		appContainer.bind<DidKeyResolverService>(TYPES.DidKeyResolverService)
+			.to(W3CDidKeyResolverService);
+		break;
+}
 
 export { appContainer }

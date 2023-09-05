@@ -18,8 +18,13 @@ import { storeAuthorizationServerStateIdToWebClient } from "../middlewares/autho
 
 @injectable()
 export class OpenidForCredentialIssuingAuthorizationServerService implements OpenidForCredentialIssuingAuthorizationServerInterface {
+	
 	private authorizationServerStateRepository: Repository<AuthorizationServerState> = AppDataSource.getRepository(AuthorizationServerState);
 
+	/**
+	 * scope which will be used for the verification of the user if VP token is used as an authentication mechanism
+	*/
+	private readonly verificationScopeName = "vid";
 	
 	constructor(
 		@inject(TYPES.OpenidForPresentationsReceivingService) private openidForPresentationReceivingService: OpenidForPresentationsReceivingInterface,
@@ -32,7 +37,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 	async authorizationRequestHandler(req: Request, res: Response): Promise<void> {
 		const params = authorizationRequestQueryParamsSchema.parse(req.query);
-		console.log("Params = ", params)
 		if (!params.authorization_details) {
 			res.status(400).send({ error: "Authorization Details is missing" })
 			return
@@ -41,6 +45,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		console.log("Authorization details = ", params.authorization_details)
 		const { success } = authorizationDetailsSchema.safeParse(JSON.parse(params.authorization_details))
 		if (!success) {
+			console.error({ error: "Invalid authorization details" });
 			res.status(400).send({ error: "Invalid authorization details" });
 			return;
 		}
@@ -57,10 +62,18 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		newAuthorizationServerState.code_challenge_method = params.code_challenge_method;
 		newAuthorizationServerState.response_type = params.response_type;
 		newAuthorizationServerState.redirect_uri = params.redirect_uri;
+		newAuthorizationServerState.scope = params.scope;
+
+		// if VP token auth is used, then use the verificationScopeName constant to verify the client
+		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
+			newAuthorizationServerState.scope = params.scope + ' ' + this.verificationScopeName;
+			req.query.scope += newAuthorizationServerState.scope;
+		}
+
 	
 		console.log("Authz server state = ", newAuthorizationServerState)
 		const insertedState = await this.authorizationServerStateRepository.save(newAuthorizationServerState);
-		storeAuthorizationServerStateIdToWebClient(res, insertedState.id); // now it has been assigned a new state id
+		await storeAuthorizationServerStateIdToWebClient(res, insertedState.id); // now it has been assigned a new state id
 	
 		let redirected = false;
 		(res.redirect as any) = (url: string): void => {
@@ -70,8 +83,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			res.statusCode = 302;
 			res.end();
 		};
-	
-
+		
+		console.log("Did auth mechanism = ", DID_AUTHENTICATION_MECHANISM_USED)
+		
 		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_ID_TOKEN ||
 				DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
 	
@@ -79,6 +93,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			if (redirected) {
 				return;
 			}
+			console.log("did not redirect");
 			return;
 		}
 		else {
@@ -91,7 +106,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	async sendAuthorizationResponse(_req: Request, res: Response, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void> {
 		const stateId = bindedUserSessionId;
 
-		console.log("AD = ", authorizationDetails)
 		const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
 			.where("state.id = :id", { id: stateId })
 			.getOne();
@@ -116,9 +130,8 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		
 		const authorization_code = crypto.randomBytes(60).toString('base64url');
 		state.authorization_code = authorization_code;
-		if (authorizationDetails) {
+		if (authorizationDetails)
 			state.authorization_details = authorizationDetails;
-		}
 
 		const authorizationResponseURL = new URL(state.redirect_uri);
 		authorizationResponseURL.searchParams.append("code", authorization_code);
@@ -128,15 +141,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 
 		await this.authorizationServerStateRepository.save(state);
-		{
-			const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
-			.where("state.id = :id", { id: stateId })
-			.getOne();
-			console.log("After save = ", state)
-		}
 
-
-		console.log("Redirecting to ...", authorizationResponseURL.toString())
 		res.redirect(authorizationResponseURL.toString());
 	}
 

@@ -7,6 +7,7 @@ import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oi
 import axios from "axios";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { CredentialView } from "./types";
+import config from "../../config";
 
 
 
@@ -27,10 +28,10 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 		return;
 	}
 
+	const allCredentialViews = await getAllCredentialViews(req.authorizationServerState);
 
 	if (req.method == "POST") {
 		try {
-			const allCredentialViews = await getAllCredentialViews(req.authorizationServerState);
 			const { selected_credential_id_list } = consentSubmitSchema.parse(req.body);
 			console.log("Selected credential id list = ", req.body)
 			const authorizationDetails = selected_credential_id_list.map((id) => {
@@ -38,7 +39,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 					return credView ? { types: credView.credential_supported_object.types, format: credView.credential_supported_object.format, type: 'openid_credential' } : null;
 				})
 				.filter((ad) => ad != null) as AuthorizationDetailsSchemaType;
-			await openidForCredentialIssuingAuthorizationServerService.sendAuthorizationResponse(
+			return await openidForCredentialIssuingAuthorizationServerService.sendAuthorizationResponse(
 				req,
 				res,
 				req.authorizationServerState.id,
@@ -61,7 +62,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 	res.render('issuer/consent.pug', {
 		title: 'Consent',
 		redirect_uri: req.authorizationServerState.redirect_uri ? new URL(req.authorizationServerState.redirect_uri).hostname : "", 
-		credentialViewList: await getAllCredentialViews(req.authorizationServerState),
+		credentialViewList: allCredentialViews,
 		lang: req.lang,
 		locale: locale[req.lang],
 	});
@@ -72,19 +73,22 @@ async function getAllCredentialViews(authorizationServerState: AuthorizationServ
 		return [];
 	}
 	return (await Promise.all(authorizationServerState.authorization_details.map(async (ad) => {
-		let credentialIssuerURL = "";
-		if (ad.locations) {
+		let credentialIssuerURL = config.url; // default issuer
+		if (ad.locations && ad.locations.length > 0) {
 			credentialIssuerURL = ad?.locations[0];
 		}
-		const cs = (await axios.get(credentialIssuerURL + "/.well-known/openid-credential-issuer"))
+		const credentialSupported = (await axios.get(credentialIssuerURL + "/.well-known/openid-credential-issuer"))
 			.data
 			.credentials_supported
 			.filter((cs: any) => 
 				ad.format == cs.format && _.isEqual(ad.types, cs.types)
 			)[0] as CredentialSupported;
-		console.log("Credential supported = ", cs);
+
 		try {
-			const { data: { credential_view } } = await axios.post(credentialIssuerURL + "/profile", { authorization_server_state: AuthorizationServerState.serialize(authorizationServerState), types: cs.types });
+			const { data: { credential_view } } = await axios.post(credentialIssuerURL + "/profile", {
+				authorization_server_state: AuthorizationServerState.serialize(authorizationServerState),
+				types: credentialSupported.types
+			});
 			if (!credential_view) {
 				return null;
 			}

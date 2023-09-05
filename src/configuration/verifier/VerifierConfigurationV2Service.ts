@@ -14,9 +14,10 @@ export type PresentationDefinitionTypeWithFormat = {
 @injectable()
 export class VerifierConfigurationV2Service implements VerifierConfigurationInterface {
 
-	getPresentationDefinition(): PresentationDefinitionTypeWithFormat {
-		return {
-			"id": "VID with Personal Identifier",
+	getPresentationDefinitions(): PresentationDefinitionTypeWithFormat[] {
+		return [{
+			"id": "vid", // scope name
+			"format": { jwt_vc: { alg: [ 'ES256' ] }, jwt_vp: { alg: [ 'ES256' ] } },
 			"input_descriptors": [
 				{
 					"id": "VID",
@@ -41,7 +42,55 @@ export class VerifierConfigurationV2Service implements VerifierConfigurationInte
 					}
 				}
 			]
-		}
+		},
+		{
+			id: 'ver_test:vp_token', // scope name
+			format: { jwt_vc: { alg: [ 'ES256' ] }, jwt_vp: { alg: [ 'ES256' ] } },
+			input_descriptors: [
+				{
+					id: '<any id, random or static>',
+					constraints: {
+						fields: [
+							{
+								path: [ '$.type' ],
+								filter: {
+									type: 'array',
+									contains: { const: 'VerifiableAttestation' }
+								}
+							}
+						]
+					}
+				},
+				{
+					id: '123456',
+					constraints: {
+						fields: [
+							{
+								path: [ '$.type' ],
+								filter: {
+									type: 'array',
+									contains: { const: 'VerifiableAttestation' }
+								}
+							}
+						]
+					}
+				},
+				{
+					id: '1234',
+					constraints: {
+						fields: [
+							{
+								path: [ '$.type' ],
+								filter: {
+									type: 'array',
+									contains: { const: 'VerifiableAttestation' }
+								}
+							}
+						]
+					}
+				}
+			]
+		}]
 	}
 
 	getConfiguration(): OpenidForPresentationsConfiguration {

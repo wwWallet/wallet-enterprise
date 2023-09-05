@@ -13,9 +13,7 @@ import { CredentialView } from "../../authorization/types";
 export class CTWalletSameDeferredSupportedCredential implements SupportedCredentialProtocol {
 
   constructor(private credentialIssuerConfig: CredentialIssuer) { }
-	getAuthenticationComponentIds(): Array<string> {
-		return ["1-local"];
-	}
+
 
 	issuanceFlow(): IssuanceFlow {
 		return IssuanceFlow.DEFERRED
@@ -41,25 +39,21 @@ export class CTWalletSameDeferredSupportedCredential implements SupportedCredent
   }
 
 
-  async getProfile(userSession: AuthorizationServerState): Promise<CredentialView | null> {
-		console.log("user session = ", userSession)
+  async getProfile(_userSession: AuthorizationServerState): Promise<CredentialView | null> {
 
 		const rows: CategorizedRawCredentialViewRow[] = [
-			{ name: "Family Name", value: "" },
-			{ name: "First Name", value: "" },
-			{ name: "Personal Identifier", value: "" },
-			{ name: "Date of Birth", value: "" },
+			{ name: "Asynchronous", value: "Yes" },
 		];
 		const categorizedCredential: CredentialView = {
 			view: { rows },
 			credential_id: this.getId(),
-			credential_supported_object: this.exportCredentialSupportedObject()
+			credential_supported_object: this.exportCredentialSupportedObject(),
+			deferredFlow: true
 		}
 		return categorizedCredential;
   }
   
-  async generateCredentialResponse(userSession: AuthorizationServerState, holderDID: string): Promise<{ format?: VerifiableCredentialFormat; credential?: any; acceptance_token?: string }> {
-		console.log("User session = ", userSession);
+  async generateCredentialResponse(_userSession: AuthorizationServerState, holderDID: string): Promise<{ format?: VerifiableCredentialFormat; credential?: any; acceptance_token?: string }> {
     const nonSignedJwt = new SignVerifiableCredentialJWT()
       .setJti(`${this.getId()}:${randomUUID()}`)
 			.setSubject(holderDID)
@@ -68,7 +62,7 @@ export class CTWalletSameDeferredSupportedCredential implements SupportedCredent
       .setContext(["https://www.w3.org/2018/credentials/v1"])
       .setType(this.getTypes())
       .setCredentialSubject({ id: holderDID })
-      .setCredentialSchema("https://api-pilot.ebsi.eu/trusted-schemas-registry/v2/schemas/z8Y6JJnebU2UuQQNc2R8GYqkEiAMj3Hd861rQhsoNWxsM");
+      // .setCredentialSchema("https://api-pilot.ebsi.eu/trusted-schemas-registry/v2/schemas/z8Y6JJnebU2UuQQNc2R8GYqkEiAMj3Hd861rQhsoNWxsM");
 
 		const { credential } = await keystoreService.signVcJwt(this.getCredentialIssuerConfig().walletId, nonSignedJwt);
     const response = {

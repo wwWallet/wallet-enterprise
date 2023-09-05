@@ -9,4 +9,5 @@ export type CredentialView = {
 	credential_id: string,
 	credential_supported_object: CredentialSupported;
 	view: CategorizedRawCredentialView;
+	deferredFlow: boolean;
 }

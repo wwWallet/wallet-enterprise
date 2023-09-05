@@ -1,23 +1,23 @@
 import { inject, injectable } from "inversify";
 import { Request , Response} from 'express'
-import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface, WalletKeystore } from "./interfaces";
+import { DidKeyResolverService, OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface, WalletKeystore } from "./interfaces";
 import { authorizationRequestQueryParamsSchema } from "../types/oid4vci";
 import { AuthorizationRequestQueryParamsSchemaType } from "../types/oid4vci";
 import { TYPES } from "./types";
 import { SignJWT, importJWK, jwtVerify } from "jose";
 import { randomUUID } from "crypto";
 import base64url from "base64url";
-import { PresentationSubmission, getPublicKeyFromDid } from "@gunet/ssi-sdk";
-import config from "../../config";
+import { PresentationSubmission } from "@gunet/ssi-sdk";
 import 'reflect-metadata';
 import { JSONPath } from "jsonpath-plus";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
 
 
+
 type VerifierState = {
 	authorizationRequest: AuthorizationRequestQueryParamsSchemaType,
-	userSessionID?: number;
+	issuanceSessionID?: number;
 }
 
 const verifierStates = new Map<string, VerifierState>();
@@ -27,9 +27,10 @@ const nonces = new Map<string, string>(); // key: nonce, value: verifierStateId
 
 @injectable()
 export class OpenidForPresentationsReceivingService implements OpenidForPresentationsReceivingInterface {
-
+	// private authorizationServerStateRepository: Repository<AuthorizationServerState> = AppDataSource.getRepository(AuthorizationServerState);
 
 	constructor(
+		@inject(TYPES.DidKeyResolverService) private didKeyResolverService: DidKeyResolverService,
 		@inject(TYPES.VerifierConfigurationServiceInterface) private configurationService: VerifierConfigurationInterface,
 		// inject other verifier configurations
 		@inject(TYPES.FilesystemKeystoreService) private walletKeystoreService: WalletKeystore,
@@ -48,7 +49,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			res.status(400).send({ error: "Authorization request params are incorrect" });
 			return;
 		}
-		const {
+		let {
 			state,
 			redirect_uri,
 			client_id,
@@ -57,21 +58,28 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		
 		const scopeList = scope.split(' ');
 
-
 		const verifierStateId = randomUUID();
 		const flowState: VerifierState = {
 			authorizationRequest: req.query as AuthorizationRequestQueryParamsSchemaType,
-			userSessionID: userSessionIdToBindWith,
+			issuanceSessionID: userSessionIdToBindWith,
 		};
 		const nonce = randomUUID();
 		nonces.set(nonce, verifierStateId);
-		console.log("NONCE1 = ", nonce)
 
 		if (state) {
 			clientStates.set(state, verifierStateId);
 		}
 
-		const responseTypeSetting = scopeList.includes("ver_test:vp_token") ? "vp_token" : "id_token";
+		let responseTypeSetting = "id_token";
+		for (const scopeName of scopeList) {
+			const search = this.configurationService.getPresentationDefinitions().filter(pd => pd.id == scopeName);
+			if (search.length > 0) {
+				responseTypeSetting = "vp_token";
+				break;
+			}
+		}
+		
+		console.log("Response type setting = ", responseTypeSetting)
 		// TODO: parse scope list to select the correct verifier configuration (presentation_definition profile) 
 
 		let payload = {
@@ -94,7 +102,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			payload = await this.addIDtokenRequestSpecificAttributes(payload);
 			break;
 		case "vp_token":
-			payload = await this.addVPtokenRequestSpecificAttributes(payload);
+			payload = await this.addVPtokenRequestSpecificAttributes(payload, scopeList);
 			break;
 		}
 
@@ -116,7 +124,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const searchParams = new URLSearchParams(redirectParameters);
 		const redirectURL = new URL(redirect_uri + "?" + searchParams.toString());
 
-		verifierStates.set(verifierStateId, { ...flowState, userSessionID: userSessionIdToBindWith })
+		verifierStates.set(verifierStateId, { ...flowState, issuanceSessionID: userSessionIdToBindWith })
 		console.log("redirecting to = ", redirectURL)
 		res.redirect(redirectURL.toString());
 	}
@@ -125,9 +133,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return payload;
 	}
 
-	private async addVPtokenRequestSpecificAttributes(payload: any) {
-		payload = { ...payload, presentation_definition: this.configurationService.getPresentationDefinition() };
-		return payload;
+	private async addVPtokenRequestSpecificAttributes(payload: any, scopeList: string[]) {
+		for (const scopeName of scopeList) {
+			const found = this.configurationService.getPresentationDefinitions().filter(pd => pd.id == scopeName);
+			if (found.length > 0) {
+				const presentationDefinition = found[0];
+				payload = { ...payload, presentation_definition: JSON.stringify(presentationDefinition) };
+				return payload;
+			}
+		}
+
 	}
 
 
@@ -135,6 +150,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	async responseHandler(req: Request, res: Response): Promise<{ verifierStateId: string, bindedUserSessionId?: number }> {
 		console.log("Body = ", req.body)
 		const { id_token, vp_token, state, presentation_submission } = req.body;
+		console.log("Body = ")
 		let verifierStateId = null;
 		let verifierState = null;
 		if (state) {
@@ -144,7 +160,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		}
 		if (id_token) {
 			const header = JSON.parse(base64url.decode(id_token.split('.')[0])) as { kid: string, alg: string };
-			const jwk = await getPublicKeyFromDid(header.kid.split('#')[0]);
+			const jwk = await this.didKeyResolverService.getPublicKeyJwk(header.kid.split('#')[0]);
 			const pubKey = await importJWK(jwk, header.alg as string);
 
 			console.log("ID token = ", id_token)
@@ -160,7 +176,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						const msg = { error: "EXPIRED_NONCE", error_description: "This nonce does not exist or has expired" };
 						console.error(msg);
 						const searchParams = new URLSearchParams(msg);
-						res.redirect(config.walletClientUrl + '?' + searchParams);
+						res.redirect("/error" + '?' + searchParams);
 						throw new Error("OpenID4VP Authorization Response failed. " + msg);
 					}
 					verifierState = verifierStates.get(verifierStateIdByNonce);
@@ -171,7 +187,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const msg = { error: "ERROR_NONCE", error_description: "There is no verifier state with this 'nonce'" };
 					console.error(msg);
 					const searchParams = new URLSearchParams(msg);
-					res.redirect(config.walletClientUrl + '?' + searchParams);
+					res.redirect("/error" + '?' + searchParams);
 					throw new Error("OpenID4VP Authorization Response failed. " + msg);
 				}
 
@@ -208,7 +224,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					res.redirect(verifierState?.authorizationRequest.redirect_uri + '?' + searchParams);
 					throw new Error("OpenID4VP Authorization Response failed. " + msg);
 				}
-				return { verifierStateId: verifierStateId as string, bindedUserSessionId: verifierState.userSessionID };
+				return { verifierStateId: verifierStateId as string, bindedUserSessionId: verifierState.issuanceSessionID };
 			}
 			catch(e) {
 				throw new Error("OpenID4VP Authorization Response failed. " + JSON.stringify(e));
@@ -217,10 +233,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		}
 		else if (vp_token) {
 			const header = JSON.parse(base64url.decode(vp_token.split('.')[0])) as { kid: string, alg: string };
-			const jwk = await getPublicKeyFromDid(header.kid.split('#')[0]);
+			const jwk = await this.didKeyResolverService.getPublicKeyJwk(header.kid.split('#')[0]);
 			const pubKey = await importJWK(jwk, header.alg as string);
 
-			console.log("VP token = ", vp_token)
 			try {
 				const { payload } = await jwtVerify(vp_token, pubKey, {
 					// audience: this.configurationService.getConfiguration().baseUrl,
@@ -233,7 +248,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						const msg = { error: "EXPIRED_NONCE", error_description: "This nonce does not exist or has expired" };
 						console.error(msg);
 						const searchParams = new URLSearchParams(msg);
-						res.redirect(config.walletClientUrl + '?' + searchParams);
+						res.redirect("/error" + '?' + searchParams);
 						throw new Error("OpenID4VP Authorization Response failed. " + msg);
 					}
 					verifierState = verifierStates.get(verifierStateIdByNonce);
@@ -243,12 +258,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const msg = { error: "ERROR_NONCE", error_description: "There is no verifier state with this 'nonce'" };
 					console.error(msg);
 					const searchParams = new URLSearchParams(msg);
-					res.redirect(config.walletClientUrl + '?' + searchParams);
+					res.redirect("/error" + '?' + searchParams);
 					throw new Error("OpenID4VP Authorization Response failed. " + msg);
 				}
 
 				if (payload.sub !== verifierState?.authorizationRequest.client_id) {
-					let msg = { error: "INVALID_SUB", error_description: "Subject of id_token should match authorizationRequest.client_id" };
+					let msg = { error: "INVALID_SUB", error_description: "Subject of vp_token should match authorizationRequest.client_id" };
 					if (state) {
 						msg = { ...msg, state } as any;
 					}
@@ -259,7 +274,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				}
 
 				if (payload.iss !== verifierState?.authorizationRequest.client_id) {
-					let msg = { error: "INVALID_ISS", error_description: "Issuer of id_token should match authorizationRequest.client_id" };
+					let msg = { error: "INVALID_ISS", error_description: "Issuer of vp_token should match authorizationRequest.client_id" };
 					if (state) {
 						msg = { ...msg, state } as any;
 					}
@@ -281,8 +296,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					throw new Error("OpenID4VP Authorization Response failed. " + msg);
 				}
 				// perform verification of vp_token
-				presentation_submission
-				let msg = { error: "access_denied", error_description: "invalid" };
+				let msg = {};
 				if (state) {
 					msg = { ...msg, state } as any;
 				}
@@ -296,10 +310,14 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				}
 				console.error(msg);
 				const searchParams = new URLSearchParams(msg);
-				res.redirect(verifierState?.authorizationRequest.redirect_uri + '?' + searchParams);
-				return { verifierStateId: verifierStateId as string, bindedUserSessionId: verifierState.userSessionID };
+
+				// if not in issuance flow, then redirect to complete the verification flow
+				if (!verifierState.issuanceSessionID)
+					res.redirect(verifierState?.authorizationRequest.redirect_uri + '?' + searchParams);
+				return { verifierStateId: verifierStateId as string, bindedUserSessionId: verifierState.issuanceSessionID };
 			}
 			catch(e) {
+				console.error(e)
 				throw new Error("OpenID4VP Authorization Response failed. " + JSON.stringify(e));
 			}
 		}
@@ -309,20 +327,27 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	private async validateVpToken(vp_token: string, presentation_submission: PresentationSubmission): Promise<{ error?: Error, error_description?: Error}> {
 		const payload = JSON.parse(base64url.decode(vp_token.split('.')[1])) as { vp: { verifiableCredential: string[] } };
 		for (const desc of presentation_submission.descriptor_map) {
-			const path = desc.path_nested?.path as string;
-			const vcjwt = JSONPath({ json: payload.vp, path: path });
+			const path = desc?.path as string;
+			let vcjwt = JSONPath({ json: payload.vp, path: path });
+			if (vcjwt.length == 0) {
+				return { error: new Error("VC_NOT_FOUND"), error_description: new Error(`Path on descriptor ${desc.id} not matching to a credential`)};
+			}
+			vcjwt = vcjwt[0]; // get the first result
+
 			if (await this.isExpired(vcjwt)) {
-				console.error({ error: new Error("access_denied"), error_description: new Error(`${desc.id} is expired`) })
-				return { error: new Error("access_denied"), error_description: new Error(`${desc.id} is expired`) }
+				const msg = { error: new Error("access_denied"), error_description: new Error(`${desc.id} is expired`) };
+				console.error(msg)
+				return msg;
 			}
 			if (await this.isNotValidYet(vcjwt)) {
-				console.error({ error: new Error("access_denied"), error_description: new Error(`${desc.id} is expired`) })
-				return { error: new Error("access_denied"), error_description: new Error(`${desc.id} is not valid yet`) }
-
+				const msg = { error: new Error("access_denied"), error_description: new Error(`${desc.id} is not valid yet`) };
+				console.error(msg)
+				return msg;
 			}
 			if (await this.isRevoked(vcjwt)) {
-				console.error({ error: new Error("access_denied"), error_description: new Error(`${desc.id} is expired`) })
-				return { error: new Error("access_denied"), error_description: new Error(`${desc.id} is revoked`) }
+				const msg = { error: new Error("access_denied"), error_description: new Error(`${desc.id} is revoked`) };
+				console.error(msg)
+				return msg;
 			}
 		}
 		return {};
@@ -330,16 +355,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 	private async isExpired(vcjwt: string): Promise<boolean> {
 		const payload = JSON.parse(base64url.decode(vcjwt.split('.')[1])) as { exp: number };
-		return payload.exp < Date.now();
+		return payload.exp ? payload.exp < Math.floor(Date.now() / 1000) : false;
 	}
 
 	private async isNotValidYet(vcjwt: string): Promise<boolean> {
 		const payload = JSON.parse(base64url.decode(vcjwt.split('.')[1])) as { nbf: number };
-		return payload.nbf > Date.now();
+		return payload.nbf ? payload.nbf > Math.floor(Date.now() / 1000) : false;
 	}
 
 	private async isRevoked(_vcjwt: string): Promise<boolean> {
-		return true;
+		return false;
 	}
 
 

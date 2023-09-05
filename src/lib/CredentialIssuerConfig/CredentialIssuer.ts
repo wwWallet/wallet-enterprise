@@ -94,7 +94,6 @@ export class CredentialIssuer {
 
 		const { userSession } = JSON.parse(base64url.decode(access_token.split('.')[1])) as { userSession: any };
 		const deserializedSession = AuthorizationServerState.deserialize(userSession);
-		console.log("Deserialized user session = ", deserializedSession)
 		return { userSession: deserializedSession };
 	}
 
@@ -216,7 +215,7 @@ export class CredentialIssuer {
 		}
 		const matched = userSession.authorization_details.filter((ad) => ad.format === body.format && _.isEqual(ad.types, body.types));
 		if (matched.length == 0) { // this access token is not authorized to access this credential (format, types)
-			throw "No authorized for this (types, format)"
+			throw new Error("Client not authorized to access this (types, format)")
 		}
 	
 	
@@ -254,6 +253,12 @@ export class CredentialIssuer {
 		}
 	}
 
+
+	async deferredCredentialRequestHandler(req: Request, res: Response) {
+		console.log("Body = ", req.body);
+		res.send({});
+	}
+
 	async getProfile(req: Request, res: Response) {
 		
 		const authorization_server_state = AuthorizationServerState.deserialize(req.body.authorization_server_state);
@@ -286,6 +291,7 @@ export class CredentialIssuer {
 			return res.send({})
 		}
 	}
+
 
 
 }

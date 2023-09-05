@@ -46,7 +46,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 export interface VerifierConfigurationInterface {
 	getConfiguration(): OpenidForPresentationsConfiguration;
-	getPresentationDefinition(): PresentationDefinitionType;
+	getPresentationDefinitions(): PresentationDefinitionType[];
 }
 
 
@@ -70,3 +70,8 @@ export interface CredentialReceiving {
 	sendAuthorizationRequest(): Promise<void>;
 }
 
+
+
+export interface DidKeyResolverService {
+	getPublicKeyJwk(did: string): Promise<JWK>;
+}

@@ -4,14 +4,12 @@ import { SignJWT, jwtVerify } from "jose";
 import { ParsedQs } from "qs";
 import { AuthenticationComponent } from "../../authentication/AuthenticationComponent";
 import locale from "../../locale";
-import AppDataSource from "../../AppDataSource";
-import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import config from "../../../config";
 
 
 
 
-export class LocalAuthenticationComponent extends AuthenticationComponent {
+export class VerifierAuthenticationComponent extends AuthenticationComponent {
 
 	constructor(
 		override identifier: string,
@@ -44,17 +42,13 @@ export class LocalAuthenticationComponent extends AuthenticationComponent {
 
 	
 	private async isAuthenticated(req: Request): Promise<boolean> {
-		const jws = req.cookies['jws'];
+		const jws = req.cookies['verifier_jws'];
 		if (!jws) {
 			return false;
 		}
 		return await jwtVerify(jws, new TextEncoder().encode(this.secret)).then(async (result) => {
 			const username = result.payload.sub;
 			if (!username || this.users.filter(u => u.username == username).length != 1) return false;
-
-			const usersFound = this.users.filter(u => u.username == username);
-			req.authorizationServerState.taxis_id = usersFound[0].taxis_id;
-			await AppDataSource.getRepository(AuthorizationServerState).save(req.authorizationServerState);
 			return true;
 		}).catch(err => {
 			console.error(err);
@@ -64,7 +58,7 @@ export class LocalAuthenticationComponent extends AuthenticationComponent {
 
 	private async renderLogin(req: Request, res: Response): Promise<any> {
 		res.render('issuer/login', {
-			title: "Login1",
+			title: "Verifier Login",
 			lang: req.lang,
 			locale: locale[req.lang]
 		})
@@ -82,10 +76,8 @@ export class LocalAuthenticationComponent extends AuthenticationComponent {
 				.setIssuedAt()
 				.setExpirationTime('1h')
 				.sign(new TextEncoder().encode(this.secret));
-			res.cookie('jws', jws);
+			res.cookie('verifier_jws', jws);
 
-			req.authorizationServerState.taxis_id = usersFound[0].taxis_id;
-			await AppDataSource.getRepository(AuthorizationServerState).save(req.authorizationServerState);
 			return res.redirect(this.protectedEndpoint);
 		}
 		else {

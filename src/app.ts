@@ -17,6 +17,7 @@ import { CredentialReceivingService } from './services/CredentialReceivingServic
 import { CredentialIssuersConfigurationService } from './configuration/CredentialIssuersConfigurationService';
 import { ExpressAppService } from './services/ExpressAppService';
 import { authorizationServerStateMiddleware } from './middlewares/authorizationServerState.middleware';
+import { verifierRouter } from './verifier/router';
 
 initDataSource();
 
@@ -56,13 +57,16 @@ appContainer.resolve(ExpressAppService).configure(app);
 app.use('/openid4vci', openid4vciRouter);
 
 
-
-app.use(authorizationServerStateMiddleware);
 app.use(LanguageMiddleware);
 
 
-app.use('/authorization', authorizationRouter);
+app.use('/verifier-panel', verifierRouter);
 
+
+app.use(authorizationServerStateMiddleware);
+
+
+app.use('/authorization', authorizationRouter);
 
 
 // expose all public keys

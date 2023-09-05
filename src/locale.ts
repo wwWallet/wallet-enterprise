@@ -54,7 +54,7 @@ const locale = {
 		},
 		Login: {
 			title: "Login",
-			description1: "Welcome! Choose your authentication mechanism",
+			description1: "",
 			taxis: "National Identifier Login",
 			local: "Login",
 			Error: {

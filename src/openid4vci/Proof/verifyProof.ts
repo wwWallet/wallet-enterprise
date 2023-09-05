@@ -85,7 +85,6 @@ async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState
 	// }
 	const { publicKeyJwk } =  didDocument.verificationMethod[0] as { publicKeyJwk: JWK };
 
-	console.log("Session = ", session)
 	// c nonce check and proof signature
 	const holderPublicKey = await importJWK(publicKeyJwk, proofHeader.alg);
 	try {

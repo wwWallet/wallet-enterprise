@@ -12,6 +12,7 @@ import { AuthorizationServerState } from '../entities/AuthorizationServerState.e
 import AppDataSource from '../AppDataSource';
 import { Repository } from 'typeorm';
 import { ApplicationModeType, applicationMode } from '../configuration/applicationMode';
+import { clearState } from '../middlewares/authorizationServerState.middleware';
 
 @injectable()
 export class ExpressAppService {
@@ -28,17 +29,17 @@ export class ExpressAppService {
 
 
 	public configure(app: Application) {
-		// exposed in both modes
+		// exposed in any mode
 		app.post('/verification/direct_post', this.directPostEndpoint());
 
-
-		if (applicationMode == ApplicationModeType.VERIFIER) {
+		if (applicationMode == ApplicationModeType.VERIFIER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER) {
 			app.get('/verification/authorize', async (req, res) => {
+				await clearState(res);
 				this.presentationsReceivingService.authorizationRequestHandler(req, res, undefined);
 			});
 		}
 
-		if (applicationMode == ApplicationModeType.ISSUER) {
+		if (applicationMode == ApplicationModeType.ISSUER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER) {
 			app.get('/openid4vci/authorize', async (req, res) => {
 				this.authorizationServerService.authorizationRequestHandler(req, res);
 			});
@@ -62,11 +63,11 @@ export class ExpressAppService {
 			};
 		
 			
-			let stateId;
+			let authorizationServerStateId;
 			let verifier_state_id;
 			try {
 				const { bindedUserSessionId, verifierStateId } = await this.presentationsReceivingService.responseHandler(req, res);
-				stateId = bindedUserSessionId;
+				authorizationServerStateId = bindedUserSessionId;
 				verifier_state_id = verifierStateId;
 			}
 			catch(e) {
@@ -82,7 +83,7 @@ export class ExpressAppService {
 			
 			if (SKIP_CONSENT) {
 				try {
-					if (!stateId) {
+					if (!authorizationServerStateId) {
 						const msg = {
 							error: "No binded authorization request was found",
 							error_description: "On /direct_post endpoint, the authorization request cannot be resolved"
@@ -93,7 +94,7 @@ export class ExpressAppService {
 					}
 					try {
 						const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
-							.where("id = :id", { id: stateId })
+							.where("id = :id", { id: authorizationServerStateId })
 							.getOne();
 						if (state && state.authorization_details) {
 							await this.authorizationServerService.sendAuthorizationResponse(req, res, state.id)

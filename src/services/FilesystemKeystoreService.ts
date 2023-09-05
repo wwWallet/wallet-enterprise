@@ -129,7 +129,6 @@ export class FilesystemKeystoreService implements WalletKeystore {
 			})
 			.setIssuer(iss as string)
 			.sign(privateKey);
-
 		return { credential };
 	}
 

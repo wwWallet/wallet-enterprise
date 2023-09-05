@@ -9,7 +9,8 @@ const TYPES = {
 	CredentialReceivingService: Symbol.for("CredentialReceivingService"),
 	CredentialIssuersConfigurationService: Symbol.for("CredentialIssuersConfigurationService"),
 	CredentialIssuersService: Symbol.for("CredentialIssuersService"),
-	ExpressAppService: Symbol.for("ExpressAppService")
+	ExpressAppService: Symbol.for("ExpressAppService"),
+	DidKeyResolverService: Symbol.for("DidKeyResolverService")
 };
 
 export { TYPES };

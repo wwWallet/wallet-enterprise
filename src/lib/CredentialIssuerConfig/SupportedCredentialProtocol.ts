@@ -16,7 +16,6 @@ export interface SupportedCredentialProtocol {
 	generateCredentialResponse(userSession: AuthorizationServerState, holderDID: string): Promise<{ format?: VerifiableCredentialFormat, credential?: any, acceptance_token?: string }>;
 
 
-	getAuthenticationComponentIds(): Array<string>;
 	
 	issuanceFlow(): IssuanceFlow;
 	exportCredentialSupportedObject(): CredentialSupported;

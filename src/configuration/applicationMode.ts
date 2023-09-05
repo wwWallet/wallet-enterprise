@@ -1,6 +1,7 @@
 export enum ApplicationModeType {
 	ISSUER,
-	VERIFIER
+	VERIFIER,
+	ISSUER_AND_VERIFIER
 }
 
-export const applicationMode: ApplicationModeType = ApplicationModeType.VERIFIER;
+export const applicationMode: ApplicationModeType = ApplicationModeType.ISSUER_AND_VERIFIER;

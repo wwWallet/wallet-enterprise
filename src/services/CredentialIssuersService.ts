@@ -24,6 +24,8 @@ export class CredentialIssuersService {
 					: "";
 				app.get(`${prefix}/.well-known/openid-credential-issuer`, async (_req, res) => { res.send(iss.exportIssuerMetadata()); });
 				app.post(`${prefix}/openid4vci/credential`, async (req, res) => iss.credentialRequestHandler(req, res));
+				app.post(`${prefix}/openid4vci/deferred`, async (req, res) => iss.deferredCredentialRequestHandler(req, res));
+
 				app.post(`${prefix}/profile`, async (req, res) => iss.getProfile(req, res));
 			})
 	}

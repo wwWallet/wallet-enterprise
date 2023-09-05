@@ -4,6 +4,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { ParsedQs } from "qs";
 import { AuthenticationComponent } from "../../authentication/AuthenticationComponent";
 import locale from "../../locale";
+import config from "../../../config";
 
 
 
@@ -15,7 +16,7 @@ export class EdiplomasAuthenticationComponent extends AuthenticationComponent {
 	constructor(
 		public override identifier: string,
 		public override protectedEndpoint: string,
-		private secret = "dsfsdfweree322r3234",
+		private secret = config.appSecret,
 		private users = [ { username: "user", password: "secret" } ]
 	) { super(identifier, protectedEndpoint) }
 

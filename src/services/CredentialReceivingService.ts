@@ -13,14 +13,24 @@ import { TokenResponseSchemaType } from "../types/oid4vci";
 @injectable()
 export class CredentialReceivingService implements CredentialReceiving {
 
+	readonly walletIdentifier = "conformant";
+	walletDID: string = "";
+
 	constructor(
 		@inject(TYPES.FilesystemKeystoreService) private walletKeystoreService: WalletKeystore,
-	) { }
+	) {
+
+		this.walletKeystoreService.getPublicKeyJwk(this.walletIdentifier).then((res) => {
+			const walletDID = res.jwk.kid?.split('#')[0];
+			if (!walletDID) {
+				throw new Error("Could not get wallet DID");
+			}
+			this.walletDID = walletDID;
+		})
+	}
 
 	async sendAuthorizationRequest(): Promise<any> {
 		const authorizationEndpoint = "https://api-conformance.ebsi.eu/conformance/v3/auth-mock/authorize";
-		const walletIdentifier = "conformant";
-		const walletDID = (await this.walletKeystoreService.getPublicKeyJwk(walletIdentifier)).jwk.kid?.split("#")[0] as string;
 		const authorizationDetails = [
 			{
 				type: "openid_credential",
@@ -31,7 +41,7 @@ export class CredentialReceivingService implements CredentialReceiving {
 		];
 		const authorizationRequestURL = new URL(authorizationEndpoint);
 		authorizationRequestURL.searchParams.append("scope", "openid");
-		authorizationRequestURL.searchParams.append("client_id", walletDID);
+		authorizationRequestURL.searchParams.append("client_id", this.walletDID);
 		
 		authorizationRequestURL.searchParams.append("redirect_uri", config.url);
 
@@ -70,11 +80,8 @@ export class CredentialReceivingService implements CredentialReceiving {
 			console.error(e)
 			return { redirect_to: null }
 		})
-		console.log("Redirecting to ...", redirect_to);
 		const code = new URL(redirect_to as string).searchParams.get('code') as string;
-		console.log("code = ", code)
 		const { access_token, c_nonce } = await this.tokenRequest(code, code_verifier);
-		console.log("Acess token = ", access_token)
 		await this.credentialRequest(access_token, c_nonce)
 
 	}
@@ -324,12 +331,10 @@ export class CredentialReceivingService implements CredentialReceiving {
 
 		data.append('grant_type', 'authorization_code');
 		data.append('code', code);
-		// data.append('redirect_uri', config.walletClientUrl);
 		data.append('code_verifier', code_verifier);
 
-		const did = (await this.walletKeystoreService.getPublicKeyJwk("conformant")).jwk.kid?.split('#')[0] as string;
 
-		data.append('client_id', did);
+		data.append('client_id', this.walletDID);
 
 		try {
 			const httpResponse = await axios.post(tokenEndpointURL, data, { headers: httpHeader });

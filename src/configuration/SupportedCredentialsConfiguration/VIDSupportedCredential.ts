@@ -2,7 +2,7 @@ import config from "../../../config";
 import { CategorizedRawCredentialView, CategorizedRawCredentialViewRow, IssuanceFlow } from "../../openid4vci/Metadata";
 import { VerifiableCredentialFormat, Display, CredentialSupportedJwtVcJson } from "../../types/oid4vci";
 import { CredentialSubject } from "../../lib/CredentialSubjectBuilders/CredentialSubject.type";
-import { getVIDByTaxisId } from "../../lib/data";
+import { getVIDByTaxisId } from "../resources/data";
 import { CredentialIssuer } from "../../lib/CredentialIssuerConfig/CredentialIssuer";
 import { SupportedCredentialProtocol } from "../../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
 import { SignVerifiableCredentialJWT } from "@gunet/ssi-sdk";
@@ -16,12 +16,8 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
 
   constructor(private credentialIssuerConfig: CredentialIssuer) { }
 
-	getAuthenticationComponentIds(): Array<string> {
-		return ["1-local"];
-	}
-	
 	issuanceFlow(): IssuanceFlow {
-		return IssuanceFlow.IN_TIME
+		return IssuanceFlow.IN_TIME;
 	}
   getCredentialIssuerConfig(): CredentialIssuer {
     return this.credentialIssuerConfig;
@@ -45,7 +41,6 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
 
 
   async getProfile(userSession: AuthorizationServerState): Promise<CredentialView | null> {
-		console.log("user session = ", userSession)
     if (!userSession?.taxis_id) {
       return null;
     }
@@ -64,6 +59,7 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
 					credential_id: this.getId(),
 					credential_supported_object: this.exportCredentialSupportedObject(),
 					view: rowsObject,
+					deferredFlow: false,
 				}
 			})
 		return credentialViews[0];

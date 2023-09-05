@@ -1,11 +1,10 @@
 import 'reflect-metadata';
 import { CredentialPool } from './interfaces';
 import { injectable } from 'inversify';
-import { CategorizedRawCredential } from '../openid4vci/Metadata';
 import { SupportedCredentialProtocol } from '../lib/CredentialIssuerConfig/SupportedCredentialProtocol';
 
 export type PoolItem = {
-	rawCredential:  CategorizedRawCredential<any>
+	rawCredential:  any
 	supportedCredential: SupportedCredentialProtocol;
 	acceptance_token: string;
 }
