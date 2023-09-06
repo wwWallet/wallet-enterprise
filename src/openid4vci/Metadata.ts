@@ -1,11 +1,5 @@
 
 
-
-export enum IssuanceFlow {
-	DEFERRED,
-	IN_TIME
-}
-
 export type CategorizedRawCredentialViewRow = {
 	name: string;
 	value: string;

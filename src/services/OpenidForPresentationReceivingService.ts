@@ -12,6 +12,9 @@ import 'reflect-metadata';
 import { JSONPath } from "jsonpath-plus";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
+import { Repository } from "typeorm";
+import { VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
+import AppDataSource from "../AppDataSource";
 
 
 
@@ -27,6 +30,7 @@ const nonces = new Map<string, string>(); // key: nonce, value: verifierStateId
 
 @injectable()
 export class OpenidForPresentationsReceivingService implements OpenidForPresentationsReceivingInterface {
+	private verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
 	// private authorizationServerStateRepository: Repository<AuthorizationServerState> = AppDataSource.getRepository(AuthorizationServerState);
 
 	constructor(
@@ -308,6 +312,15 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					res.redirect(verifierState?.authorizationRequest.redirect_uri + '?' + searchParams);
 					throw new Error(error.message + "\n" + error_description?.message);
 				}
+
+				// store presentation
+				const newVerifiablePresentation = new VerifiablePresentationEntity()
+				newVerifiablePresentation.format = "jwt_vc";
+				newVerifiablePresentation.presentation_definition_id = presentation_submission.definition_id;
+				newVerifiablePresentation.status = true;
+				newVerifiablePresentation.raw_presentation = vp_token;
+				this.verifiablePresentationRepository.save(newVerifiablePresentation);
+
 				console.error(msg);
 				const searchParams = new URLSearchParams(msg);
 

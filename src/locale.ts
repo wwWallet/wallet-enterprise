@@ -8,7 +8,7 @@ const locale = {
 		Footer: {
 			services: "Services",
 			documentation: "Documentation",
-			adminLogin: "Admin Login",
+			adminLogin: "Verifier Panel",
 			information: "Information",
 			participatingInst: "Participating Institutions",
 			termsOfUse: "Terms of Use",

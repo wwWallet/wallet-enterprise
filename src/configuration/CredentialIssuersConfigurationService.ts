@@ -19,7 +19,7 @@ export class CredentialIssuersConfigurationService {
 			.setWalletId("conformant")
 			.setAuthorizationServerURL(config.url)
 			.setCredentialEndpoint(config.url + "/openid4vci/credential")
-			.setDeferredCredentialEndpoint(config.url + "/openid4vci/deferred")
+			// .setDeferredCredentialEndpoint(config.url + "/openid4vci/deferred")
 
 		vidIssuer.addSupportedCredential(new CTWalletSameInTimeSupportedCredential(vidIssuer));
 		vidIssuer.addSupportedCredential(new CTWalletSameDeferredSupportedCredential(vidIssuer));
@@ -31,7 +31,7 @@ export class CredentialIssuersConfigurationService {
 			.setWalletId("conformant")
 			.setAuthorizationServerURL(config.url)
 			.setCredentialEndpoint(config.url + "/vid/openid4vci/credential")
-			.setDeferredCredentialEndpoint(config.url + "/vid/openid4vci/deferred");
+			// .setDeferredCredentialEndpoint(config.url + "/vid/openid4vci/deferred");
 		vidIssuer2.addSupportedCredential(new CTWalletSameInTimeSupportedCredential(vidIssuer2));
 		vidIssuer2.addSupportedCredential(new CTWalletSameDeferredSupportedCredential(vidIssuer2));
 		vidIssuer2.addSupportedCredential(new CTWalletSamePreAuthorisedSupportedCredential(vidIssuer2));

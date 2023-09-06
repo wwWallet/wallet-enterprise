@@ -4,7 +4,6 @@ import { SupportedCredentialProtocol } from "./SupportedCredentialProtocol";
 import { Request, Response } from 'express';
 import * as _ from 'lodash';
 import { verifyProof } from "../../openid4vci/Proof/verifyProof";
-import { credentialPoolService } from "../../services/instances";
 import base64url from "base64url";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 
@@ -173,7 +172,7 @@ export class CredentialIssuer {
 	 * @param credentialRequest 
 	 * @returns 
 	 */
-	private async returnSingleCredential(userSession: AuthorizationServerState, access_token: string, credentialRequest: CredentialRequestBody): Promise<{ acceptance_token?: string, credential?: any, format?: string }> {
+	private async returnSingleCredential(userSession: AuthorizationServerState, _access_token: string, credentialRequest: CredentialRequestBody): Promise<{ acceptance_token?: string, credential?: any, format?: string }> {
 		console.log("Credential request = ", credentialRequest)
 		let body: CredentialRequestBody;
 		try {
@@ -231,21 +230,6 @@ export class CredentialIssuer {
 		}
 
 		try {
-			const deferredCred = await credentialPoolService.getFromPendingCredentialsPoolDeferred(access_token, resolvedSupportedCredential.getId());
-			if (deferredCred) {
-				setTimeout(() => {
-					credentialPoolService.moveFromPendingToReadyDeferred(access_token, resolvedSupportedCredential.getId(), { firstName: "XXX", familyName: "YYY" });
-					console.log("Moved from pending to deferred");
-				}, 5000);
-				return { acceptance_token: deferredCred.acceptance_token };
-			}
-			
-			// sign ...
-			// const intimeCred = await credentialPoolService.getFromReadyCredentialsPoolInTime(access_token, resolvedSupportedCredential.getId());
-			// if (!intimeCred) {
-			// 	throw new Error("In time credential could not be returned");
-			// }
-			// sign item
 			return await resolvedSupportedCredential.generateCredentialResponse(userSession, did);
 		}
 		catch(e) {

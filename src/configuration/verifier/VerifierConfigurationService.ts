@@ -12,7 +12,7 @@ export type PresentationDefinitionTypeWithFormat = {
 };
 
 @injectable()
-export class VerifierConfigurationV2Service implements VerifierConfigurationInterface {
+export class VerifierConfigurationService implements VerifierConfigurationInterface {
 
 	getPresentationDefinitions(): PresentationDefinitionTypeWithFormat[] {
 		return [{
@@ -104,3 +104,6 @@ export class VerifierConfigurationV2Service implements VerifierConfigurationInte
 	}
 
 }
+
+
+	

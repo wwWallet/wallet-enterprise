@@ -1,5 +1,5 @@
 import config from "../../../config";
-import { CategorizedRawCredentialViewRow, IssuanceFlow } from "../../openid4vci/Metadata";
+import { CategorizedRawCredentialViewRow } from "../../openid4vci/Metadata";
 import { VerifiableCredentialFormat, Display, CredentialSupportedJwtVcJson } from "../../types/oid4vci";
 import { CredentialIssuer } from "../../lib/CredentialIssuerConfig/CredentialIssuer";
 import { SupportedCredentialProtocol } from "../../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
@@ -15,9 +15,6 @@ export class CTWalletSamePreAuthorisedSupportedCredential implements SupportedCr
   constructor(private credentialIssuerConfig: CredentialIssuer) { }
 
 
-	issuanceFlow(): IssuanceFlow {
-		return IssuanceFlow.IN_TIME;
-	}
   getCredentialIssuerConfig(): CredentialIssuer {
     return this.credentialIssuerConfig;
   }

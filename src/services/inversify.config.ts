@@ -1,26 +1,26 @@
 import { Container } from "inversify";
-import { OpenidForPresentationsReceivingInterface, WalletKeystore, CredentialPool, VerifierConfigurationInterface, CredentialReceiving, OpenidForCredentialIssuingAuthorizationServerInterface, DidKeyResolverService } from "./interfaces";
+import { OpenidForPresentationsReceivingInterface, WalletKeystore, CredentialReceiving, OpenidForCredentialIssuingAuthorizationServerInterface, DidKeyResolverService, VerifierConfigurationInterface } from "./interfaces";
 import { TYPES } from "./types";
 import { FilesystemKeystoreService } from "./FilesystemKeystoreService";
 import { OpenidForPresentationsReceivingService } from "./OpenidForPresentationReceivingService";
 import 'reflect-metadata';
-import { CredentialPoolService } from "./CredentialPoolService";
 import { CredentialReceivingService } from "./CredentialReceivingService";
 import { OpenidForCredentialIssuingAuthorizationServerService } from "./OpenidForCredentialIssuingAuthorizationServerService";
 import { CredentialIssuersConfigurationService } from "../configuration/CredentialIssuersConfigurationService";
 import { CredentialIssuersService } from "./CredentialIssuersService";
 import { ExpressAppService } from "./ExpressAppService";
-import { VerifierConfigurationV2Service } from "../configuration/verifier/VerifierConfigurationV2Service";
 import { W3CDidKeyResolverService } from "./W3CDidKeyResolverService";
 import { DidKeyMethodVersion, didKeyMethodVersion } from "../configuration/didKeyMethodVersion";
 import { EBSIDidKeyResolverService } from "./EBSIDidKeyResolverService";
+import { VerifierConfigurationService } from "../configuration/verifier/VerifierConfigurationService";
 
 
 const appContainer = new Container();
 
 // to add a new configuration, unbind this with appContainer.unbind() if from external component
 appContainer.bind<VerifierConfigurationInterface>(TYPES.VerifierConfigurationServiceInterface)
-	.to(VerifierConfigurationV2Service);
+	.to(VerifierConfigurationService);
+
 
 // to add a new configuration, unbind this with appContainer.unbind() if from external component
 appContainer.bind<CredentialIssuersConfigurationService>(TYPES.CredentialIssuersConfigurationService)
@@ -38,8 +38,6 @@ appContainer.bind<OpenidForCredentialIssuingAuthorizationServerInterface>(TYPES.
 	.to(OpenidForCredentialIssuingAuthorizationServerService);
 
 
-appContainer.bind<CredentialPool>(TYPES.CredentialPoolService)
-	.to(CredentialPoolService);
 
 
 appContainer.bind<CredentialReceiving>(TYPES.CredentialReceivingService)

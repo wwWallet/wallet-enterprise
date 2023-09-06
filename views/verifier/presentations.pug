@@ -1,0 +1,5 @@
+extends ../layout.pug
+block layout-content
+	h1 Received Verifiable Presentations
+	for vp in verifiablePresentations
+		div #{vp.id}

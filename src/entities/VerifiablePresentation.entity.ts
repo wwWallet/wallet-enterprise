@@ -8,14 +8,14 @@ export enum VerificationStatus {
 }
 
 @Entity({ name: "verifiable_presentation" })
-export class VerifiablePresentation {
+export class VerifiablePresentationEntity {
 	@PrimaryGeneratedColumn()
 	id: number = 0;
 
 	@Column({ name: "presentation_definition_id", type: "varchar", nullable: true })
 	presentation_definition_id?: string; // same with scope
 
-	@Column({ name: "raw_presentation", type: "varchar", nullable: true })
+	@Column({ name: "raw_presentation", type: "blob", nullable: true })
 	// @ts-ignore
 	private _raw_presentation?: Buffer;
 	set raw_presentation(value: string | null) {

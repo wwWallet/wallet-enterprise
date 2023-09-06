@@ -3,7 +3,6 @@ import { JWK, SignJWT } from "jose";
 import { Request , Response} from 'express'
 import { OpenidForPresentationsConfiguration } from "./types/OpenidForPresentationsConfiguration.type";
 import 'reflect-metadata';
-import { PoolItem } from "./CredentialPoolService";
 import { AuthorizationDetailsSchemaType } from "../types/oid4vci";
 
 
@@ -48,22 +47,6 @@ export interface VerifierConfigurationInterface {
 	getConfiguration(): OpenidForPresentationsConfiguration;
 	getPresentationDefinitions(): PresentationDefinitionType[];
 }
-
-
-
-export interface CredentialPool {
-	storeInPendingCredentialsPoolDeferred(access_token: string, supported_credential_identifier: string, item: PoolItem): Promise<void>
-	storeInReadyCredentialsPoolDeferred(acceptance_token: string, item: PoolItem): Promise<void>
-	storeInReadyCredentialsPoolInTime(access_token: string, supported_credential_identifier: string, item: PoolItem): Promise<void>
-
-
-	getFromPendingCredentialsPoolDeferred(access_token: string, supported_credential_identifier: string): Promise<PoolItem | null>
-	getFromReadyCredentialsPoolDeferred(acceptance_token: string): Promise<PoolItem | null>
-	getFromReadyCredentialsPoolInTime(access_token: string, supported_credential_identifier: string): Promise<PoolItem | null>
-
-	moveFromPendingToReadyDeferred(access_token: string, supported_credential_identifier: string, rawData: any): Promise<void>
-}
-
 
 
 export interface CredentialReceiving {

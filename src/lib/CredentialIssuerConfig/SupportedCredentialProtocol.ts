@@ -1,6 +1,5 @@
 import { CredentialView } from "../../authorization/types";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
-import {  IssuanceFlow } from "../../openid4vci/Metadata";
 import { VerifiableCredentialFormat, Display, CredentialSupported } from "../../types/oid4vci";
 import { CredentialIssuer } from "./CredentialIssuer";
 
@@ -17,6 +16,5 @@ export interface SupportedCredentialProtocol {
 
 
 	
-	issuanceFlow(): IssuanceFlow;
 	exportCredentialSupportedObject(): CredentialSupported;
 }

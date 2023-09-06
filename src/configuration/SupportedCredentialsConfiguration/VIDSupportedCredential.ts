@@ -1,7 +1,7 @@
 import config from "../../../config";
-import { CategorizedRawCredentialView, CategorizedRawCredentialViewRow, IssuanceFlow } from "../../openid4vci/Metadata";
+import { CategorizedRawCredentialView, CategorizedRawCredentialViewRow } from "../../openid4vci/Metadata";
 import { VerifiableCredentialFormat, Display, CredentialSupportedJwtVcJson } from "../../types/oid4vci";
-import { CredentialSubject } from "../../lib/CredentialSubjectBuilders/CredentialSubject.type";
+import { CredentialSubject } from "../CredentialSubjectBuilders/CredentialSubject.type";
 import { getVIDByTaxisId } from "../resources/data";
 import { CredentialIssuer } from "../../lib/CredentialIssuerConfig/CredentialIssuer";
 import { SupportedCredentialProtocol } from "../../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
@@ -16,9 +16,6 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
 
   constructor(private credentialIssuerConfig: CredentialIssuer) { }
 
-	issuanceFlow(): IssuanceFlow {
-		return IssuanceFlow.IN_TIME;
-	}
   getCredentialIssuerConfig(): CredentialIssuer {
     return this.credentialIssuerConfig;
   }
