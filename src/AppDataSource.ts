@@ -1,7 +1,6 @@
 import { DataSource } from "typeorm";
 import config from "../config";
 
-
 // Initialize DB connection
 const AppDataSource: DataSource = new DataSource({
     type: "mysql",
@@ -14,7 +13,7 @@ const AppDataSource: DataSource = new DataSource({
     synchronize: true
 });
 
-(async function initDataSource() {
+export async function initDataSource() {
   let connected = false;
 
   console.log("Connecting with DB...");
@@ -40,7 +39,7 @@ const AppDataSource: DataSource = new DataSource({
         });
     });
   }
-})();
+};
 
 
 

@@ -1,19 +1,10 @@
 import { JWK } from 'jose';
 
-export type AuthorizationDetail = {
-	type: string,
-	format: VerifiableCredentialFormat,
-	types: string[],
-	locations?: string[]
-}
-
-export type AuthorizationDetails = AuthorizationDetail[];
-
 
 
 export enum GrantType {
 	AUTHORIZATION_CODE = "authorization_code",
-	PRE_AUTHORIZED_CODE = "pre-authorized_code"
+	PRE_AUTHORIZED_CODE = "urn:ietf:params:oauth:grant-type:pre-authorized_code"
 }
 
 
@@ -43,6 +34,7 @@ export type CredentialIssuerMetadata = {
 	authorization_server: string,
 	credential_endpoint: string,
 	batch_credential_endpoint?: string,
+	deferred_credential_endpoint?: string
 	credentials_supported: CredentialSupported[],
 	display?: Display[]
 }

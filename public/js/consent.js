@@ -1,6 +1,6 @@
 const layout = document.querySelector('.layout');
 
-const cards = document.querySelectorAll('.card');
+const cards = document.querySelectorAll('.credential-card');
 const toggleButtons = document.querySelectorAll('.toggle-details');
 
 const form = document.querySelector('#DiplomaSelection');

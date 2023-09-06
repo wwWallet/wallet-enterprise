@@ -1,35 +1,51 @@
-import { Request, Response } from "express";
-import { UserSession, redisModule } from "../RedisModule";
-import { CredentialView } from "./types";
+import { NextFunction, Request, Response } from "express";
 import locale from "../locale";
-import { CategorizedRawCredential } from "../openid4vci/Metadata";
-import { generateAuthorizationResponse } from "../openid4vci/endpoints/authorizationEndpoint";
 import z from 'zod';
-import { issuersConfigurations } from "../configuration/IssuersConfiguration";
-import { CredentialIssuerConfig } from "../lib/CredentialIssuerConfig/CredentialIssuerConfig";
 import _ from "lodash";
+import { openidForCredentialIssuingAuthorizationServerService } from "../services/instances";
+import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oid4vci";
+import axios from "axios";
+import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
+import { CredentialView } from "./types";
 import config from "../../config";
+
+
+
+
 const consentSubmitSchema = z.object({
 	selected_credential_id_list: z.array(z.string())
 })
 
-export async function consent(req: Request, res: Response) {
-	if (!req.userSession || !req.userSession.authorizationDetails) {
-		res.render('error');
+export async function consent(req: Request, res: Response, _next: NextFunction) {
+	console.log("Consent = ", req.authorizationServerState)
+	if (!req.authorizationServerState || !req.authorizationServerState.authorization_details) {
+		res.render('error', {
+			lang: req.lang,
+			code: 0,
+			msg: "Authorization server state is missing",
+			locale: locale[req.lang]
+		});
 		return;
 	}
+
+	const allCredentialViews = await getAllCredentialViews(req.authorizationServerState);
 
 	if (req.method == "POST") {
 		try {
 			const { selected_credential_id_list } = consentSubmitSchema.parse(req.body);
 			console.log("Selected credential id list = ", req.body)
-			const { authorizationResponseURL } = await generateAuthorizationResponse(req.userSession, selected_credential_id_list);
-			if (!req.userSession.categorizedRawCredentials) {
-				return res.render('error');
-			}
-			req.userSession.categorizedRawCredentials = req.userSession.categorizedRawCredentials.filter(cred => selected_credential_id_list.includes(cred.credential_id));
-			await redisModule.storeUserSession(req.userSession.id, req.userSession);
-			return res.redirect(authorizationResponseURL);
+			const authorizationDetails = selected_credential_id_list.map((id) => {
+					const credView = allCredentialViews.filter((credView) => credView.credential_id == id)[0];
+					return credView ? { types: credView.credential_supported_object.types, format: credView.credential_supported_object.format, type: 'openid_credential' } : null;
+				})
+				.filter((ad) => ad != null) as AuthorizationDetailsSchemaType;
+			return await openidForCredentialIssuingAuthorizationServerService.sendAuthorizationResponse(
+				req,
+				res,
+				req.authorizationServerState.id,
+				authorizationDetails
+			);
+
 		}
 		catch(err) {
 			console.log(err);
@@ -42,64 +58,49 @@ export async function consent(req: Request, res: Response) {
 	} // end of POST
 
 
-	const credentials: CategorizedRawCredential<any>[] = [ ];
-	const credViewList: CredentialView[] = [];
-
-	for (const authorizationDetail of req.userSession.authorizationDetails) {
-		// find the selected issuer by the locations parameter, else by the default credential issuer identifier
-		const credentialIssuerIdentifier = authorizationDetail.locations && authorizationDetail.locations.length ? authorizationDetail.locations[0] : config.url;
-		const issuerConfiguration = issuersConfigurations.get(credentialIssuerIdentifier);
-		if (!issuerConfiguration)
-			continue;
-
-		// for each supported credentials, get resources
-		const resourceResponsesPromises = issuerConfiguration.supportedCredentials
-			.map(sc => 
-				sc.getFormat() == authorizationDetail.format && _.isEqual(sc.getTypes(), authorizationDetail.types) ? 
-				sc.getResources(req.userSession as UserSession) :
-				[]
-			);
-		const resourceResponses = await Promise.all(resourceResponsesPromises);
-
-		// push all found resources into the credentials array
-		for (const resourceResponse of resourceResponses) {
-			credentials.push(...resourceResponse);
-
-			// store all credential views
-			credViewList.push(...resourceResponse.map(credential => constructView(issuerConfiguration, credential)));
-		}
-
-	}
-
-	req.userSession.categorizedRawCredentials = credentials;
-	console.log("User session = ", req.userSession)
-	redisModule.storeUserSession(req.userSession.id, req.userSession).catch(err => {
-		console.log("Redis could not store userSession")
-		console.log(err)
-	});
-
-
+	
 	res.render('issuer/consent.pug', {
-		credentialViewList: credViewList,
 		title: 'Consent',
+		redirect_uri: req.authorizationServerState.redirect_uri ? new URL(req.authorizationServerState.redirect_uri).hostname : "", 
+		credentialViewList: allCredentialViews,
 		lang: req.lang,
 		locale: locale[req.lang],
 	});
 }
 
-
-function constructView(issuerConfiguration: CredentialIssuerConfig, credential: CategorizedRawCredential<any>): CredentialView {
-	const supportedCredential = issuerConfiguration.supportedCredentials.filter(sc => sc.getId() == credential.supportedCredentialIdentifier)[0];
-	const logo =  supportedCredential.getDisplay().logo?.url;
-	if (!logo) {
-		console.log("no logo was found")
-		throw "No logo was found";
+async function getAllCredentialViews(authorizationServerState: AuthorizationServerState) {
+	if (!authorizationServerState.authorization_details) {
+		return [];
 	}
-	return {
-		credential_id: credential.credential_id,
-		credential_logo_url: logo,
-		credentialSubject: {},
-		data: credential.rawData,
-		view: credential.view
-	}	
+	return (await Promise.all(authorizationServerState.authorization_details.map(async (ad) => {
+		let credentialIssuerURL = config.url; // default issuer
+		if (ad.locations && ad.locations.length > 0) {
+			credentialIssuerURL = ad?.locations[0];
+		}
+		const credentialSupported = (await axios.get(credentialIssuerURL + "/.well-known/openid-credential-issuer"))
+			.data
+			.credentials_supported
+			.filter((cs: any) => 
+				ad.format == cs.format && _.isEqual(ad.types, cs.types)
+			)[0] as CredentialSupported;
+
+		try {
+			const { data: { credential_view } } = await axios.post(credentialIssuerURL + "/profile", {
+				authorization_server_state: AuthorizationServerState.serialize(authorizationServerState),
+				types: credentialSupported.types
+			});
+			if (!credential_view) {
+				return null;
+			}
+			return credential_view as CredentialView;
+		}
+		catch(e: any) {
+			console.error("Error while getting all credential views");
+			if (e.response.data) {
+				console.error(e.response.data);
+			}
+			return null;
+		}
+
+	}))).filter(res => res != null) as CredentialView[];
 }

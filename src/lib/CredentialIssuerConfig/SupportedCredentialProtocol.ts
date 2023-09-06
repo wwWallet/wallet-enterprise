@@ -1,17 +1,20 @@
-import { UserSession } from "../../RedisModule";
-import { CategorizedRawCredential } from "../../openid4vci/Metadata";
+import { CredentialView } from "../../authorization/types";
+import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import { VerifiableCredentialFormat, Display, CredentialSupported } from "../../types/oid4vci";
-import { CredentialIssuerConfig } from "./CredentialIssuerConfig";
+import { CredentialIssuer } from "./CredentialIssuer";
+
 
 export interface SupportedCredentialProtocol {
-	getCredentialIssuerConfig(): CredentialIssuerConfig;
+	getCredentialIssuerConfig(): CredentialIssuer;
 	getId(): string;
 	getFormat(): VerifiableCredentialFormat;
 	getTypes(): string[];
 	getDisplay(): Display;
 
-	getResources(userSession: UserSession): Promise<CategorizedRawCredential<any>[]>;
-	signCredential(userSession: UserSession, holderDID: string): Promise<{ format: VerifiableCredentialFormat, credential: any }>;
+	getProfile(userSession: AuthorizationServerState): Promise<CredentialView | null>;
+	generateCredentialResponse(userSession: AuthorizationServerState, holderDID: string): Promise<{ format?: VerifiableCredentialFormat, credential?: any, acceptance_token?: string }>;
 
+
+	
 	exportCredentialSupportedObject(): CredentialSupported;
 }

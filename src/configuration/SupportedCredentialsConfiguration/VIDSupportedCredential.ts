@@ -1,22 +1,22 @@
 import config from "../../../config";
-import { UserSession } from "../../RedisModule";
-import { CategorizedRawCredential, CategorizedRawCredentialView, CategorizedRawCredentialViewRow } from "../../openid4vci/Metadata";
+import { CategorizedRawCredentialView, CategorizedRawCredentialViewRow } from "../../openid4vci/Metadata";
 import { VerifiableCredentialFormat, Display, CredentialSupportedJwtVcJson } from "../../types/oid4vci";
-import { CredentialSubject } from "../../lib/CredentialSubjectBuilders/CredentialSubject.type";
-import { VIDEntry, getVIDByTaxisId } from "../../lib/resourceServer";
-import { CredentialIssuerConfig } from "../../lib/CredentialIssuerConfig/CredentialIssuerConfig";
+import { CredentialSubject } from "../CredentialSubjectBuilders/CredentialSubject.type";
+import { getVIDByTaxisId } from "../resources/data";
+import { CredentialIssuer } from "../../lib/CredentialIssuerConfig/CredentialIssuer";
 import { SupportedCredentialProtocol } from "../../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
 import { SignVerifiableCredentialJWT } from "@gunet/ssi-sdk";
-import { randomUUID } from 'node:crypto';
-import { appContainer } from "../../services/inversify.config";
-import { FilesystemKeystoreService } from "../../services/FilesystemKeystoreService";
+import { keystoreService } from "../../services/instances";
+import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
+import { CredentialView } from "../../authorization/types";
 
-const keystoreService = appContainer.resolve(FilesystemKeystoreService);
 
 export class VIDSupportedCredential implements SupportedCredentialProtocol {
 
-  constructor(private credentialIssuerConfig: CredentialIssuerConfig) { }
-  getCredentialIssuerConfig(): CredentialIssuerConfig {
+
+  constructor(private credentialIssuerConfig: CredentialIssuer) { }
+
+  getCredentialIssuerConfig(): CredentialIssuer {
     return this.credentialIssuerConfig;
   }
   getId(): string {
@@ -37,13 +37,12 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
   }
 
 
-  async getResources(userSession: UserSession): Promise<CategorizedRawCredential<any>[]> {
-		console.log("user session = ", userSession)
-    if (!userSession.additionalData?.taxisid) {
-      return [];
+  async getProfile(userSession: AuthorizationServerState): Promise<CredentialView | null> {
+    if (!userSession?.taxis_id) {
+      return null;
     }
-		const vids = [await getVIDByTaxisId(userSession.additionalData.taxisid)];
-		const categorizedRawVIDs: CategorizedRawCredential<VIDEntry>[] = vids
+		const vids = [await getVIDByTaxisId(userSession?.taxis_id)];
+		const credentialViews: CredentialView[] = vids
 			.map((vid) => {
 				const rows: CategorizedRawCredentialViewRow[] = [
 					{ name: "Family Name", value: vid.familyName },
@@ -51,39 +50,40 @@ export class VIDSupportedCredential implements SupportedCredentialProtocol {
 					{ name: "Personal Identifier", value: vid.personalIdentifier },
 					{ name: "Date of Birth", value: vid.birthdate },
 				];
-				const view: CategorizedRawCredentialView = { rows };
+				const rowsObject: CategorizedRawCredentialView = { rows };
 				
 				return {
-					credential_id: "vid:"+randomUUID(),
-					credentialIssuerIdentifier: this.getCredentialIssuerConfig().credentialIssuerIdentifier,
-					supportedCredentialIdentifier: this.getId(),
-					rawData: vid,
-					view: view
+					credential_id: this.getId(),
+					credential_supported_object: this.exportCredentialSupportedObject(),
+					view: rowsObject,
+					deferredFlow: false,
 				}
 			})
-		return categorizedRawVIDs;
+		return credentialViews[0];
   }
   
-  async signCredential(userSession: UserSession, holderDID: string): Promise<{ format: VerifiableCredentialFormat; credential: any; }> {
-		console.log("User session = ", userSession);
-    if (!userSession?.categorizedRawCredentials) {
-			throw "Categorized raw credentials not found";
+  async generateCredentialResponse(userSession: AuthorizationServerState, holderDID: string): Promise<{ format: VerifiableCredentialFormat; credential: any;  }> {
+		if (!userSession.taxis_id) {
+			throw new Error("Cannot generate credential: Taxis id is missing");
+		}
+		
+		const vidEntry = await getVIDByTaxisId(userSession?.taxis_id);
+
+		if (!vidEntry) {
+			console.error("Possibly raw data w not found")
+			throw new Error("Could not generate credential response");
 		}
 
-    const selectedCategorizedCredential: CategorizedRawCredential<VIDEntry> = userSession.categorizedRawCredentials
-    .filter(crc => crc.supportedCredentialIdentifier == this.getId())
-    [0];
-
 		const vid: CredentialSubject = {
-			familyName: selectedCategorizedCredential.rawData.familyName,
-			firstName: selectedCategorizedCredential.rawData.firstName,
+			familyName: vidEntry.familyName,
+			firstName: vidEntry.firstName,
 			id: holderDID,
-			personalIdentifier: selectedCategorizedCredential.rawData.personalIdentifier,
-			dateOfBirth: selectedCategorizedCredential.rawData.birthdate
+			personalIdentifier: vidEntry.personalIdentifier,
+			dateOfBirth: vidEntry.birthdate
 		} as any;
 
     const nonSignedJwt = new SignVerifiableCredentialJWT()
-      .setJti(selectedCategorizedCredential.credential_id)
+      .setJti(vidEntry.personalIdentifier)
 			.setSubject(holderDID)
       .setIssuedAt()
       .setExpirationTime('1y')
