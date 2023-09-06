@@ -1,5 +1,11 @@
 extends ../layout.pug
 block layout-content
 	h1 Received Verifiable Presentations
-	for vp in verifiablePresentations
-		div #{vp.id}
+  .card-container
+    each vp in verifiablePresentations
+      .card
+        .card-title #{vp.id}
+        p.card-text Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec ex sed urna ultrices consectetur.
+        .card-buttons
+          button.btn.btn-primary View
+          button.btn.btn-secondary Edit
