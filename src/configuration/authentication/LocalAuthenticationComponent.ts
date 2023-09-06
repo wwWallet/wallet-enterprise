@@ -3,10 +3,10 @@ import { ParamsDictionary } from "express-serve-static-core";
 import { SignJWT, jwtVerify } from "jose";
 import { ParsedQs } from "qs";
 import { AuthenticationComponent } from "../../authentication/AuthenticationComponent";
-import locale from "../../locale";
 import AppDataSource from "../../AppDataSource";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import config from "../../../config";
+import locale from "../locale";
 
 
 

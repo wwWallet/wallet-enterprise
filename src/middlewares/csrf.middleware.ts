@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { NextFunction, Request, Response } from 'express';
-import locale from '../locale';
+import locale from '../configuration/locale';
 
 export function csrfMiddlewareGenerate(req: Request, res: Response, next: NextFunction) {
 	req.csrfToken = () => {

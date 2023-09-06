@@ -11,6 +11,6 @@ if (document.getElementById('mainBtn')) {
 			DEVICE_TYPE = "DESKTOP"
 		}
 		const encodedCredentialIssuerIdentifier = encodeURIComponent(document.getElementById('credentialIssuerIdentifier').value)
-		window.location.href = "/openid4vci/init/view/" + DEVICE_TYPE + `?issuer=${encodedCredentialIssuerIdentifier}`;
+		window.location.href = "/init/view/" + DEVICE_TYPE + `?issuer=${encodedCredentialIssuerIdentifier}`;
 	})
 }

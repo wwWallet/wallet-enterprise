@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { verifierPanelAuthChain } from "../configuration/authentication/authenticationChain";
-import locale from "../locale";
 import { Repository } from "typeorm";
 import AppDataSource from "../AppDataSource";
 import { VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
@@ -8,6 +7,7 @@ import { appContainer } from "../services/inversify.config";
 import { TYPES } from "../services/types";
 import { VerifierConfigurationInterface } from "../services/interfaces";
 import base64url from "base64url";
+import locale from "../configuration/locale";
 
 
 

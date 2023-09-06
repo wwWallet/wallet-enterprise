@@ -7,8 +7,6 @@ import cors from 'cors';
 import { LanguageMiddleware } from './middlewares/language.middleware';
 import { authorizationRouter } from './authorization/router';
 import { initDataSource } from './AppDataSource';
-import { openid4vciRouter } from './openid4vci/router';
-import locale from './locale';
 import createHttpError, { HttpError} from 'http-errors';
 import { appContainer } from './services/inversify.config';
 import { FilesystemKeystoreService } from './services/FilesystemKeystoreService';
@@ -18,6 +16,8 @@ import { CredentialIssuersConfigurationService } from './configuration/Credentia
 import { ExpressAppService } from './services/ExpressAppService';
 import { authorizationServerStateMiddleware } from './middlewares/authorizationServerState.middleware';
 import { verifierRouter } from './verifier/router';
+import locale from './configuration/locale';
+import qs from 'qs';
 
 initDataSource();
 
@@ -54,10 +54,11 @@ const walletKeystore = appContainer.resolve(FilesystemKeystoreService);
 appContainer.resolve(ExpressAppService).configure(app);
 
 
-app.use('/openid4vci', openid4vciRouter);
 
 
 app.use(LanguageMiddleware);
+
+
 
 
 app.use('/verifier-panel', verifierRouter);
@@ -101,6 +102,57 @@ app.get('/', async (req: Request, res: Response) => {
 
 app.get('/.well-known/openid-configuration', async (_req: Request, res: Response) => {
 	res.send(authorizationServerMetadataConfiguration); 
+})
+
+
+
+app.get('/init/view/:client_type', async (req: Request, res: Response) => {
+	const credentialIssuerIdentifier = req.query["issuer"] as string;
+	if (!credentialIssuerIdentifier) {
+		console.error("Credential issuer identifier not found in params")
+		return res.redirect('/');
+	}
+
+	const selectedCredentialIssuer = appContainer.resolve(CredentialIssuersConfigurationService)
+		.registeredCredentialIssuerRepository()
+		.getCredentialIssuer(credentialIssuerIdentifier);
+	if (!selectedCredentialIssuer) {
+		console.error("Credential issuer not map")
+		return res.redirect('/')
+	}
+	const client_type = req.params.client_type;
+	if (!client_type) {
+		return res.redirect('/');
+	}
+
+	const credentialOfferObject = {
+		credential_issuer: selectedCredentialIssuer.credentialIssuerIdentifier,
+		credentials: [
+			...selectedCredentialIssuer.supportedCredentials.map(sc => sc.exportCredentialSupportedObject())
+		],
+		grants: {
+			authorization_code: { issuer_state: "123xxx" }
+		}
+	};
+	const credentialOfferURL = "openid-credential-offer://?" + qs.stringify(credentialOfferObject);
+
+	const parsed = qs.parse(credentialOfferURL.split('?')[1]);
+	console.log("parsed = ", parsed)
+	// credentialOfferURL.searchParams.append("credential_offer", qs.stringify(credentialOfferObject));
+	
+	switch (client_type) {
+	case "DESKTOP":
+		return res.render('issuer/init', {
+			url: credentialOfferURL,
+			qrcode: "",
+			lang: req.lang,
+			locale: locale[req.lang]
+		})
+	case "MOBILE":
+		return res.redirect(credentialOfferURL);
+	default:
+		return res.redirect('/');
+	}
 })
 
 

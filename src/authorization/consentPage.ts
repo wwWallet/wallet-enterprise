@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import locale from "../locale";
 import z from 'zod';
 import _ from "lodash";
 import { openidForCredentialIssuingAuthorizationServerService } from "../services/instances";
@@ -8,6 +7,7 @@ import axios from "axios";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { CredentialView } from "./types";
 import config from "../../config";
+import locale from "../configuration/locale";
 
 
 
