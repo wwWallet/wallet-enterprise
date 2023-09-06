@@ -1,7 +1,7 @@
 extends ../layout.pug
 block layout-content
 
-	.gunet-container
+	.main-container
 		form#DiplomaSelection(method="POST")
 
 			section.layout
@@ -14,10 +14,10 @@ block layout-content
 					section.CredentialsArea
 						//- form.diplomas(name='selectDiplomas' method="post")
 						for credential in credentialViewList
-							.card
+							.credential-card
 								input(type="hidden" name="selected_credential_id_list[]" value=credential.credential_id disabled)
 								a.credential.toggle-details(id=credential.credential_id style=`
-									background-image: url(${credential.credential_logo_url});
+									background-image: url(${credential.credential_supported_object.display[0].logo.url});
 								`)
 									i.is-selected.fa.fa-check-circle-o(aria-hidden="true")
 								.details
@@ -40,9 +40,9 @@ block layout-content
 							table
 								tr
 									td
-										b Wallet client
+										b Client
 									td
-										div eDiplomas Wallet
+										div #{redirect_uri}
 								tr
 									td
 										b Expiration

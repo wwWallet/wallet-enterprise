@@ -1,0 +1,11 @@
+extends ../layout.pug
+block layout-content
+	.container
+		h1 Received Verifiable Presentations
+		.card-container
+		for vp in verifiablePresentations
+			.card
+				.card-title #{vp.id}
+				p.card-text Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec ex sed urna ultrices consectetur.
+				.card-buttons
+					button.btn.btn-secondary(onclick=`window.location.href = "/verifier-panel/presentation/${vp.id}"`) Inspect details

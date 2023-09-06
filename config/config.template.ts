@@ -13,7 +13,6 @@ export = {
 	redis: {
 		url: "REDIS_URL"
 	},
-	walletClientUrl: "WALLET_CLIENT_URL",
 	walletCore: {
 		url: "WALLET_CORE_URL"
 	}
