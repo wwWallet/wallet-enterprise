@@ -1,7 +1,7 @@
 extends ../layout.pug
 block layout-content
 
-	.gunet-container
+	.main-container
 		form#DiplomaSelection(method="POST")
 
 			section.layout
@@ -14,7 +14,7 @@ block layout-content
 					section.CredentialsArea
 						//- form.diplomas(name='selectDiplomas' method="post")
 						for credential in credentialViewList
-							.card
+							.credential-card
 								input(type="hidden" name="selected_credential_id_list[]" value=credential.credential_id disabled)
 								a.credential.toggle-details(id=credential.credential_id style=`
 									background-image: url(${credential.credential_supported_object.display[0].logo.url});

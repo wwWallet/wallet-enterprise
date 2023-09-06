@@ -83,9 +83,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			}
 		}
 		
-		console.log("Response type setting = ", responseTypeSetting)
 		// TODO: parse scope list to select the correct verifier configuration (presentation_definition profile) 
-
 		let payload = {
 			client_id: this.configurationService.getConfiguration().client_id,
 			response_type: responseTypeSetting,
@@ -129,7 +127,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const redirectURL = new URL(redirect_uri + "?" + searchParams.toString());
 
 		verifierStates.set(verifierStateId, { ...flowState, issuanceSessionID: userSessionIdToBindWith })
-		console.log("redirecting to = ", redirectURL)
 		res.redirect(redirectURL.toString());
 	}
 
@@ -319,6 +316,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				newVerifiablePresentation.presentation_definition_id = presentation_submission.definition_id;
 				newVerifiablePresentation.status = true;
 				newVerifiablePresentation.raw_presentation = vp_token;
+				newVerifiablePresentation.presentation_submission = presentation_submission;
 				this.verifiablePresentationRepository.save(newVerifiablePresentation);
 
 				console.error(msg);

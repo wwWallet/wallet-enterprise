@@ -44,13 +44,6 @@ html, body {
   overflow-x: hidden;
 }
 
-.main-container {
-  margin-left: auto;
-  margin-right: auto;
-  background-color: #fff;
-  box-shadow: 0px 3px 15px rgba(0,0,0,0.2);
-  border: 0px solid;
-}
 
 p {
 	font-size: 18px;
@@ -58,7 +51,7 @@ p {
 }
 
 
-.gunet-container {
+.main-container {
 	min-height: 70vh;
 	width: 80%;
 	display: block;
@@ -69,7 +62,7 @@ p {
 }
 
 /* @media only screen and (max-width: 600px) {
-	.gunet-container {
+	.main-container {
 		margin: 10px;
 		margin-top: 60px;
 		margin-bottom: 100px;
@@ -235,8 +228,9 @@ section.layout {
 .card-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-around;
+	flex-direction: column;
 }
+
 
 .card {
   flex: 0 1 calc(33.33% - 20px);
@@ -271,23 +265,24 @@ section.layout {
 }
 
 .btn-primary {
-  background-color: #007bff;
+  background-color: var(--primary-color);
   color: #fff;
 }
 
 .btn-secondary {
-  background-color: #6c757d;
+  background-color: var(--secondary-color);
   color: #fff;
 }
 
 /* Media query for small screens (center and same width) */
 @media (max-width: 768px) {
-  .card-container {
-    flex-direction: column;
-    align-items: center;
-  }
 
   .card {
     flex: 0 1 calc(80% - 20px); /* Adjust the width as needed */
   }
+}
+
+
+.container {
+	margin: 60px 30px;
 }

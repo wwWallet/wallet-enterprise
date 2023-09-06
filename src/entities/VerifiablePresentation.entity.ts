@@ -15,6 +15,7 @@ export class VerifiablePresentationEntity {
 	@Column({ name: "presentation_definition_id", type: "varchar", nullable: true })
 	presentation_definition_id?: string; // same with scope
 
+
 	@Column({ name: "raw_presentation", type: "blob", nullable: true })
 	// @ts-ignore
 	private _raw_presentation?: Buffer;
@@ -32,6 +33,25 @@ export class VerifiablePresentationEntity {
 		}
 		return null;
 	}
+
+	@Column({ name: "presentation_submission", type: "blob", nullable: true })
+	// @ts-ignore
+	private _presentation_submission?: Buffer;
+	set presentation_submission(value: string | null) {
+		if (value) {
+			this._presentation_submission = Buffer.from(value);
+			return;
+		}
+		this._presentation_submission = undefined;
+	}
+
+	get presentation_submission(): string | null {
+		if (this._presentation_submission) {
+			return this._presentation_submission?.toString();
+		}
+		return null;
+	}
+
 
 	@Column({ name: "format", type: "varchar", nullable: true })
 	format?: string;
