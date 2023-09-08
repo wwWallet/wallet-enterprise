@@ -10,10 +10,4 @@ export = {
 		password: "DB_PASSWORD",
 		dbname: "DB_NAME"
 	},
-	redis: {
-		url: "REDIS_URL"
-	},
-	walletCore: {
-		url: "WALLET_CORE_URL"
-	}
 }

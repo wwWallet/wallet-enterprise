@@ -98,6 +98,8 @@ export class AuthorizationServerState {
 	taxis_id?: string;
 	
 
+	@Column({ name: "ssn", type: "varchar", nullable: true })
+	ssn?: string;
 
 	/**
 	 * convert source into a format ready to be transmitted

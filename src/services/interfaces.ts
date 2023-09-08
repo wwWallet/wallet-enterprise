@@ -43,6 +43,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 }
 
+
 export interface VerifierConfigurationInterface {
 	getConfiguration(): OpenidForPresentationsConfiguration;
 	getPresentationDefinitions(): PresentationDefinitionType[];

@@ -86,15 +86,23 @@ app.get('/init', async (_req, res) => {
 
 
 app.get('/', async (req: Request, res: Response) => {
-	res.render('index', {
-		title: "Index",
-		credentialIssuerIdentifier: appContainer.resolve(CredentialIssuersConfigurationService)
-			.registeredCredentialIssuerRepository()
-			.getAllCredentialIssuers()[0]
-			.credentialIssuerIdentifier,
-		lang: req.lang,
-		locale: locale[req.lang]
-	})
+	const firstCredentialIssuer = appContainer.resolve(CredentialIssuersConfigurationService)
+	.registeredCredentialIssuerRepository()
+	.getAllCredentialIssuers()[0];
+
+	if (firstCredentialIssuer) {
+		const firstCredentialIssuerIdentifier = firstCredentialIssuer.credentialIssuerIdentifier;
+		return res.render('index', {
+			title: "Index",
+			credentialIssuerIdentifier: firstCredentialIssuerIdentifier,
+			lang: req.lang,
+			locale: locale[req.lang]
+		})
+	}
+	else {
+		return res.send({ error: "No issuer exists" })
+	}
+
 });
 
 
