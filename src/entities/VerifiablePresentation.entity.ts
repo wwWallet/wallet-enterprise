@@ -37,17 +37,17 @@ export class VerifiablePresentationEntity {
 	@Column({ name: "presentation_submission", type: "blob", nullable: true })
 	// @ts-ignore
 	private _presentation_submission?: Buffer;
-	set presentation_submission(value: string | null) {
+	set presentation_submission(value: any | null) {
 		if (value) {
-			this._presentation_submission = Buffer.from(value);
+			this._presentation_submission = Buffer.from(JSON.stringify(value));
 			return;
 		}
 		this._presentation_submission = undefined;
 	}
 
-	get presentation_submission(): string | null {
+	get presentation_submission(): any | null {
 		if (this._presentation_submission) {
-			return this._presentation_submission?.toString();
+			return JSON.parse(this._presentation_submission?.toString());
 		}
 		return null;
 	}

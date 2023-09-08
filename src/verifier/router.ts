@@ -8,6 +8,9 @@ import { TYPES } from "../services/types";
 import { VerifierConfigurationInterface } from "../services/interfaces";
 import base64url from "base64url";
 import locale from "../configuration/locale";
+import { VerifierConfigurationService } from "../configuration/verifier/VerifierConfigurationService";
+import { PresentationSubmission } from "@gunet/ssi-sdk";
+import { JSONPath } from "jsonpath-plus";
 
 
 
@@ -66,6 +69,8 @@ verifierRouter.get('/presentation/:presentation_id', async (req, res) => {
 		});
 	}
 
+	const presentationSubmission = verifiablePresentation.presentation_submission as PresentationSubmission;
+
 	const payload = JSON.parse(base64url.decode(verifiablePresentation.raw_presentation?.split('.')[1])) as any;
 	const vcList = payload.vp.verifiableCredential as string[];
 	const credentialList = [];
@@ -74,11 +79,34 @@ verifierRouter.get('/presentation/:presentation_id', async (req, res) => {
 		credentialList.push(vcPayload.vc);
 	}
 
+	const presentationDefinition = appContainer.resolve(VerifierConfigurationService)
+		.getPresentationDefinitions()
+		.filter(pd => 
+			pd.id == verifiablePresentation.presentation_definition_id
+		)[0];
+
+	let presentationView = [ ];
+	for (const descriptor of presentationDefinition.input_descriptors) {
+		const correspondingElementOnSubmission = presentationSubmission.descriptor_map.filter(desc => desc.id == descriptor.id)[0];
+
+		const vcView = descriptor.constraints.fields.map((field) => {
+			const vcPath = correspondingElementOnSubmission.path;
+			const payload = JSON.parse(base64url.decode(verifiablePresentation.raw_presentation?.split('.')[1] as string)) as any;
+			const vcJwtString = JSONPath({ json: payload.vp, path: vcPath })[0];
+			const vcPayload = JSON.parse(base64url.decode(vcJwtString.split('.')[1])) as any;
+			const valuePath = field.path;
+			const value = JSONPath({ json: vcPayload.vc, path: valuePath })[0];
+			return { name: valuePath, value: value }
+		});
+		presentationView.push({
+			inputDescriptorId: descriptor.id,
+			vcView: vcView
+		});
+	}
 	// TODO: construct view based on the raw presentation, presentation submission and presentation definition
-	const view = [ { name: "First name", value: "Dokimastikos" } ];
 
 	return res.render('verifier/detailed-presentation.pug', {
-		view: view,
+		view: presentationView,
 		status: verifiablePresentation.status,
 		lang: req.lang,
 		locale: locale[req.lang]

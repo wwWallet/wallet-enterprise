@@ -15,6 +15,8 @@ import { ParsedQs } from "qs";
 import { Repository } from "typeorm";
 import { VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
 import AppDataSource from "../AppDataSource";
+import { verificationCallback } from "../configuration/verificationCallback";
+import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 
 
 
@@ -325,6 +327,15 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				// if not in issuance flow, then redirect to complete the verification flow
 				if (!verifierState.issuanceSessionID)
 					res.redirect(verifierState?.authorizationRequest.redirect_uri + '?' + searchParams);
+				if (verifierState.issuanceSessionID) {
+					const authorizationServerState = await AppDataSource.getRepository(AuthorizationServerState)
+						.createQueryBuilder('state')
+						.where("state.id = :id", { id: verifierState.issuanceSessionID })
+						.getOne();
+					if (authorizationServerState)
+						await verificationCallback(authorizationServerState, payload.vp)
+				}
+
 				return { verifierStateId: verifierStateId as string, bindedUserSessionId: verifierState.issuanceSessionID };
 			}
 			catch(e) {
