@@ -2,13 +2,12 @@ import { JWK } from "jose";
 import { DidKeyResolverService } from "./interfaces";
 import { injectable } from "inversify";
 import 'reflect-metadata';
-import { getPublicKeyFromDid } from "@gunet/ssi-sdk";
-
+import { didKeyPublicKeyAdapter } from '@gunet/ssi-sdk';
 
 @injectable()
 export class EBSIDidKeyResolverService implements DidKeyResolverService {
 	async getPublicKeyJwk(did: string): Promise<JWK> {
-		return getPublicKeyFromDid(did);
+		// this is using EBSI's version of did:key
+		return await didKeyPublicKeyAdapter.getPublicKeyJwk(did + '#' + did.split(':')[2]);
 	}
-
 }

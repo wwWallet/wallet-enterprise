@@ -26,6 +26,16 @@
     "@babel/helper-validator-identifier" "^7.19.1"
     to-fast-properties "^2.0.0"
 
+"@cef-ebsi/ebsi-did-resolver@^3.1.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@cef-ebsi/ebsi-did-resolver/-/ebsi-did-resolver-3.2.0.tgz#2e7dadc0f071468bc6fa90c2da4ca28997334e23"
+  integrity sha512-4wM5TK5l6xRBSkOCEZRP64Xqsd0BqmvjfSpREn8fXbrpMZqOafku77YQSMzqFmOIQ62HSEi5Vf4CSzDHAmalig==
+  dependencies:
+    axios "^1.4.0"
+    did-resolver "^4.1.0"
+    jose "^4.14.4"
+    multiformats "^9.9.0"
+
 "@cef-ebsi/key-did-resolver@^1.0.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@cef-ebsi/key-did-resolver/-/key-did-resolver-1.1.0.tgz#3523a824c34ac0a52c416d1c91938541e153a05d"
@@ -80,11 +90,12 @@
   resolved "https://registry.npmjs.org/@gsiou/paketo/-/paketo-0.0.1.tgz"
   integrity sha512-UouhkiqAzyALZQH9Z69UYYDNU45zTTEAF1HiFhKYkLoQTCgyvxPj5c/R0Gxqt9TDsmp/OF1sxbNYXWaXMtKUQg==
 
-"@gunet/ssi-sdk@^1.0.0":
-  version "1.0.0"
-  resolved "https://npm.pkg.github.com/download/@gunet/ssi-sdk/1.0.0/b39279d80bde78372b6cfda0d7c62914a0dba381#b39279d80bde78372b6cfda0d7c62914a0dba381"
-  integrity sha512-pgaqtcagpoLi9k37Ii+dRnS3nKLE73H4jCsR82Hfey7ZXE2vWLNBK52g0qybvVSdotDnQcFYC/M8fp+JFFS5CQ==
+"@gunet/ssi-sdk@^1.0.1":
+  version "1.0.1"
+  resolved "https://npm.pkg.github.com/download/@gunet/ssi-sdk/1.0.1/ffeebae3bee4fd25c59743a41d8ee5aa756da405#ffeebae3bee4fd25c59743a41d8ee5aa756da405"
+  integrity sha512-whxCwAb2nqmicSydc0dXaI8HvH1vWkWYiFFvuWN18n+AX+nlJomu48Eb2mbMVJ7ckDZQKwUkhpOBJrPKtLNNtg==
   dependencies:
+    "@cef-ebsi/ebsi-did-resolver" "^3.1.0"
     "@cef-ebsi/key-did-resolver" "^1.0.0"
     ajv "^8.11.0"
     ajv-formats "^2.1.1"
@@ -615,6 +626,15 @@ axios@^0.27.2:
   dependencies:
     follow-redirects "^1.14.9"
     form-data "^4.0.0"
+
+axios@^1.4.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.5.0.tgz#f02e4af823e2e46a9768cfc74691fdd0517ea267"
+  integrity sha512-D4DdjDo5CY50Qms0qGQTTw6Q44jl7zRwY7bthds06pUGfChBCTcQs+N743eFWGEd6pRTMd6A+I87aWyFV5wiZQ==
+  dependencies:
+    follow-redirects "^1.15.0"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
 
 babel-walk@3.0.0-canary-5:
   version "3.0.0-canary-5"

@@ -1,8 +1,10 @@
-import { JWK, base64url, importJWK, jwtVerify } from "jose";
+import { base64url, importJWK, jwtVerify } from "jose";
 import z from 'zod';
 import { ProofType } from "../../types/oid4vci";
-import * as ed25519 from '@transmute/did-key-ed25519';
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
+import { appContainer } from "../../services/inversify.config";
+import { TYPES } from "../../services/types";
+import { DidKeyResolverService } from "../../services/interfaces";
 
 const proofHeaderSchema = z.object({
 	kid: z.string(),
@@ -62,29 +64,8 @@ async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState
 	const holderDID: string = proofPayload.iss; // did of the Holder
 
 
-	const {
-		didDocument,
-	} = await ed25519.resolve(
-		holderDID,
-		{ accept: 'application/did+json' }
-	);
-
-	// const thumbprint = await calculateJwkThumbprint(holderPublicKeyJwk, "sha256");
-	// const subjectIdentifier: Buffer = Buffer.from(thumbprint, "base64");
-	// const BYTE_LENGTH = 32; // for Natural Persons
-	// const VERSION_ID = 2; // for Natural Persons
-	// const bytesArray = new Uint8Array(1 + BYTE_LENGTH);
-	// bytesArray.set([VERSION_ID]);
-	// bytesArray.set(subjectIdentifier, 1);
-	// const trueDID = "did:ebsi:" + base58btc.encode(bytesArray);
-	// console.log("True DID = ", trueDID)
-	// console.log("Holder did = ", holderDID)
-	// if (trueDID !== holderDID) {
-	// 	console.log("Wrong pub key");
-	// 	throw "WRONG PUB KEY";
-	// }
-	const { publicKeyJwk } =  didDocument.verificationMethod[0] as { publicKeyJwk: JWK };
-
+	const publicKeyJwk = await appContainer.get<DidKeyResolverService>(TYPES.DidKeyResolverService).getPublicKeyJwk(holderDID);
+	
 	// c nonce check and proof signature
 	const holderPublicKey = await importJWK(publicKeyJwk, proofHeader.alg);
 	try {
