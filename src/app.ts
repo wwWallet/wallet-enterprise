@@ -18,6 +18,7 @@ import { authorizationServerStateMiddleware } from './middlewares/authorizationS
 import { verifierRouter } from './verifier/router';
 import locale from './configuration/locale';
 import qs from 'qs';
+import { applicationMode, ApplicationModeType } from './configuration/applicationMode';
 
 initDataSource();
 
@@ -90,7 +91,8 @@ app.get('/', async (req: Request, res: Response) => {
 	.registeredCredentialIssuerRepository()
 	.getAllCredentialIssuers()[0];
 
-	if (firstCredentialIssuer) {
+	if (firstCredentialIssuer
+		&& ( applicationMode == ApplicationModeType.ISSUER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER)) {
 		const firstCredentialIssuerIdentifier = firstCredentialIssuer.credentialIssuerIdentifier;
 		return res.render('index', {
 			title: "Index",
@@ -99,8 +101,15 @@ app.get('/', async (req: Request, res: Response) => {
 			locale: locale[req.lang]
 		})
 	}
+	else if (applicationMode == ApplicationModeType.VERIFIER) {
+		return res.render('verifier/index', {
+			title: "Index",
+			lang: req.lang,
+			locale: locale[req.lang]
+		})
+	}
 	else {
-		return res.send({ error: "No issuer exists" })
+		return res.send({ error: "Error occured" })
 	}
 
 });
