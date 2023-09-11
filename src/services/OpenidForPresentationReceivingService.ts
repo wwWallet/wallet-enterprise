@@ -319,6 +319,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				newVerifiablePresentation.status = true;
 				newVerifiablePresentation.raw_presentation = vp_token;
 				newVerifiablePresentation.presentation_submission = presentation_submission;
+				newVerifiablePresentation.date = new Date();
+
 				this.verifiablePresentationRepository.save(newVerifiablePresentation);
 
 				console.error(msg);

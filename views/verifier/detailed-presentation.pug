@@ -3,13 +3,14 @@ block layout-content
 	.container
 		h1 Detailed Presentation
 		.card-container
-			div.table-container
-				table
-					tbody
-					each row, index in view
-						tr(class= index % 2 === 0 ? 'even' : 'odd')
-							td #{row.name}
-							td #{row.value}
+			for inputDescriptor in view.descriptor_mapped_value
+				div.table-container
+					table
+						tbody
+						each row, index in inputDescriptor.vcView.rows
+							tr(class= index % 2 === 0 ? 'even' : 'odd')
+								td #{row.name}
+								td #{row.value}
 
 
 	link(rel="stylesheet" href="/styles/detailed-presentation.css")

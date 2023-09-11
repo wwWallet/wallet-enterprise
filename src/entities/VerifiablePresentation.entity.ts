@@ -56,6 +56,12 @@ export class VerifiablePresentationEntity {
 	@Column({ name: "format", type: "varchar", nullable: true })
 	format?: string;
 
+
+
+	@Column({ name: "date", type: "date", nullable: true })
+	date?: Date;
+
+	
 	@Column({ name: "status", type: "boolean", nullable: true })
 	status?: boolean;
 

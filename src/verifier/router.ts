@@ -52,6 +52,22 @@ verifierRouter.get('/filter/by/definition/:definition_id', async (req, res) => {
 })
 
 
+
+type PresentationView = {
+	descriptor_mapped_value: {
+		inputDescriptorId: string;
+		vcView: VerifiableCredentialView;
+	}[]
+}
+
+type VerifiableCredentialView = {
+	rows: {
+		name: string;
+		value: string;
+	}[];
+}
+
+
 verifierRouter.get('/presentation/:presentation_id', async (req, res) => {
 	const presentation_id = req.params.presentation_id;
 	if (!presentation_id) {
@@ -85,28 +101,27 @@ verifierRouter.get('/presentation/:presentation_id', async (req, res) => {
 			pd.id == verifiablePresentation.presentation_definition_id
 		)[0];
 
-	let presentationView = [ ];
+	let view: PresentationView = { descriptor_mapped_value: [] };
 	for (const descriptor of presentationDefinition.input_descriptors) {
 		const correspondingElementOnSubmission = presentationSubmission.descriptor_map.filter(desc => desc.id == descriptor.id)[0];
 
-		const vcView = descriptor.constraints.fields.map((field) => {
+		const vcRows = descriptor.constraints.fields.map((field) => {
 			const vcPath = correspondingElementOnSubmission.path;
 			const payload = JSON.parse(base64url.decode(verifiablePresentation.raw_presentation?.split('.')[1] as string)) as any;
 			const vcJwtString = JSONPath({ json: payload.vp, path: vcPath })[0];
 			const vcPayload = JSON.parse(base64url.decode(vcJwtString.split('.')[1])) as any;
-			const valuePath = field.path;
-			const value = JSONPath({ json: vcPayload.vc, path: valuePath })[0];
+			const valuePath = field.path[0];
+			const value = JSONPath({ json: vcPayload.vc, path: valuePath })[0] as string;
 			return { name: valuePath, value: value }
 		});
-		presentationView.push({
+		view.descriptor_mapped_value.push({
 			inputDescriptorId: descriptor.id,
-			vcView: vcView
+			vcView: { rows: vcRows }
 		});
 	}
-	// TODO: construct view based on the raw presentation, presentation submission and presentation definition
-
+	console.dir(view, { depth: null })
 	return res.render('verifier/detailed-presentation.pug', {
-		view: presentationView,
+		view: view,
 		status: verifiablePresentation.status,
 		lang: req.lang,
 		locale: locale[req.lang]
