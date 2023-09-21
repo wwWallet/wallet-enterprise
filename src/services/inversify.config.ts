@@ -1,5 +1,5 @@
 import { Container } from "inversify";
-import { OpenidForPresentationsReceivingInterface, WalletKeystore, CredentialReceiving, OpenidForCredentialIssuingAuthorizationServerInterface, DidKeyResolverService, VerifierConfigurationInterface } from "./interfaces";
+import { OpenidForPresentationsReceivingInterface, WalletKeystore, CredentialReceiving, OpenidForCredentialIssuingAuthorizationServerInterface, DidKeyResolverService, VerifierConfigurationInterface, CredentialIssuersConfiguration } from "./interfaces";
 import { TYPES } from "./types";
 import { FilesystemKeystoreService } from "./FilesystemKeystoreService";
 import { OpenidForPresentationsReceivingService } from "./OpenidForPresentationReceivingService";
@@ -23,7 +23,7 @@ appContainer.bind<VerifierConfigurationInterface>(TYPES.VerifierConfigurationSer
 
 
 // to add a new configuration, unbind this with appContainer.unbind() if from external component
-appContainer.bind<CredentialIssuersConfigurationService>(TYPES.CredentialIssuersConfigurationService)
+appContainer.bind<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfiguration)
 	.to(CredentialIssuersConfigurationService);
 
 

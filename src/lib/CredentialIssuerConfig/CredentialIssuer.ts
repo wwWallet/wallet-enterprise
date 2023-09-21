@@ -4,8 +4,9 @@ import { SupportedCredentialProtocol } from "./SupportedCredentialProtocol";
 import { Request, Response } from 'express';
 import * as _ from 'lodash';
 import { verifyProof } from "../../openid4vci/Proof/verifyProof";
-import base64url from "base64url";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
+import { jwtDecrypt } from "jose";
+import { keyPairPromise } from "../../openid4vci/utils/generateAccessToken";
 
 export class CredentialIssuer {
 
@@ -89,9 +90,10 @@ export class CredentialIssuer {
 			throw new Error("Invalid access token");
 		}
 		const access_token = req.headers.authorization.split(' ')[1];
+		const { payload: { userSession }} = await jwtDecrypt(access_token, (await keyPairPromise).privateKey)
 		// verify access_token, also validate the audience and the issuer (must be the authorization server)
 
-		const { userSession } = JSON.parse(base64url.decode(access_token.split('.')[1])) as { userSession: any };
+		// const { userSession } = JSON.parse(base64url.decode(access_token.split('.')[1])) as { userSession: any };
 		const deserializedSession = AuthorizationServerState.deserialize(userSession);
 		return { userSession: deserializedSession };
 	}
@@ -248,7 +250,6 @@ export class CredentialIssuer {
 		const authorization_server_state = AuthorizationServerState.deserialize(req.body.authorization_server_state);
 		const types = req.body.types;
 		const authorizationDetails = authorization_server_state.authorization_details;
-		console.log("State = ", authorization_server_state);
 		console.log("Authorization details = ", authorization_server_state.authorization_details)
 		if (!authorizationDetails) {
 			return res.status(400).send({ err: "Authorization details not provided" });

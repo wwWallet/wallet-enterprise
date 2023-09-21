@@ -24,7 +24,7 @@ export const authorizationDetailsSchema = z.array(z.object({
 	format: z.string(),
 	types: z.array(z.string()),
 	locations: z.array(z.string()).optional()
-}))
+}));
 
 
 

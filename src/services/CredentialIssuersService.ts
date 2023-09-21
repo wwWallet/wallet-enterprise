@@ -1,9 +1,9 @@
 import { inject, injectable } from "inversify";
 import 'reflect-metadata';
 import { TYPES } from "./types";
-import { CredentialIssuersConfigurationService } from "../configuration/CredentialIssuersConfigurationService";
 import { Application } from "express";
 import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
+import { CredentialIssuersConfiguration } from "./interfaces";
 
 @injectable()
 export class CredentialIssuersService {
@@ -11,7 +11,7 @@ export class CredentialIssuersService {
 	private credentialIssuersRepository: CredentialIssuersRepository;
 
 	constructor(
-		@inject(TYPES.CredentialIssuersConfigurationService) private credentialIssuersConfigurationService: CredentialIssuersConfigurationService,
+		@inject(TYPES.CredentialIssuersConfiguration) private credentialIssuersConfigurationService: CredentialIssuersConfiguration,
 	) { 
 		this.credentialIssuersRepository = this.credentialIssuersConfigurationService.registeredCredentialIssuerRepository();
 	}

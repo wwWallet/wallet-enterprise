@@ -1,5 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
-import { AuthorizationDetailsSchemaType } from "../types/oid4vci";
+import { AuthorizationDetailsSchemaType, GrantType } from "../types/oid4vci";
+import { EdiplomasResponse } from "../types/diplomaData/diploma.interface";
+
 
 @Entity({ name: "authorization_server_state" })
 export class AuthorizationServerState {
@@ -59,13 +61,18 @@ export class AuthorizationServerState {
 	@Column({ name: "state", type: "varchar", nullable: true })
 	state?: string;
 
-	@Column({ name: "grant_type", type: "varchar", nullable: true })
-	grant_type?: string;
+	@Column({ name: "grant_type", type: "enum", enum: GrantType, default: GrantType.PRE_AUTHORIZED_CODE, nullable: false })
+	grant_type?: GrantType;
 
 
 	@Column({ name: "user_pin", type: "varchar", nullable: true })
 	user_pin?: string;
 
+	@Column({ name: "user_pin_required", type: "boolean", nullable: true })
+	user_pin_required?:  boolean;
+
+	@Column({ name: "credential_issuer_identifier", type: "varchar", nullable: true })
+	credential_issuer_identifier?: string;
 
 	// @Column({ name: "credential_identifiers", type: "varchar", nullable: true })
 	// private _credential_identifiers?: string;
@@ -101,6 +108,24 @@ export class AuthorizationServerState {
 	@Column({ name: "ssn", type: "varchar", nullable: true })
 	ssn?: string;
 
+
+	@Column({ name: "ediplomas_response", type: 'blob', nullable: true })
+	private _ediplomas_response?: Buffer;
+	set ediplomas_response(value: EdiplomasResponse | undefined) {
+		if (value) {
+			this._ediplomas_response = Buffer.from(JSON.stringify(value));
+			return;
+		}
+		this._ediplomas_response = undefined;
+	}
+	
+	get ediplomas_response(): EdiplomasResponse | undefined {
+		if (this._ediplomas_response) {
+			return JSON.parse(this._ediplomas_response.toString()) as EdiplomasResponse;
+		}
+		return undefined;
+	}
+
 	/**
 	 * convert source into a format ready to be transmitted
 	 * @param source
@@ -113,6 +138,8 @@ export class AuthorizationServerState {
 		dest._authorization_details = undefined; // not to be transmitted
 		// dest.credential_identifiers = source.credential_identifiers;
 		// dest._credential_identifiers = undefined; // not to be transmitted
+		dest.ediplomas_response = source.ediplomas_response;
+		dest._ediplomas_response = undefined;
 		return dest;
 	}
 
@@ -125,6 +152,7 @@ export class AuthorizationServerState {
 		let dest = new AuthorizationServerState();
 		dest = { ...source };
 		dest.authorization_details = source.authorization_details;
+		dest.ediplomas_response = source.ediplomas_response;
 		// dest.credential_identifiers = source.credential_identifiers; 
 		return dest;
 	}

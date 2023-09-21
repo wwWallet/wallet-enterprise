@@ -1,7 +1,7 @@
 import { inject, injectable } from "inversify";
 import { Request , Response} from 'express'
 import { DidKeyResolverService, OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface, WalletKeystore } from "./interfaces";
-import { authorizationRequestQueryParamsSchema } from "../types/oid4vci";
+import { VerifiableCredentialFormat, authorizationRequestQueryParamsSchema } from "../types/oid4vci";
 import { AuthorizationRequestQueryParamsSchemaType } from "../types/oid4vci";
 import { TYPES } from "./types";
 import { SignJWT, importJWK, jwtVerify } from "jose";
@@ -314,7 +314,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 				// store presentation
 				const newVerifiablePresentation = new VerifiablePresentationEntity()
-				newVerifiablePresentation.format = "jwt_vc";
+				newVerifiablePresentation.format = VerifiableCredentialFormat.JWT_VC_JSON;
 				newVerifiablePresentation.presentation_definition_id = presentation_submission.definition_id;
 				newVerifiablePresentation.status = true;
 				newVerifiablePresentation.raw_presentation = vp_token;

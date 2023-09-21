@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { OpenidForCredentialIssuingAuthorizationServerInterface, OpenidForPresentationsReceivingInterface } from "./interfaces";
-import { AuthorizationDetailsSchemaType, GrantType, authorizationDetailsSchema, authorizationRequestQueryParamsSchema, tokenRequestBodySchemaForAuthorizationCodeGrant, tokenRequestBodySchemaForPreAuthorizedCodeGrant } from "../types/oid4vci";
+import { AuthorizationDetailsSchemaType, CredentialSupported, GrantType, authorizationDetailsSchema, authorizationRequestQueryParamsSchema, tokenRequestBodySchemaForAuthorizationCodeGrant, tokenRequestBodySchemaForPreAuthorizedCodeGrant } from "../types/oid4vci";
 import { DID_AUTHENTICATION_MECHANISM_USED, DIDAuthenticationMechanism } from "../configuration/authentication/auth.config";
 import { inject, injectable } from "inversify";
 import { TYPES } from "./types";
@@ -14,6 +14,7 @@ import { AuthorizationServerState } from "../entities/AuthorizationServerState.e
 import AppDataSource from "../AppDataSource";
 import { Repository } from "typeorm";
 import { storeAuthorizationServerStateIdToWebClient } from "../middlewares/authorizationServerState.middleware";
+import qs from "qs";
 
 
 @injectable()
@@ -34,6 +35,34 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		throw new Error("Method not implemented.");
 	}
 
+
+	async generateCredentialOfferURL(req: Request, credentialSupported: CredentialSupported): Promise<{ url: URL }> {
+		const preAuthorizedCode = crypto.randomBytes(60).toString('base64url');
+		const state = req.authorizationServerState;
+		state.pre_authorized_code = preAuthorizedCode;
+		state.user_pin_required = false;
+		this.authorizationServerStateRepository.save(state); // asynchronously
+
+		const credentialOffer = {
+			credential_issuer: req.authorizationServerState.credential_issuer_identifier,
+			credentials: [
+				{
+					types: credentialSupported.types,
+					format: credentialSupported.format
+				}
+			],
+			grants: {
+				"urn:ietf:params:oauth:grant-type:pre-authorized_code": {
+					"pre-authorized_code": preAuthorizedCode,
+					"user_pin_required": false
+				}
+			}
+		};
+
+		const credentialOfferURL = new URL("openid-credential-offer://credential_offer");
+		credentialOfferURL.searchParams.append('credential_offer', qs.stringify(credentialOffer));
+		return { url: credentialOfferURL };
+	}
 
 	async authorizationRequestHandler(req: Request, res: Response): Promise<void> {
 		const params = authorizationRequestQueryParamsSchema.parse(req.query);
@@ -63,7 +92,8 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		newAuthorizationServerState.response_type = params.response_type;
 		newAuthorizationServerState.redirect_uri = params.redirect_uri;
 		newAuthorizationServerState.scope = params.scope;
-
+		newAuthorizationServerState.grant_type = GrantType.AUTHORIZATION_CODE;
+		
 		// if VP token auth is used, then use the verificationScopeName constant to verify the client
 		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
 			newAuthorizationServerState.scope = params.scope + ' ' + this.verificationScopeName;
@@ -71,7 +101,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 
 	
-		console.log("Authz server state = ", newAuthorizationServerState)
 		const insertedState = await this.authorizationServerStateRepository.save(newAuthorizationServerState);
 		await storeAuthorizationServerStateIdToWebClient(res, insertedState.id); // now it has been assigned a new state id
 	

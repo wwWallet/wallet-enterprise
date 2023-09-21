@@ -6,23 +6,27 @@ import path from 'path';
 import cors from 'cors';
 import { LanguageMiddleware } from './middlewares/language.middleware';
 import { authorizationRouter } from './authorization/router';
-import { initDataSource } from './AppDataSource';
+import AppDataSource, { initDataSource } from './AppDataSource';
 import createHttpError, { HttpError} from 'http-errors';
 import { appContainer } from './services/inversify.config';
 import { FilesystemKeystoreService } from './services/FilesystemKeystoreService';
 import { authorizationServerMetadataConfiguration } from './authorizationServiceConfiguration';
 import { CredentialReceivingService } from './services/CredentialReceivingService';
-import { CredentialIssuersConfigurationService } from './configuration/CredentialIssuersConfigurationService';
 import { ExpressAppService } from './services/ExpressAppService';
-import { authorizationServerStateMiddleware } from './middlewares/authorizationServerState.middleware';
+import { authorizationServerStateMiddleware, createNewAuthorizationServerState, storeAuthorizationServerStateIdToWebClient } from './middlewares/authorizationServerState.middleware';
 import { verifierRouter } from './verifier/router';
 import locale from './configuration/locale';
-import qs from 'qs';
+import { CONSENT_ENTRYPOINT } from './authorization/constants';
+import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
+import { CredentialIssuersConfiguration } from './services/interfaces';
+import { TYPES } from './services/types';
 
 initDataSource();
 
 const credentialReceivingService = appContainer.resolve(CredentialReceivingService);
 
+const walletKeystore = appContainer.resolve(FilesystemKeystoreService);
+const credentialIssuersConfigurationService = appContainer.get<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfiguration);
 
 const app: Express = express();
 
@@ -49,7 +53,6 @@ app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, '../../views'));
 
 
-const walletKeystore = appContainer.resolve(FilesystemKeystoreService);
 
 appContainer.resolve(ExpressAppService).configure(app);
 
@@ -86,26 +89,47 @@ app.get('/init', async (_req, res) => {
 
 
 app.get('/', async (req: Request, res: Response) => {
-	const firstCredentialIssuer = appContainer.resolve(CredentialIssuersConfigurationService)
-	.registeredCredentialIssuerRepository()
-	.getAllCredentialIssuers()[0];
-
-	if (firstCredentialIssuer) {
-		const firstCredentialIssuerIdentifier = firstCredentialIssuer.credentialIssuerIdentifier;
-		return res.render('index', {
-			title: "Index",
-			credentialIssuerIdentifier: firstCredentialIssuerIdentifier,
-			lang: req.lang,
-			locale: locale[req.lang]
-		})
-	}
-	else {
-		return res.send({ error: "No issuer exists" })
-	}
-
+	return res.render('index', {
+		title: "Index",
+		lang: req.lang,
+		locale: locale[req.lang]
+	})
 });
 
 
+app.post('/', async (req, res) => {
+	if (req.body.initiate_pre_authorized == "true") {
+		const credentialIssuer = credentialIssuersConfigurationService
+			.registeredCredentialIssuerRepository()
+			.getCredentialIssuer(credentialIssuersConfigurationService.defaultCredentialIssuerIdentifier());
+		const authorizationServerState = await createNewAuthorizationServerState();
+
+		if (!credentialIssuer) {
+			return res.render('error', {
+				msg: "Issuer doest not exist",
+				code: 0,
+				lang: req.lang,
+				locale: locale[req.lang]
+			})
+		}
+		authorizationServerState.authorization_details = credentialIssuer.supportedCredentials.map((sc) => {
+			return { 
+				type: 'openid_credential',
+				types: sc.exportCredentialSupportedObject().types ?? [],
+				format: sc.exportCredentialSupportedObject().format ?? ""
+			}
+		}).filter((ad => ad.types.length != 0));
+		await AppDataSource.getRepository(AuthorizationServerState)
+			.save(authorizationServerState);
+		await storeAuthorizationServerStateIdToWebClient(res, authorizationServerState.id);
+		console.log("just created = ", authorizationServerState)
+		return res.redirect(CONSENT_ENTRYPOINT);
+	}
+	else {
+		return res.redirect('/');
+	}
+
+})
 
 
 app.get('/.well-known/openid-configuration', async (_req: Request, res: Response) => {
@@ -113,55 +137,6 @@ app.get('/.well-known/openid-configuration', async (_req: Request, res: Response
 })
 
 
-
-app.get('/init/view/:client_type', async (req: Request, res: Response) => {
-	const credentialIssuerIdentifier = req.query["issuer"] as string;
-	if (!credentialIssuerIdentifier) {
-		console.error("Credential issuer identifier not found in params")
-		return res.redirect('/');
-	}
-
-	const selectedCredentialIssuer = appContainer.resolve(CredentialIssuersConfigurationService)
-		.registeredCredentialIssuerRepository()
-		.getCredentialIssuer(credentialIssuerIdentifier);
-	if (!selectedCredentialIssuer) {
-		console.error("Credential issuer not map")
-		return res.redirect('/')
-	}
-	const client_type = req.params.client_type;
-	if (!client_type) {
-		return res.redirect('/');
-	}
-
-	const credentialOfferObject = {
-		credential_issuer: selectedCredentialIssuer.credentialIssuerIdentifier,
-		credentials: [
-			...selectedCredentialIssuer.supportedCredentials.map(sc => sc.exportCredentialSupportedObject())
-		],
-		grants: {
-			authorization_code: { issuer_state: "123xxx" }
-		}
-	};
-	const credentialOfferURL = "openid-credential-offer://?" + qs.stringify(credentialOfferObject);
-
-	const parsed = qs.parse(credentialOfferURL.split('?')[1]);
-	console.log("parsed = ", parsed)
-	// credentialOfferURL.searchParams.append("credential_offer", qs.stringify(credentialOfferObject));
-	
-	switch (client_type) {
-	case "DESKTOP":
-		return res.render('issuer/init', {
-			url: credentialOfferURL,
-			qrcode: "",
-			lang: req.lang,
-			locale: locale[req.lang]
-		})
-	case "MOBILE":
-		return res.redirect(credentialOfferURL);
-	default:
-		return res.redirect('/');
-	}
-})
 
 
 // catch 404 and forward to error handler

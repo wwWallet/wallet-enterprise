@@ -3,7 +3,8 @@ import { JWK, SignJWT } from "jose";
 import { Request , Response} from 'express'
 import { OpenidForPresentationsConfiguration } from "./types/OpenidForPresentationsConfiguration.type";
 import 'reflect-metadata';
-import { AuthorizationDetailsSchemaType } from "../types/oid4vci";
+import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oid4vci";
+import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
 
 
 export interface WalletKeystore {
@@ -14,6 +15,7 @@ export interface WalletKeystore {
 }
 
 export interface OpenidForCredentialIssuingAuthorizationServerInterface {
+	generateCredentialOfferURL(req: Request, credentialSupported: CredentialSupported): Promise<{ url: URL }>;
 	metadataRequestHandler(req: Request, res: Response): Promise<void>;
 	authorizationRequestHandler(req: Request, res: Response): Promise<void>;
 
@@ -58,4 +60,9 @@ export interface CredentialReceiving {
 
 export interface DidKeyResolverService {
 	getPublicKeyJwk(did: string): Promise<JWK>;
+}
+
+export interface CredentialIssuersConfiguration {
+	registeredCredentialIssuerRepository(): CredentialIssuersRepository;
+	defaultCredentialIssuerIdentifier(): string;
 }

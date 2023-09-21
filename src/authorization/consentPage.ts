@@ -2,13 +2,14 @@ import { NextFunction, Request, Response } from "express";
 import z from 'zod';
 import _ from "lodash";
 import { openidForCredentialIssuingAuthorizationServerService } from "../services/instances";
-import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oid4vci";
+import { AuthorizationDetailsSchemaType, CredentialSupported, GrantType } from "../types/oid4vci";
 import axios from "axios";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { CredentialView } from "./types";
 import config from "../../config";
 import locale from "../configuration/locale";
-
+import { SKIP_CONSENT } from "../configuration/consent/consent.config";
+import * as qrcode from 'qrcode';
 
 
 
@@ -17,7 +18,6 @@ const consentSubmitSchema = z.object({
 })
 
 export async function consent(req: Request, res: Response, _next: NextFunction) {
-	console.log("Consent = ", req.authorizationServerState)
 	if (!req.authorizationServerState || !req.authorizationServerState.authorization_details) {
 		res.render('error', {
 			lang: req.lang,
@@ -28,7 +28,18 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 		return;
 	}
 
+
+
 	const allCredentialViews = await getAllCredentialViews(req.authorizationServerState);
+
+	if (SKIP_CONSENT) {
+		return await openidForCredentialIssuingAuthorizationServerService.sendAuthorizationResponse(
+			req,
+			res,
+			req.authorizationServerState.id,
+			req.authorizationServerState.authorization_details
+		);
+	}
 
 	if (req.method == "POST") {
 		try {
@@ -58,11 +69,38 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 	} // end of POST
 
 
-	
-	res.render('issuer/consent.pug', {
+	let credentialViewsWithCredentialOffers = null;
+	if (req.authorizationServerState.grant_type == GrantType.PRE_AUTHORIZED_CODE) {
+		credentialViewsWithCredentialOffers = await Promise.all(allCredentialViews.map(async (credentialView) => {
+			const { url } = await openidForCredentialIssuingAuthorizationServerService
+				.generateCredentialOfferURL(req, credentialView.credential_supported_object);
+			let credentialOfferQR = await new Promise((resolve) => {
+				qrcode.toDataURL(url.toString(), {
+					margin: 1,
+					errorCorrectionLevel: 'L',
+					type: 'image/png'
+				}, 
+				(err, data) => {
+					if (err) return resolve("NO_QR");
+					return resolve(data);
+				});
+			}) as string;
+			const credViewWithCredentialOffer = { 
+				...credentialView,
+				credentialOfferURL: url.toString(),
+				credentialOfferQR,
+			};
+			return credViewWithCredentialOffer;
+		}));
+	}
+
+	return res.render('issuer/consent.pug', {
 		title: 'Consent',
 		redirect_uri: req.authorizationServerState.redirect_uri ? new URL(req.authorizationServerState.redirect_uri).hostname : "", 
-		credentialViewList: allCredentialViews,
+		credentialViewList: req.authorizationServerState.grant_type == GrantType.PRE_AUTHORIZED_CODE ?
+			credentialViewsWithCredentialOffers :
+			allCredentialViews,
+		grant_type: req.authorizationServerState.grant_type,
 		lang: req.lang,
 		locale: locale[req.lang],
 	});
@@ -77,14 +115,15 @@ async function getAllCredentialViews(authorizationServerState: AuthorizationServ
 		if (ad.locations && ad.locations.length > 0) {
 			credentialIssuerURL = ad?.locations[0];
 		}
-		const credentialSupported = (await axios.get(credentialIssuerURL + "/.well-known/openid-credential-issuer"))
+
+		try {
+			const credentialSupported = (await axios.get(credentialIssuerURL + "/.well-known/openid-credential-issuer"))
 			.data
 			.credentials_supported
 			.filter((cs: any) => 
 				ad.format == cs.format && _.isEqual(ad.types, cs.types)
 			)[0] as CredentialSupported;
 
-		try {
 			const { data: { credential_view } } = await axios.post(credentialIssuerURL + "/profile", {
 				authorization_server_state: AuthorizationServerState.serialize(authorizationServerState),
 				types: credentialSupported.types
@@ -96,8 +135,11 @@ async function getAllCredentialViews(authorizationServerState: AuthorizationServ
 		}
 		catch(e: any) {
 			console.error("Error while getting all credential views");
-			if (e.response.data) {
+			if (e.response && e.response.data) {
 				console.error(e.response.data);
+			}
+			else {
+				console.error(e);
 			}
 			return null;
 		}

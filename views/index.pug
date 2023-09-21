@@ -1,14 +1,14 @@
 extends layout.pug
 block layout-content
 
-	#Index
+	form#Index(method="POST")
 		section.IssuerOrVerifierLayout
 			div.item.IssuerSection
 				.ItemLayout
 					i.fa.fa-id-card-o.LargeIcon
 					p #{locale.index.phrase}
-					button.Btn.Large.Landing(id="mainBtn") #{locale.index.proceed}
-					input(type="hidden" id="credentialIssuerIdentifier" value=credentialIssuerIdentifier)
+					button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
+					input(type="hidden" id="initiate_pre_authorized" name="initiate_pre_authorized" value="true")
 			//- div.item.VerifierSection
 			//- 	.ItemLayout
 			//- 		i.fa.fa-university.LargeIcon

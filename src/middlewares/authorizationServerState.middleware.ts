@@ -47,7 +47,6 @@ export async function authorizationServerStateMiddleware(req: Request, res: Resp
 				authorizationServerState = await createNewAuthorizationServerState();
 			}
 			req.authorizationServerState = authorizationServerState;
-			console.log("State = ", req.authorizationServerState);
 			next();
 		}
 		catch(e) {
