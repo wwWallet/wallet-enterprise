@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { OpenidForCredentialIssuingAuthorizationServerInterface, OpenidForPresentationsReceivingInterface } from "./interfaces";
+import { CredentialIssuersConfiguration, OpenidForCredentialIssuingAuthorizationServerInterface, OpenidForPresentationsReceivingInterface } from "./interfaces";
 import { AuthorizationDetailsSchemaType, CredentialSupported, GrantType, authorizationDetailsSchema, authorizationRequestQueryParamsSchema, tokenRequestBodySchemaForAuthorizationCodeGrant, tokenRequestBodySchemaForPreAuthorizedCodeGrant } from "../types/oid4vci";
 import { DID_AUTHENTICATION_MECHANISM_USED, DIDAuthenticationMechanism } from "../configuration/authentication/auth.config";
 import { inject, injectable } from "inversify";
@@ -14,7 +14,6 @@ import { AuthorizationServerState } from "../entities/AuthorizationServerState.e
 import AppDataSource from "../AppDataSource";
 import { Repository } from "typeorm";
 import { storeAuthorizationServerStateIdToWebClient } from "../middlewares/authorizationServerState.middleware";
-import qs from "qs";
 
 
 @injectable()
@@ -28,6 +27,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	private readonly verificationScopeName = "vid";
 	
 	constructor(
+		@inject(TYPES.CredentialIssuersConfiguration) private credentialIssuersConfiguration: CredentialIssuersConfiguration,
 		@inject(TYPES.OpenidForPresentationsReceivingService) private openidForPresentationReceivingService: OpenidForPresentationsReceivingInterface,
 	) { }
 
@@ -37,14 +37,20 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 
 	async generateCredentialOfferURL(req: Request, credentialSupported: CredentialSupported): Promise<{ url: URL }> {
-		const preAuthorizedCode = crypto.randomBytes(60).toString('base64url');
-		const state = req.authorizationServerState;
-		state.pre_authorized_code = preAuthorizedCode;
-		state.user_pin_required = false;
-		this.authorizationServerStateRepository.save(state); // asynchronously
+
+		// force creation of new state with a separate pre-authorized_code which has specific scope
+		let newAuthorizationServerState: AuthorizationServerState = { ...req.authorizationServerState, id: 0 } as AuthorizationServerState;
+		newAuthorizationServerState.user_pin_required = false;
+		newAuthorizationServerState.pre_authorized_code = crypto.randomBytes(60).toString('base64url');
+		newAuthorizationServerState.authorization_details = [
+			{ types: credentialSupported.types as string[], format: credentialSupported.format, type: 'openid_credential' }
+		];
+		const insertRes = await this.authorizationServerStateRepository.insert(newAuthorizationServerState);
+		console.log("Insertion result = ", insertRes)
 
 		const credentialOffer = {
-			credential_issuer: req.authorizationServerState.credential_issuer_identifier,
+			credential_issuer: newAuthorizationServerState.credential_issuer_identifier ??
+				this.credentialIssuersConfiguration.defaultCredentialIssuerIdentifier(),
 			credentials: [
 				{
 					types: credentialSupported.types,
@@ -53,14 +59,14 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			],
 			grants: {
 				"urn:ietf:params:oauth:grant-type:pre-authorized_code": {
-					"pre-authorized_code": preAuthorizedCode,
+					"pre-authorized_code": newAuthorizationServerState.pre_authorized_code,
 					"user_pin_required": false
 				}
 			}
 		};
 
 		const credentialOfferURL = new URL("openid-credential-offer://credential_offer");
-		credentialOfferURL.searchParams.append('credential_offer', qs.stringify(credentialOffer));
+		credentialOfferURL.searchParams.append('credential_offer', JSON.stringify(credentialOffer));
 		return { url: credentialOfferURL };
 	}
 
@@ -218,7 +224,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		case GrantType.PRE_AUTHORIZED_CODE:
 			body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(req.body);
 			let state = await this.authorizationServerStateRepository.createQueryBuilder("state")
-				.where("state.authorization_code = :code", { code: body["pre-authorized_code"] })
+				.where("state.pre_authorized_code = :code", { code: body["pre-authorized_code"] })
 				.getOne();
 			if (!state)
 				throw new Error("Could not get session");

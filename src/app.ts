@@ -122,7 +122,6 @@ app.post('/', async (req, res) => {
 		await AppDataSource.getRepository(AuthorizationServerState)
 			.save(authorizationServerState);
 		await storeAuthorizationServerStateIdToWebClient(res, authorizationServerState.id);
-		console.log("just created = ", authorizationServerState)
 		return res.redirect(CONSENT_ENTRYPOINT);
 	}
 	else {

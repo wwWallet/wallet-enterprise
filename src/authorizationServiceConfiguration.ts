@@ -8,7 +8,7 @@ export const authorizationServerMetadataConfiguration = {
 	"scopes_supported": ["openid"],
 	"response_types_supported": ["vp_token", "id_token"],
 	"response_modes_supported": ["query"],
-	"grant_types_supported": ["authorization_code"],
+	"grant_types_supported": ["authorization_code", "pre-authorized_code"],
 	"subject_types_supported": ["public"],
 	"id_token_signing_alg_values_supported": ["ES256"],
 	"request_object_signing_alg_values_supported": ["ES256"],
