@@ -1,6 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { AuthorizationDetailsSchemaType, GrantType } from "../types/oid4vci";
-import { EdiplomasResponse } from "../types/diplomaData/diploma.interface";
 
 
 @Entity({ name: "authorization_server_state" })
@@ -109,22 +108,22 @@ export class AuthorizationServerState {
 	ssn?: string;
 
 
-	@Column({ name: "ediplomas_response", type: 'blob', nullable: true })
-	private _ediplomas_response?: Buffer;
-	set ediplomas_response(value: EdiplomasResponse | undefined) {
-		if (value) {
-			this._ediplomas_response = Buffer.from(JSON.stringify(value));
-			return;
-		}
-		this._ediplomas_response = undefined;
-	}
+	// @Column({ name: "ediplomas_response", type: 'blob', nullable: true })
+	// private _ediplomas_response?: Buffer;
+	// set ediplomas_response(value: EdiplomasResponse | undefined) {
+	// 	if (value) {
+	// 		this._ediplomas_response = Buffer.from(JSON.stringify(value));
+	// 		return;
+	// 	}
+	// 	this._ediplomas_response = undefined;
+	// }
 	
-	get ediplomas_response(): EdiplomasResponse | undefined {
-		if (this._ediplomas_response) {
-			return JSON.parse(this._ediplomas_response.toString()) as EdiplomasResponse;
-		}
-		return undefined;
-	}
+	// get ediplomas_response(): EdiplomasResponse | undefined {
+	// 	if (this._ediplomas_response) {
+	// 		return JSON.parse(this._ediplomas_response.toString()) as EdiplomasResponse;
+	// 	}
+	// 	return undefined;
+	// }
 
 	/**
 	 * convert source into a format ready to be transmitted
@@ -138,8 +137,8 @@ export class AuthorizationServerState {
 		dest._authorization_details = undefined; // not to be transmitted
 		// dest.credential_identifiers = source.credential_identifiers;
 		// dest._credential_identifiers = undefined; // not to be transmitted
-		dest.ediplomas_response = source.ediplomas_response;
-		dest._ediplomas_response = undefined;
+		// dest.ediplomas_response = source.ediplomas_response;
+		// dest._ediplomas_response = undefined;
 		return dest;
 	}
 
@@ -152,7 +151,7 @@ export class AuthorizationServerState {
 		let dest = new AuthorizationServerState();
 		dest = { ...source };
 		dest.authorization_details = source.authorization_details;
-		dest.ediplomas_response = source.ediplomas_response;
+		// dest.ediplomas_response = source.ediplomas_response;
 		// dest.credential_identifiers = source.credential_identifiers; 
 		return dest;
 	}
