@@ -56,8 +56,11 @@ export async function authorizationCodeGrantTokenEndpoint(body: TokenRequestBody
 		.getOne();
 
 	if (!userSession) {
-		throw `No user session was found for authorization code ${body.code}`
+		throw new Error(`No user session was found for authorization code ${body.code}`)
 	}
+
+	userSession.state = undefined;
+	await AppDataSource.getRepository(AuthorizationServerState).save(userSession);
 	
 	return generateAccessToken(userSession);
 }

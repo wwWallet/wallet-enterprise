@@ -178,12 +178,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				// }
 				// if (!userSession.categorizedRawCredentials)
 				// 	throw new Error("Could not get categorized raw credential");
-
 				response = await authorizationCodeGrantTokenEndpoint(body, req.headers.authorization);
-				if (state.authorization_code) {
-					state.authorization_code = "";
-					await this.authorizationServerStateRepository.save(state);
-				}
 			}
 			catch (err) {
 				console.error("Error = ", err)
