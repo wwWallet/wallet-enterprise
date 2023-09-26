@@ -168,6 +168,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				let state = await this.authorizationServerStateRepository.createQueryBuilder("state")
 					.where("state.authorization_code = :code", { code: body.code })
 					.getOne();
+
 				if (!state)
 					throw new Error("Could not get session");
 				// if (!userSession.categorizedRawCredentials) {
@@ -179,6 +180,10 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				// 	throw new Error("Could not get categorized raw credential");
 
 				response = await authorizationCodeGrantTokenEndpoint(body, req.headers.authorization);
+				if (state.authorization_code) {
+					state.authorization_code = "";
+					await this.authorizationServerStateRepository.save(state);
+				}
 			}
 			catch (err) {
 				console.error("Error = ", err)
