@@ -130,7 +130,7 @@ function toggleInput(value) {
 }
 
 function deselectAllInputs() {
-	const inputs = document.querySelectorAll('input');
+	const inputs = document.querySelectorAll('input:not([type=checkbox])');
 	inputs.forEach(input => input.disabled = true);
 	disableSubmitButtons();
 }

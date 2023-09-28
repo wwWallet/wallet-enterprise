@@ -31,6 +31,8 @@ block layout-content
 													b #{row.name}
 												td
 													div #{row.value}
+												td
+													input(type="checkbox" class="scopeCheckbox" id=row.name name=row.name value=row.value checked)
 									br
 									if grant_type != "authorization_code"
 										img(src=`${credential.credentialOfferQR}` height=250 width=250)
