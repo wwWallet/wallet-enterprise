@@ -11,14 +11,15 @@ import { VIDSupportedCredential } from "./SupportedCredentialsConfiguration/VIDS
 
 @injectable()
 export class CredentialIssuersConfigurationService {
+	readonly credentialIssuerIdentifierVID = config.url;
 
 
 	public registeredCredentialIssuerRepository(): CredentialIssuersRepository {
 		const vidIssuer = new CredentialIssuer()
-			.setCredentialIssuerIdentifier(config.url)
+			.setCredentialIssuerIdentifier(this.credentialIssuerIdentifierVID)
 			.setWalletId("conformant")
 			.setAuthorizationServerURL(config.url)
-			.setCredentialEndpoint(config.url + "/openid4vci/credential")
+			.setCredentialEndpoint(this.credentialIssuerIdentifierVID + "/openid4vci/credential")
 			// .setDeferredCredentialEndpoint(config.url + "/openid4vci/deferred")
 
 		vidIssuer.addSupportedCredential(new CTWalletSameInTimeSupportedCredential(vidIssuer));
@@ -40,5 +41,9 @@ export class CredentialIssuersConfigurationService {
 			vidIssuer,
 			vidIssuer2
 		]);
+	}
+
+	public defaultCredentialIssuerIdentifier(): string {
+		return this.credentialIssuerIdentifierVID;
 	}
 }
