@@ -10,7 +10,7 @@ export const keyPairPromise = jose.generateKeyPair('RSA-OAEP-256');
 export async function generateAccessToken(userSession: AuthorizationServerState): Promise<TokenResponseSchemaType> {
 
 	const credentialIssuersIdentifiers: string[] = [];
-
+	
 	if (userSession.authorization_details) {
 		for (const ad of userSession?.authorization_details) {
 			if (ad.locations) {
@@ -25,6 +25,8 @@ export async function generateAccessToken(userSession: AuthorizationServerState)
 	// c_nonce
 	userSession.c_nonce = crypto.randomBytes(60).toString('base64url');
 	userSession.c_nonce_expires_in = accessTokenExpirationInSeconds;
+
+
 
 	// store user session in access token
 	console.log("User session on AT generation: ", userSession);
