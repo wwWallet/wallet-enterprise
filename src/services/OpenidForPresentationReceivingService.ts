@@ -153,7 +153,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	async responseHandler(req: Request, res: Response): Promise<{ verifierStateId: string, bindedUserSessionId?: number }> {
 		console.log("Body = ", req.body)
 		const { id_token, vp_token, state, presentation_submission } = req.body;
-		console.log("Body = ")
+		console.log("Id token = ", id_token)
+		let presentationSubmissionObject: PresentationSubmission | null = null;
+		if (presentation_submission) {
+			presentationSubmissionObject = JSON.parse(presentation_submission) as PresentationSubmission;
+		}
+
 		let verifierStateId = null;
 		let verifierState = null;
 		if (state) {
@@ -166,7 +171,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			const jwk = await this.didKeyResolverService.getPublicKeyJwk(header.kid.split('#')[0]);
 			const pubKey = await importJWK(jwk, header.alg as string);
 
-			console.log("ID token = ", id_token)
 			try {
 				const { payload } = await jwtVerify(id_token, pubKey, {
 					// audience: this.configurationService.getConfiguration().baseUrl,
@@ -303,7 +307,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				if (state) {
 					msg = { ...msg, state } as any;
 				}
-				const { error, error_description } = await this.validateVpToken(vp_token, presentation_submission);
+				const { error, error_description } = await this.validateVpToken(vp_token, presentationSubmissionObject as PresentationSubmission);
 				if (error && error_description) {
 					msg = { ...msg, error: error.message, error_description: error_description?.message };
 					console.error(msg);
@@ -318,7 +322,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				newVerifiablePresentation.presentation_definition_id = presentation_submission.definition_id;
 				newVerifiablePresentation.status = true;
 				newVerifiablePresentation.raw_presentation = vp_token;
-				newVerifiablePresentation.presentation_submission = presentation_submission;
+				newVerifiablePresentation.presentation_submission = presentationSubmissionObject;
 				newVerifiablePresentation.date = new Date();
 
 				this.verifiablePresentationRepository.save(newVerifiablePresentation);

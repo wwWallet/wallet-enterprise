@@ -8,6 +8,26 @@ declare global {
     export interface Request {
       lang: Language;
 			authorizationServerState: AuthorizationServerState;
+
     }
+
+  }
+}
+
+
+declare module 'express-session' {
+  interface Session {
+    authenticationChain: {
+			localAuthenticationComponent?: {
+				username?: string;
+			},
+			issuerSelectionComponent?: {
+				institutionId?: string;
+			},
+			inspectPersonalInfoComponent?: {
+				proceed?: boolean;
+			}
+		};
+    // Add any other custom properties or methods here
   }
 }

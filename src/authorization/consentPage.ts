@@ -6,7 +6,6 @@ import { AuthorizationDetailsSchemaType, CredentialSupported, GrantType } from "
 import axios from "axios";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { CredentialView } from "./types";
-import config from "../../config";
 import locale from "../configuration/locale";
 import { SKIP_CONSENT } from "../configuration/consent/consent.config";
 import * as qrcode from 'qrcode';
@@ -110,21 +109,18 @@ async function getAllCredentialViews(authorizationServerState: AuthorizationServ
 	if (!authorizationServerState.authorization_details) {
 		return [];
 	}
-	return (await Promise.all(authorizationServerState.authorization_details.map(async (ad) => {
-		let credentialIssuerURL = config.url; // default issuer
-		if (ad.locations && ad.locations.length > 0) {
-			credentialIssuerURL = ad?.locations[0];
-		}
 
+	console.log("Credential issuer id = ", authorizationServerState.credential_issuer_identifier)
+	return (await Promise.all(authorizationServerState.authorization_details.map(async (ad) => {
 		try {
-			const credentialSupported = (await axios.get(credentialIssuerURL + "/.well-known/openid-credential-issuer"))
+			const credentialSupported = (await axios.get(authorizationServerState.credential_issuer_identifier + "/.well-known/openid-credential-issuer"))
 			.data
 			.credentials_supported
 			.filter((cs: any) => 
 				ad.format == cs.format && _.isEqual(ad.types, cs.types)
 			)[0] as CredentialSupported;
 
-			const { data: { credential_view } } = await axios.post(credentialIssuerURL + "/profile", {
+			const { data: { credential_view } } = await axios.post(authorizationServerState.credential_issuer_identifier + "/profile", {
 				authorization_server_state: AuthorizationServerState.serialize(authorizationServerState),
 				types: credentialSupported.types
 			});

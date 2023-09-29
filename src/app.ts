@@ -20,6 +20,8 @@ import { CONSENT_ENTRYPOINT } from './authorization/constants';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
 import { CredentialIssuersConfiguration } from './services/interfaces';
 import { TYPES } from './services/types';
+import session from 'express-session';
+
 
 initDataSource();
 
@@ -38,6 +40,7 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.static(path.join(__dirname, '../../public')));
 
 app.use(cookieParser());
+app.use(session({ secret: config.appSecret, cookie: { maxAge: 60000 }}))
 
 
 app.use(bodyParser.urlencoded({ extended: true })); // support url encoded bodies
@@ -89,6 +92,8 @@ app.get('/init', async (_req, res) => {
 
 
 app.get('/', async (req: Request, res: Response) => {
+	
+	req.session.authenticationChain = {};
 	return res.render('index', {
 		title: "Index",
 		lang: req.lang,

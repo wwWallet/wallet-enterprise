@@ -176,6 +176,11 @@ export class CredentialIssuer {
 	 */
 	private async returnSingleCredential(userSession: AuthorizationServerState, _access_token: string, credentialRequest: CredentialRequestBody): Promise<{ acceptance_token?: string, credential?: any, format?: string }> {
 		console.log("Credential request = ", credentialRequest)
+		// incorrect credential issuer
+		if (userSession.credential_issuer_identifier !== this.credentialIssuerIdentifier) {
+			throw new Error('Invalid credential issuer');
+		}
+		
 		let body: CredentialRequestBody;
 		try {
 			body = credentialRequestBodySchema.parse(credentialRequest);
@@ -248,6 +253,10 @@ export class CredentialIssuer {
 	async getProfile(req: Request, res: Response) {
 		
 		const authorization_server_state = AuthorizationServerState.deserialize(req.body.authorization_server_state);
+		// incorrect credential issuer
+		if (authorization_server_state.credential_issuer_identifier !== this.credentialIssuerIdentifier) {
+			return res.send({});
+		}
 		const types = req.body.types;
 		const authorizationDetails = authorization_server_state.authorization_details;
 		console.log("Authorization details = ", authorization_server_state.authorization_details)
