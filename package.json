@@ -15,7 +15,7 @@
   "author": "",
   "description": "",
   "dependencies": {
-    "@gunet/ssi-sdk": "^1.0.1",
+    "@gunet/ssi-sdk": "^1.0.3",
     "@transmute/did-key-ed25519": "^0.3.0-unstable.10",
     "ajv": "^8.11.0",
     "axios": "^0.27.2",
