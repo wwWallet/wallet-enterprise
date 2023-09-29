@@ -1,0 +1,30 @@
+extends ../layout.pug
+block layout-content
+
+	form#confirmInfo(name="proceed" method="POST")
+		.personal-container
+			h2 #{locale.personalInfo.title}
+			p #{locale.personalInfo.subtitle}
+			table.info-table.striped
+				tbody
+					tr
+						td #[strong #{locale.personalInfo.firstName}]
+						td CHRISTOS
+					tr
+						td #[strong #{locale.personalInfo.lastName}]
+						td DOKIMASTIKOS
+					tr
+						td #[strong #{locale.personalInfo.ssn}]
+						td #{info.ssn}
+					tr
+						td #[strong #{locale.personalInfo.taxisId}]
+						td #{info.taxis_id}
+			hr
+			p #{locale.personalInfo.acknowledgement}
+			
+			.action-group
+				button.Btn.Medium.gray #{locale.personalInfo.back}
+				button.Btn.Medium.Landing(id="mainBtn" name="proceed" type="submit") #{locale.personalInfo.proceed}
+
+	link(rel="stylesheet" href="/styles/styles.css")
+	link(rel="stylesheet" href="/styles/profile.css")

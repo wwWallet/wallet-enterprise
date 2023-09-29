@@ -1,4 +1,4 @@
-#Header .header {
+#Header .header, #Header .header-plain {
 	height: auto;
 	width: 100%;
 	background-color: var(--primary-color);
@@ -8,7 +8,9 @@
 	position: relative;
 	top: 0;
 }
-
+#Header .header-plain {
+	background-color: #162F44;
+}
 #Header .header-content {
 	font-family: var(--header-font);
 	font-size: 35px;

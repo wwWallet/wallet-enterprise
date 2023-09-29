@@ -3,11 +3,11 @@ block layout-content
 
 	form#IssuerSelection(name="issuer" method="POST")
 		.main-container
+			p(class="dropdownLabel") Choose an Issuing Institution
 			div(class='dropdownContainer')
-				p(class="dropdownLabel") Choose issuer
 				select(name="issuer" class='issuerDropdown')
-					option(value="uoa" selected) National and Kapodistrian University of Athens 
-					option(value="uwa") University of West Attica 
+					option(value="uoa" selected) National and Kapodistrian University of Athens
+					option(value="uwa") University of West Attica
 					option(value="aegean") University of the Aegean
 				button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
 
