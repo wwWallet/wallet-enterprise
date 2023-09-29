@@ -5,7 +5,7 @@ block layout-content
 		section.IssuerOrVerifierLayout
 			div.item.IssuerSection
 				.ItemLayout
-					i.fa.fa-id-card-o.LargeIcon
+					i(class=`fa ${fa_icon ? fa_icon : "fa-id-card-o"} LargeIcon`)
 					p #{locale.index.phrase}
 					button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
 					input(type="hidden" id="initiate_pre_authorized" name="initiate_pre_authorized" value="true")
