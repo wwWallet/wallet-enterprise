@@ -85,10 +85,10 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return;
 		}
 		const authorizationDetails = JSON.parse(params.authorization_details) as AuthorizationDetailsSchemaType;
-	
+		
 		// TODO: make sure that authorization details are correct and conform to the ones publish on the CredentialIssuerMetadata
 		// TODO: make sure that the client_id exists in the clients table
-	
+
 
 		const newAuthorizationServerState = new AuthorizationServerState();
 		newAuthorizationServerState.authorization_details = authorizationDetails;
@@ -99,6 +99,14 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		newAuthorizationServerState.redirect_uri = params.redirect_uri;
 		newAuthorizationServerState.scope = params.scope;
 		newAuthorizationServerState.grant_type = GrantType.AUTHORIZATION_CODE;
+
+		if (authorizationDetails[0] && authorizationDetails[0].locations 
+				&& authorizationDetails[0].locations[0]) {
+			newAuthorizationServerState.credential_issuer_identifier = authorizationDetails[0].locations[0];
+		}
+		else {
+			newAuthorizationServerState.credential_issuer_identifier = this.credentialIssuersConfiguration.defaultCredentialIssuerIdentifier();
+		}
 		
 		// if VP token auth is used, then use the verificationScopeName constant to verify the client
 		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
