@@ -7,7 +7,7 @@ import { TYPES } from "./types";
 import { SignJWT, importJWK, jwtVerify } from "jose";
 import { randomUUID } from "crypto";
 import base64url from "base64url";
-import { PresentationSubmission } from "@gunet/ssi-sdk";
+import { PresentationDefinitionType, PresentationSubmission } from "@gunet/ssi-sdk";
 import 'reflect-metadata';
 import { JSONPath } from "jsonpath-plus";
 import { ParamsDictionary } from "express-serve-static-core";
@@ -17,12 +17,14 @@ import { VerifiablePresentationEntity } from "../entities/VerifiablePresentation
 import AppDataSource from "../AppDataSource";
 import { verificationCallback } from "../configuration/verificationCallback";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
+import config from "../../config";
 
 
 
 type VerifierState = {
-	authorizationRequest: AuthorizationRequestQueryParamsSchemaType,
+	authorizationRequest: AuthorizationRequestQueryParamsSchemaType;
 	issuanceSessionID?: number;
+	presentation_definition?: PresentationDefinitionType;
 }
 
 const verifierStates = new Map<string, VerifierState>();
@@ -41,6 +43,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		// inject other verifier configurations
 		@inject(TYPES.FilesystemKeystoreService) private walletKeystoreService: WalletKeystore,
 	) {}
+
 
 	
 	metadataRequestHandler(_req: Request, _res: Response): Promise<void> {
@@ -64,11 +67,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		
 		const scopeList = scope.split(' ');
 
-		const verifierStateId = randomUUID();
 		const flowState: VerifierState = {
 			authorizationRequest: req.query as AuthorizationRequestQueryParamsSchemaType,
 			issuanceSessionID: userSessionIdToBindWith,
 		};
+
+		const verifierStateId = randomUUID();
 		const nonce = randomUUID();
 		nonces.set(nonce, verifierStateId);
 
@@ -85,7 +89,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			}
 		}
 		
-		// TODO: parse scope list to select the correct verifier configuration (presentation_definition profile) 
 		let payload = {
 			client_id: this.configurationService.getConfiguration().client_id,
 			response_type: responseTypeSetting,
@@ -104,9 +107,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		switch (responseTypeSetting) {
 		case "id_token":
 			payload = await this.addIDtokenRequestSpecificAttributes(payload);
-			break;
-		case "vp_token":
-			payload = await this.addVPtokenRequestSpecificAttributes(payload, scopeList);
 			break;
 		}
 
@@ -136,18 +136,67 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return payload;
 	}
 
-	private async addVPtokenRequestSpecificAttributes(payload: any, scopeList: string[]) {
-		for (const scopeName of scopeList) {
-			const found = this.configurationService.getPresentationDefinitions().filter(pd => pd.id == scopeName);
-			if (found.length > 0) {
-				const presentationDefinition = found[0];
-				payload = { ...payload, presentation_definition: JSON.stringify(presentationDefinition) };
+	private async addVPtokenRequestSpecificAttributes(verifierStateId: string, payload: any, presentation_definition_id: string) {
+		const found = this.configurationService.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id);
+		if (found.length > 0) {
+			const presentationDefinition = found[0];
+			const verifierState = verifierStates.get(verifierStateId);
+			if (verifierState) {
+				verifierStates.set(verifierStateId, { ...verifierState, presentation_definition: presentationDefinition })
+				payload = { ...payload, presentation_definition_uri: config.url + '/verification/definition?state=' + payload.state };
 				return payload;
 			}
 		}
-
+	}
+	
+	public async presentationDefinitionAccessHandler(req: Request, res: Response) {
+		const state = req.query.state as string;
+		if (state) {
+			const verifierState = verifierStates.get(state);
+			if (verifierState?.presentation_definition)
+				return res.send(verifierState?.presentation_definition);
+		}
+		return res.status(404).send({ msg: "not found" });
 	}
 
+	async generateAuthorizationRequestURL(presentation_definition_id: string): Promise<{ url: URL; }> {
+		const state = randomUUID();
+		const verifierStateId = randomUUID();
+		const nonce = randomUUID();
+		nonces.set(nonce, verifierStateId);
+		let payload = {
+			client_id: this.configurationService.getConfiguration().client_id,
+			response_type: "vp_token",
+			response_mode: "direct_post",
+			redirect_uri: this.configurationService.getConfiguration().redirect_uri,
+			response_uri: this.configurationService.getConfiguration().redirect_uri,
+			scope: "openid",
+			nonce: nonce,
+			iss: this.configurationService.getConfiguration().client_id,
+			state,
+		};
+
+		payload = await this.addVPtokenRequestSpecificAttributes(verifierStateId, payload, presentation_definition_id);
+
+		const requestJwt = new SignJWT(payload)
+			.setExpirationTime('30s');
+
+		const { jws } = await this.walletKeystoreService.signJwt(
+			this.configurationService.getConfiguration().authorizationServerWalletIdentifier,
+			requestJwt,
+			"JWT"
+		);
+
+		const requestJwtSigned = jws;
+		const redirectParameters = {
+			...payload,
+			request: requestJwtSigned,
+		};
+
+		const searchParams = new URLSearchParams(redirectParameters);
+		const authorizationRequestURL = new URL("openid://cb" + "?" + searchParams.toString());
+		return { url: authorizationRequestURL };
+	}
 
 
 	async responseHandler(req: Request, res: Response): Promise<{ verifierStateId: string, bindedUserSessionId?: number }> {

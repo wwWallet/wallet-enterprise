@@ -31,7 +31,9 @@ export class ExpressAppService {
 	public configure(app: Application) {
 		// exposed in any mode
 		app.post('/verification/direct_post', this.directPostEndpoint());
+		app.get('/verification/definition', async (req, res) => { this.presentationsReceivingService.presentationDefinitionAccessHandler(req, res); });
 
+		
 		if (applicationMode == ApplicationModeType.VERIFIER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER) {
 			app.get('/verification/authorize', async (req, res) => {
 				await clearState(res);

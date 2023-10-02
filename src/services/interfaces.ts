@@ -34,6 +34,7 @@ export interface OpenidForPresentationsReceivingInterface {
 	
 	authorizationRequestHandler(req: Request, res: Response, userSessionIdToBindWith?: number): Promise<void>;
 
+	generateAuthorizationRequestURL(presentation_definition_id: string): Promise<{ url: URL }>;
 	/**
 	 * @throws
 	 * @param req 

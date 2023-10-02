@@ -1,0 +1,8 @@
+extends ../layout.pug
+block layout-content
+
+	.container
+		.centered-layout
+			h1 Verification
+			img(src=authorizationRequestQR width=500 height=500)
+			button.Btn.Medium(onclick=`window.location.href = ${authorizationRequestURL}`) Open in wallet

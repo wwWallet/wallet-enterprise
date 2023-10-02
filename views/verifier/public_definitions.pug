@@ -1,0 +1,11 @@
+extends ../layout.pug
+block layout-content
+	.container
+		h1 Presentation Definitions
+		.card-container
+			for definition in presentationDefinitions
+				.card
+					.card-title #{definition.id}
+					p.card-text Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla nec ex sed urna ultrices consectetur.
+					.card-buttons
+						button.btn.btn-primary(onclick=`window.location.href = "/verifier/public/definitions/presentation-request/${definition.id}"`) Present

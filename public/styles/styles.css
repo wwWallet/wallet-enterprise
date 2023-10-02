@@ -286,3 +286,37 @@ section.layout {
 .container {
 	margin: 60px 30px;
 }
+
+/* public presentation */
+.options-container {
+	display: flex;
+	align-items: center;
+	justify-content: space-around;
+	flex-wrap: wrap;
+	background-color: #000!important;
+}
+
+.option-card {
+	background-color: red!important;
+	padding: 20px;
+	border-radius: 8px;
+	box-shadow: 0px 0px 5px 0px #0000001a;
+	width: 45%;
+	text-align: center;
+	margin: 10px 0; 
+}
+
+.or {
+	display: inline-block;
+	margin: 0 20px;
+}
+
+@media (max-width: 768px) {
+	.option-card, .or {
+		width: 100%;
+	}
+	.or {
+		margin: 20px 0;
+		text-align: center;
+	}
+}

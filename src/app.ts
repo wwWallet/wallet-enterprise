@@ -14,14 +14,15 @@ import { authorizationServerMetadataConfiguration } from './authorizationService
 import { CredentialReceivingService } from './services/CredentialReceivingService';
 import { ExpressAppService } from './services/ExpressAppService';
 import { authorizationServerStateMiddleware, createNewAuthorizationServerState, storeAuthorizationServerStateIdToWebClient } from './middlewares/authorizationServerState.middleware';
-import { verifierRouter } from './verifier/router';
-import locale from './configuration/locale';
 import { CONSENT_ENTRYPOINT } from './authorization/constants';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
 import { CredentialIssuersConfiguration } from './services/interfaces';
 import { TYPES } from './services/types';
 import session from 'express-session';
 
+import { verifierPanelRouter } from './verifier/verifierPanelRouter';
+import locale from './configuration/locale';
+import { verifierRouter } from './verifier/verifierRouter';
 
 initDataSource();
 
@@ -67,8 +68,8 @@ app.use(LanguageMiddleware);
 
 
 
-app.use('/verifier-panel', verifierRouter);
-
+app.use('/verifier-panel', verifierPanelRouter);
+app.use('/verifier', verifierRouter);
 
 app.use(authorizationServerStateMiddleware);
 
@@ -86,8 +87,6 @@ app.get('/init', async (_req, res) => {
 	credentialReceivingService.sendAuthorizationRequest();
 	res.send({})
 })
-
-
 
 
 
