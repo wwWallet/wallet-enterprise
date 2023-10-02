@@ -71,6 +71,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	}
 
 	async authorizationRequestHandler(req: Request, res: Response): Promise<void> {
+		req.session.authenticationChain = {};
 		const params = authorizationRequestQueryParamsSchema.parse(req.query);
 		if (!params.authorization_details) {
 			res.status(400).send({ error: "Authorization Details is missing" })
