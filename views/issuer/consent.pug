@@ -12,6 +12,11 @@ block layout-content
 				section.consent-description Inspect your credentials by clicking on them and authorize the sharing of them with the client
 
 				section.MainLayout
+					dialog#qrDialog
+						img#qrImage(src="", alt="QR Code")
+						.centered
+							button.Btn.Small(type="button" id="closeDialogBtn") Close
+
 					section.CredentialsArea
 						//- form.diplomas(name='selectDiplomas' method="post")
 						for credential in credentialViewList
@@ -35,8 +40,7 @@ block layout-content
 													input(type="checkbox" class="scopeCheckbox" id=row.name name=row.name value=row.value checked)
 									br
 									if grant_type != "authorization_code"
-										img(src=`${credential.credentialOfferQR}` height=250 width=250)
-										button.Btn.Small(type='button' onclick=`window.location.href = '${credential.credentialOfferURL}'`) Get
+										button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}')`) Scan QR
 				.GetMultiBtnArea
 					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
 					if grant_type == "authorization_code"
@@ -63,3 +67,4 @@ block layout-content
 	link(rel="stylesheet" href="/styles/consent.css")
 	link(rel="stylesheet" href="/styles/inspect.css")
 	script(src='/js/consent.js')
+	script(src='/js/qr-popup.js')
