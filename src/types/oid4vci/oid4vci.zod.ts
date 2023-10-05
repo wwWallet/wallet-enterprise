@@ -50,7 +50,7 @@ export const tokenRequestBodySchemaForAuthorizationCodeGrant = z.object({
 export const tokenRequestBodySchemaForPreAuthorizedCodeGrant = z.object({
 	grant_type: z.string(),
 	"pre-authorized_code": z.string(),
-	user_pin: z.string(),
+	user_pin: z.string().optional(),
 })
 
 
@@ -74,7 +74,7 @@ export const credentialResponseSchema = z.object({
 
 export const credentialRequestBodySchema = z.object({
 	format: z.nativeEnum(VerifiableCredentialFormat),
-	types: z.array(z.string()),
+	types: z.array(z.string()).optional(),
 	proof: z.object({
 		proof_type: z.nativeEnum(ProofType),
 		jwt: z.string()

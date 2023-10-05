@@ -17,7 +17,7 @@ export class VerifiablePresentationEntity {
 	presentation_definition_id?: string; // same with scope
 
 
-	@Column({ name: "raw_presentation", type: "blob", nullable: true })
+	@Column({ name: "raw_presentation", type: "longtext", nullable: true })
 	// @ts-ignore
 	private _raw_presentation?: Buffer;
 	set raw_presentation(value: string | null) {
