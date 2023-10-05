@@ -13,8 +13,9 @@ block layout-content
 
 				section.MainLayout
 					dialog#qrDialog
-						img#qrImage(src="", alt="QR Code")
+						img#qrImage(src="" alt="QR Code")
 						.centered
+							button#qrURL.Btn.Small Open with wallet
 							button.Btn.Small(type="button" id="closeDialogBtn") Close
 
 					section.CredentialsArea
@@ -40,7 +41,7 @@ block layout-content
 													input(type="checkbox" class="scopeCheckbox" id=row.name name=row.name value=row.value checked)
 									br
 									if grant_type != "authorization_code"
-										button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}')`) Scan QR
+										button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}', '${credential.credentialOfferURL}')`) Get credential
 				.GetMultiBtnArea
 					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
 					if grant_type == "authorization_code"

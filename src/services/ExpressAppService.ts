@@ -31,8 +31,7 @@ export class ExpressAppService {
 	public configure(app: Application) {
 		// exposed in any mode
 		app.post('/verification/direct_post', this.directPostEndpoint());
-		app.get('/verification/definition', async (req, res) => { this.presentationsReceivingService.presentationDefinitionAccessHandler(req, res); });
-
+		app.get('/verification/definition', async (req, res) => { this.presentationsReceivingService.getPresentationDefinitionHandler(req, res); });
 		
 		if (applicationMode == ApplicationModeType.VERIFIER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER) {
 			app.get('/verification/authorize', async (req, res) => {
@@ -62,6 +61,14 @@ export class ExpressAppService {
 				res.setHeader("Location", url);
 				// Perform the actual redirect
 				res.end();
+			};
+
+			//@ts-ignore
+			(res.send as any) = (payload: string): void => {
+				redirected = true;
+				res.status(200);
+				res.end();
+				// Perform the actual redirect
 			};
 		
 			

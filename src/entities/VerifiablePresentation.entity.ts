@@ -66,4 +66,7 @@ export class VerifiablePresentationEntity {
 	@Column({ name: "status", type: "boolean", nullable: true })
 	status?: boolean;
 
+
+	@Column({ name: "state", type: "varchar", nullable: true })
+	state?: string;
 }

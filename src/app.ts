@@ -128,8 +128,8 @@ app.post('/', async (req, res) => {
 		await storeAuthorizationServerStateIdToWebClient(res, authorizationServerState.id);
 		return res.redirect(CONSENT_ENTRYPOINT);
 	}
-	else {
-		return res.redirect('/');
+	else if (req.body.verifier == "true") {
+		return res.redirect('/verifier/public/definitions');
 	}
 
 })

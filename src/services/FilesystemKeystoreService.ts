@@ -33,12 +33,12 @@ const KeyIdentifierKeySchema = z.object({
 
 @injectable()
 export class FilesystemKeystoreService implements WalletKeystore {
-
+	private readonly algorithm: SigningAlgorithm = SigningAlgorithm.EdDSA;
+	// this map is indexed using the walletIdentifier
+	private walletIdentifiers: Map<string, Identifier> = new Map<string, Identifier>()
+	
 	constructor(
-		private readonly algorithm: SigningAlgorithm = SigningAlgorithm.ES256,
 
-		// this map is indexed using the walletIdentifier
-		private walletIdentifiers: Map<string, Identifier> = new Map<string, Identifier>()
 	) { 
 		this.loadWalletsFromFilesystem();
 	}

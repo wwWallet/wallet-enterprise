@@ -23,9 +23,35 @@ verifierRouter.get('/public/definitions', async (req, res) => {
 })
 
 
+verifierRouter.get('/success', async (req, res) => {
+	return res.render('verifier/success.pug', {
+		lang: req.lang,
+		locale: locale[req.lang],
+	})
+})
 
-verifierRouter.get('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
+
+
+
+verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
 	const presentation_definition_id = req.params.presentation_definition_id;
+	if (req.body.state && req.method == "POST") {
+		console.log("Got state = ", req.body.state)
+		const status = await openidForPresentationReceivingService.getPresentationStatus(req.body.state as string);
+		if (status) {
+			return res.redirect('/verifier/success');
+		}
+		else {
+			return res.render('verifier/QR.pug', {
+				state: req.body.state,
+				authorizationRequestURL: req.body.authorizationRequestURL,
+				authorizationRequestQR: req.body.authorizationRequestQR,
+				lang: req.lang,
+				locale: locale[req.lang],
+			})		
+		}
+	}
+
 	if (!presentation_definition_id) {
 		return res.render('error', {
 			msg: "No presentation definition was selected",
@@ -58,11 +84,12 @@ verifierRouter.get('/public/definitions/presentation-request/:presentation_defin
 		});
 	}) as string;
 
-
+	console.log("URL = ", url)
 	return res.render('verifier/QR.pug', {
-		lang: req.lang,
 		authorizationRequestURL: url.toString(),
 		authorizationRequestQR,
+		state: url.searchParams.get('state'),
+		lang: req.lang,
 		locale: locale[req.lang],
 	})
 })

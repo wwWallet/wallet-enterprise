@@ -10,17 +10,20 @@ export const authorizationServerMetadataConfiguration = {
 	"response_modes_supported": ["query"],
 	"grant_types_supported": ["authorization_code", "pre-authorized_code"],
 	"subject_types_supported": ["public"],
-	"id_token_signing_alg_values_supported": ["ES256"],
-	"request_object_signing_alg_values_supported": ["ES256"],
+	"id_token_signing_alg_values_supported": ["ES256", "EdDSA"],
+	"request_object_signing_alg_values_supported": ["ES256", "EdDSA"],
 	"request_parameter_supported": true,
 	"request_uri_parameter_supported": true,
 	"token_endpoint_auth_methods_supported": ["private_key_jwt"],
 	"vp_formats_supported": {
 		"jwt_vp": {
-			"alg_values_supported": ["ES256"]
+			"alg_values_supported": ["ES256", "EdDSA"]
 		},
 		"jwt_vc": {
-			"alg_values_supported": ["ES256"]
+			"alg_values_supported": ["ES256", "EdDSA"]
+		},
+		"jwt_vc_json": {
+			"alg_values_supported": ["ES256", "EdDSA"]
 		}
 	},
 	"subject_syntax_types_supported": ["did:key"],

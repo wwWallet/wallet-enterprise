@@ -65,8 +65,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			}
 		};
 
-		const credentialOfferURL = new URL("openid-credential-offer://credential_offer");
+		const credentialOfferURL = new URL("openid-credential-offer://");
 		credentialOfferURL.searchParams.append('credential_offer', JSON.stringify(credentialOffer));
+		console.log("Credential offer = ", credentialOfferURL)
 		return { url: credentialOfferURL };
 	}
 
@@ -191,13 +192,14 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 
 	async tokenRequestHandler(req: Request, res: Response): Promise<void> {
+		console.log("URL = ", req.url)
 		console.log("Body ", req.body)
 
 		let body = null;
 		let response = null;
 		if (!req.body.grant_type) {
 			console.log("No grant type was found");
-			res.status(500).send({});
+			res.status(400).send({ error: "No grant type was found"});
 			return;
 		}
 	
@@ -226,7 +228,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			}
 			catch (err) {
 				console.error("Error = ", err)
-				res.status(500).json({ error: "Failed"})
+				res.status(400).json({ error: JSON.stringify(err) })
 				return
 			}
 			break;

@@ -31,10 +31,12 @@ export interface OpenidForCredentialIssuingAuthorizationServerInterface {
 export interface OpenidForPresentationsReceivingInterface {
 	metadataRequestHandler(req: Request, res: Response): Promise<void>;
 
-	
 	authorizationRequestHandler(req: Request, res: Response, userSessionIdToBindWith?: number): Promise<void>;
 
 	generateAuthorizationRequestURL(presentation_definition_id: string): Promise<{ url: URL }>;
+	getPresentationDefinitionHandler(req: Request, res: Response): Promise<void>;
+	getPresentationStatus(state: string): Promise<boolean>;
+	
 	/**
 	 * @throws
 	 * @param req 

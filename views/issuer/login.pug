@@ -11,9 +11,9 @@ block layout-content
 						input#csrf-token(type="hidden" name="csrf-token" value="")
 
 						.input-wrap.item
-							input.input-field#username(type='text' name='username' placeholder='Username')
+							input.input-field#username(type='text' name='username' value="user" placeholder='Username')
 						.input-wrap.item
-							input.input-field#password(type='password' name='password' placeholder='Password')
+							input.input-field#password(type='password' name='password' value="secret" placeholder='Password')
 
 						p.invalid-feedback#invalid-username #{locale.login.error.emptyUsername}
 						p.invalid-feedback#invalid-password #{locale.login.error.emptyPassword}
@@ -23,7 +23,6 @@ block layout-content
 						.login-flex
 							button.Btn.Large
 								| #{locale.login.btnText}
-
 	link(rel="stylesheet" href="/styles/login.css")
 	script(src="/js/alert.js")
 	script(src="/js/login.js")
