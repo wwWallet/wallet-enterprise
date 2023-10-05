@@ -6,7 +6,8 @@ block layout-content
 			div.item.IssuerSection
 				.ItemLayout
 					i(class=`fa ${locale.landingPageFaClass ? locale.landingPageFaClass : "fa-id-card-o"} LargeIcon`)
-					p #{locale.index.phrase}
+					p.title #{locale.index.phrase}
+					p.text-area #{locale.index.subtitle}
 					button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
 					input(type="hidden" id="initiate_pre_authorized" name="initiate_pre_authorized" value="true")
 			//- div.item.VerifierSection
@@ -18,6 +19,8 @@ block layout-content
 		.container
 			h1 #{locale.index.heading}
 			p #{locale.index.paragraph}
+			p #{locale.index.paragraph2}
+			p #{locale.index.paragraph3}
 			.demo-text #{locale.index.demo_text}
 
 	block footer

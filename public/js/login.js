@@ -36,4 +36,11 @@ document.forms.login.onsubmit = function(event) {
 		popupAlert('invalid-password');
 		return;
 	}
+	if (username !== 'user' || password !== "secret") {
+		event.preventDefault();
+		console.log('invalid credentials');
+		popupAlert('invalid-credentials');
+		return;
+	}
+
 }

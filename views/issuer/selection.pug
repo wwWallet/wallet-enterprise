@@ -3,10 +3,12 @@ block layout-content
 
 	form#IssuerSelection(name="issuer" method="POST")
 		.main-container
-			p(class="dropdownLabel") Choose an Issuing Institution
+			p(class="dropdownLabel") Choose an Institution
 			div(class='dropdownContainer')
+				p.label Select the Insitution by which you have been awarded with a University Degree:
 				select(name="issuer" class='issuerDropdown')
-					option(value="uoa" selected) National and Kapodistrian University of Athens
+					option(value="" disabled selected) Select an Institution
+					option(value="uoa") National and Kapodistrian University of Athens
 					option(value="uniwa") University of West Attica
 					option(value="aegean") University of the Aegean
 					option(value="eap") Hellenic Open University
@@ -15,8 +17,13 @@ block layout-content
 					option(value="upatras") University of Patras
 					option(value="aueb") Athens University of Economics and Business
 					option(value="ihu") International Hellenic University
+				p.invalid-feedback#invalid-issuer You have not been awarded by this Institution
+				p.invalid-feedback#no-issuer You have to select an Institution
 				button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
-
+	block footer
+	include ../footer.pug
 
 	link(rel="stylesheet" href="/styles/styles.css")
 	link(rel="stylesheet" href="/styles/selection.css")
+	script(src="/js/alert.js")
+	script(src="/js/select-issuer.js")

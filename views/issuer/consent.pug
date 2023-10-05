@@ -6,10 +6,10 @@ block layout-content
 
 			section.layout
 				section.container-header
-					h1 Consent
+					p Consent
 					if grant_type == "authorization_code"
 						button.Btn.Small.SelectMultiBtn(type="button") Select
-				section.consent-description Inspect your credentials by clicking on them and authorize the sharing of them with the client
+				section.consent-description The following credentials have been found. Please review their details and select the one you want to get.
 
 				section.MainLayout
 					dialog#qrDialog

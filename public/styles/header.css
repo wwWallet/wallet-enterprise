@@ -19,9 +19,11 @@
 	font-weight: 600;
 	padding-left: 1%;
 	text-align: left;
-	width: 70%;
-	padding-top: 45px;
-	padding-bottom: 20px;
+	/* width: 70%; */
+	width: 100%;
+	display: flex;
+	padding-top: 35px;
+	/* padding-bottom: 15px; */
 }
 
 #Header .header-content a{
@@ -43,6 +45,7 @@
 
 .logo-text {
 	font-size: 24px;
+	color: white;
 }
 
 .logo-split {
@@ -56,6 +59,13 @@
 	top: 6px;
 	height: 40px;
 	margin-left: 10px;
+}
+
+#img-gunet {
+	margin-left: auto;
+	position: relative;
+	left: 40;
+	top: -20;
 }
 
 .header-border {
