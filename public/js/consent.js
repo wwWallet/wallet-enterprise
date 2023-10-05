@@ -1,3 +1,13 @@
+setTimeout(() => {
+	const spinnerContainer = document.getElementById('spinner-container');
+	const mainContainer = document.getElementsByClassName('layout')[0];
+
+	if (spinnerContainer && mainContainer) {
+		spinnerContainer.style.display = 'none'; // Hide the spinner
+		mainContainer.style.display = 'block'; // Show the main content
+	}
+}, 1500); // Hide the spinner after 2000 milliseconds (2 seconds)
+
 const layout = document.querySelector('.layout');
 
 const cards = document.querySelectorAll('.credential-card');
