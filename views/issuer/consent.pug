@@ -12,9 +12,9 @@ block layout-content
 
 			section.layout(style="display: none;")
 				section.container-header
+					section.consent-description The following credentials have been found. Please review their details and select the one you want to receive.
 					if grant_type == "authorization_code"
-						button.Btn.Small.SelectMultiBtn(type="button") Select
-				section.consent-description The following credentials have been found. Please review their details and select the one you want to receive.
+						button.Btn.Small.SelectMultiBtn(type="button" id="selectVc") Select
 
 				section.MainLayout
 					dialog#qrDialog
