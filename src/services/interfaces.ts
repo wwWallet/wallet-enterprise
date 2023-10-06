@@ -35,7 +35,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 	generateAuthorizationRequestURL(presentation_definition_id: string): Promise<{ url: URL }>;
 	getPresentationDefinitionHandler(req: Request, res: Response): Promise<void>;
-	getPresentationStatus(state: string): Promise<boolean>;
+	getPresentationByState(state: string): Promise<{ status: boolean, presentation?: string }>;
 	
 	/**
 	 * @throws

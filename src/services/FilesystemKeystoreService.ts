@@ -104,6 +104,7 @@ export class FilesystemKeystoreService implements WalletKeystore {
 			throw new Error("Invalid identifier instance");
 		}
 
+		//@ts-ignore
 		let kid, iss, privateKey, privateKeyJwk;
 		
 		if (identifier instanceof EbsiLegalPersonMethodIdentifier) {
@@ -127,7 +128,7 @@ export class FilesystemKeystoreService implements WalletKeystore {
 				kid: kid as string,
 				typ: "JWT"
 			})
-			.setIssuer(iss as string)
+			// .setIssuer(iss as string)
 			.sign(privateKey);
 		return { credential };
 	}

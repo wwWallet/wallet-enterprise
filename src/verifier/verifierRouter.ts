@@ -7,6 +7,7 @@ import { appContainer } from "../services/inversify.config";
 import { TYPES } from "../services/types";
 import locale from "../configuration/locale";
 import * as qrcode from 'qrcode';
+import base64url from "base64url";
 
 const verifierRouter = Router();
 // const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
@@ -24,9 +25,28 @@ verifierRouter.get('/public/definitions', async (req, res) => {
 
 
 verifierRouter.get('/success', async (req, res) => {
+	const state = req.query.state;
+	const {status, presentation} = await openidForPresentationReceivingService.getPresentationByState(state as string);
+	if (!presentation) {
+		return res.render('error.pug', {
+			msg: "Failed to get presentation",
+			code: 0,
+			lang: req.lang,
+			locale: locale[req.lang],
+		})
+	}
+	
+	const presentationPayload = JSON.parse(base64url.decode(presentation.split('.')[1])) as any;
+	const credentials = presentationPayload.vp.verifiableCredential.map((vcString: any) => {
+		return JSON.parse(base64url.decode(vcString.split('.')[1]));
+	}).map((credential: any) => credential.vc);
+
+	console.log("Credential payloads = ", credentials)
 	return res.render('verifier/success.pug', {
 		lang: req.lang,
 		locale: locale[req.lang],
+		status: status,
+		credentialPayloads: credentials
 	})
 })
 
@@ -37,9 +57,9 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 	const presentation_definition_id = req.params.presentation_definition_id;
 	if (req.body.state && req.method == "POST") {
 		console.log("Got state = ", req.body.state)
-		const status = await openidForPresentationReceivingService.getPresentationStatus(req.body.state as string);
+		const { status } = await openidForPresentationReceivingService.getPresentationByState(req.body.state as string);
 		if (status) {
-			return res.redirect('/verifier/success');
+			return res.redirect(`/verifier/success?state=${req.body.state}`);
 		}
 		else {
 			return res.render('verifier/QR.pug', {
