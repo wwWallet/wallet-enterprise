@@ -168,6 +168,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		nonces.set(nonce, stateId);
 		let payload = {
 			client_id: this.configurationService.getConfiguration().client_id,
+			client_id_scheme: "redirect_uri",
 			response_type: "vp_token",
 			response_mode: "direct_post",
 			redirect_uri: this.configurationService.getConfiguration().redirect_uri,
