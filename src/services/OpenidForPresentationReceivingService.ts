@@ -7,7 +7,7 @@ import { TYPES } from "./types";
 import { SignJWT, importJWK, jwtVerify } from "jose";
 import { randomUUID } from "crypto";
 import base64url from "base64url";
-import { PresentationSubmission } from "@gunet/ssi-sdk";
+import { PresentationSubmission } from "@wwWallet/ssi-sdk";
 import 'reflect-metadata';
 import { JSONPath } from "jsonpath-plus";
 import { ParamsDictionary } from "express-serve-static-core";

@@ -1,4 +1,4 @@
-import { PresentationDefinitionType, SignVerifiableCredentialJWT } from "@gunet/ssi-sdk";
+import { PresentationDefinitionType, SignVerifiableCredentialJWT } from "@wwWallet/ssi-sdk";
 import { JWK, SignJWT } from "jose";
 import { Request , Response} from 'express'
 import { OpenidForPresentationsConfiguration } from "./types/OpenidForPresentationsConfiguration.type";

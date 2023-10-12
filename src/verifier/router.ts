@@ -9,7 +9,7 @@ import { VerifierConfigurationInterface } from "../services/interfaces";
 import base64url from "base64url";
 import locale from "../configuration/locale";
 import { VerifierConfigurationService } from "../configuration/verifier/VerifierConfigurationService";
-import { PresentationSubmission } from "@gunet/ssi-sdk";
+import { PresentationSubmission } from "@wwWallet/ssi-sdk";
 import { JSONPath } from "jsonpath-plus";
 
 
