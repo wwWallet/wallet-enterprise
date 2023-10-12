@@ -1,6 +1,6 @@
 import { injectable } from "inversify";
 import { WalletKeystore } from "./interfaces";
-import { SignVerifiableCredentialJWT } from "@wwWallet/ssi-sdk";
+import { SignVerifiableCredentialJWT } from "@wwwallet/ssi-sdk";
 import fs from 'fs';
 import path from "path";
 import { DidEbsiKeyTypeObject, DidKeyKeyTypeObject, EbsiLegalPersonMethodIdentifier, Identifier, KeyMethodIdentifier, SigningAlgorithm } from "../lib/Identifier";
