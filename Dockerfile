@@ -3,7 +3,7 @@ FROM node:16-bullseye-slim AS builder
 WORKDIR /home/node/app
 
 COPY . .
-RUN yarn cache clean && yarn --frozen-lockfile && yarn build
+RUN yarn cache clean && yarn install && yarn build
 
 # Production stage
 FROM node:16-bullseye-slim AS production

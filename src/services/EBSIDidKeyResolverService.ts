@@ -2,7 +2,7 @@ import { JWK } from "jose";
 import { DidKeyResolverService } from "./interfaces";
 import { injectable } from "inversify";
 import 'reflect-metadata';
-import { didKeyPublicKeyAdapter } from '@gunet/ssi-sdk';
+import { didKeyPublicKeyAdapter } from '@wwwallet/ssi-sdk';
 
 @injectable()
 export class EBSIDidKeyResolverService implements DidKeyResolverService {
