@@ -111,8 +111,7 @@ section.MainLayout {
 	align-items: center;
 	flex-direction: column;
 	border-radius: 3.18mm;
-	/* width: clamp(120px, 85.6mm, 80vw); */
-	width: 470px;
+	width: clamp(120px, 85.6mm, 80vw);
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease-out; /* Set the animation duration and easing */
