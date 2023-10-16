@@ -184,9 +184,6 @@ export class CredentialIssuer {
 		let body: CredentialRequestBody;
 		try {
 			body = credentialRequestBodySchema.parse(credentialRequest);
-			if (!body.types) { // To be removed
-				body.types = ["VerifiableCredential", "VerifiableAttestation", "Bachelor","urn:credential:ediplomas:blueprint:46"];
-			}
 		}
 		catch(e) {
 			console.log("invalid request body schema");
