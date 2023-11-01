@@ -8,6 +8,7 @@ import { TYPES } from "../services/types";
 import locale from "../configuration/locale";
 import * as qrcode from 'qrcode';
 import base64url from "base64url";
+import config from "../../config";
 
 const verifierRouter = Router();
 // const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
@@ -68,7 +69,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 				authorizationRequestQR: req.body.authorizationRequestQR,
 				lang: req.lang,
 				locale: locale[req.lang],
-			})		
+			})
 		}
 	}
 
@@ -91,7 +92,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		});
 	}
 
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL(presentationDefinition.id);
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL(presentationDefinition.id, config.url + "/verifier/success");	
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(url.toString(), {
 			margin: 1,

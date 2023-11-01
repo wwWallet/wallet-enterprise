@@ -15,26 +15,29 @@ export interface WalletKeystore {
 }
 
 export interface OpenidForCredentialIssuingAuthorizationServerInterface {
-	generateCredentialOfferURL(req: Request, credentialSupported: CredentialSupported): Promise<{ url: URL }>;
-	metadataRequestHandler(req: Request, res: Response): Promise<void>;
-	authorizationRequestHandler(req: Request, res: Response): Promise<void>;
+	generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported): Promise<{ url: URL }>;
+	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	authorizationRequestHandler(rctx: { req: Request, res: Response }): Promise<void>;
+	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 
-	sendAuthorizationResponse(req: Request, res: Response, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void>;
+	sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void>;
 
-	tokenRequestHandler(req: Request, res: Response): Promise<void>;
-	// credentialRequestHandler(req: Request, res: Response): Promise<void>;
-	// batchCredentialRequestHandler(req: Request, res: Response): Promise<void>;
+	tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	// credentialRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	// batchCredentialRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 }
 
 
 
 export interface OpenidForPresentationsReceivingInterface {
-	metadataRequestHandler(req: Request, res: Response): Promise<void>;
+	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 
-	authorizationRequestHandler(req: Request, res: Response, userSessionIdToBindWith?: number): Promise<void>;
+	
+	authorizationRequestHandler(ctx: { req: Request, res: Response }, userSessionIdToBindWith?: number): Promise<void>;
 
-	generateAuthorizationRequestURL(presentation_definition_id: string): Promise<{ url: URL }>;
-	getPresentationDefinitionHandler(req: Request, res: Response): Promise<void>;
+	generateAuthorizationRequestURL(presentation_definition_id: string, directPostEndpoint?: string): Promise<{ url: URL; stateId: string }>;
+	getPresentationDefinitionHandler(ctx: { req: Request, res: Response }): Promise<void>;
 	getPresentationByState(state: string): Promise<{ status: boolean, presentation?: string }>;
 	
 	/**
@@ -42,9 +45,9 @@ export interface OpenidForPresentationsReceivingInterface {
 	 * @param req 
 	 * @param res 
 	 */
-	responseHandler(req: Request, res: Response): Promise<{ verifierStateId: string, bindedUserSessionId?: number }>;
+	responseHandler(ctx: { req: Request, res: Response }): Promise<{ verifierStateId: string, bindedUserSessionId?: number, vp_token?: string }>;
 
-	sendAuthorizationResponse(req: Request, res: Response, verifierStateId: string): Promise<void>;
+	sendAuthorizationResponse(ctx: { req: Request, res: Response }, verifierStateId: string): Promise<void>;
 
 }
 

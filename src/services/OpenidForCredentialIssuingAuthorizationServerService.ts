@@ -13,7 +13,6 @@ import { preAuthorizedCodeGrantTokenEndpoint } from "../openid4vci/grant_types/P
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import AppDataSource from "../AppDataSource";
 import { Repository } from "typeorm";
-import { storeAuthorizationServerStateIdToWebClient } from "../middlewares/authorizationServerState.middleware";
 
 
 @injectable()
@@ -31,15 +30,15 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		@inject(TYPES.OpenidForPresentationsReceivingService) private openidForPresentationReceivingService: OpenidForPresentationsReceivingInterface,
 	) { }
 
-	metadataRequestHandler(_req: Request, _res: Response): Promise<void> {
+	metadataRequestHandler(): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
 
 
-	async generateCredentialOfferURL(req: Request, credentialSupported: CredentialSupported): Promise<{ url: URL }> {
+	async generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported): Promise<{ url: URL }> {
 
 		// force creation of new state with a separate pre-authorized_code which has specific scope
-		let newAuthorizationServerState: AuthorizationServerState = { ...req.authorizationServerState, id: 0 } as AuthorizationServerState;
+		let newAuthorizationServerState: AuthorizationServerState = { ...ctx.req.authorizationServerState, id: 0 } as AuthorizationServerState;
 		newAuthorizationServerState.user_pin_required = false;
 		newAuthorizationServerState.pre_authorized_code = crypto.randomBytes(60).toString('base64url');
 		newAuthorizationServerState.authorization_details = [
@@ -71,11 +70,26 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		return { url: credentialOfferURL };
 	}
 
-	async authorizationRequestHandler(req: Request, res: Response): Promise<void> {
-		req.session.authenticationChain = {};
-		const params = authorizationRequestQueryParamsSchema.parse(req.query);
+
+	/**
+	 * Updates the authorization server state on Database entity and on Session
+	 * @param ctx 
+	 * @param newAuthorizationServerState 
+	 * @returns 
+	 */
+	private async updateAuthorizationServerState(ctx: {req: Request, res: Response}, newAuthorizationServerState: AuthorizationServerState): Promise<{ newStateRecord: AuthorizationServerState }> {
+		const insertedState = await this.authorizationServerStateRepository.save(newAuthorizationServerState); // update session on database
+		ctx.req.session.authorizationServerStateIdentifier = insertedState.id; // update state identifier on session
+		return { newStateRecord: insertedState };
+	}
+
+
+	async authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		ctx.req.session.authenticationChain = {}; // clear the session
+
+		const params = authorizationRequestQueryParamsSchema.parse(ctx.req.query);
 		if (!params.authorization_details) {
-			res.status(400).send({ error: "Authorization Details is missing" })
+			ctx.res.status(400).send({ error: "Authorization Details is missing" })
 			return
 		}
 	
@@ -83,7 +97,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		const { success } = authorizationDetailsSchema.safeParse(JSON.parse(params.authorization_details))
 		if (!success) {
 			console.error({ error: "Invalid authorization details" });
-			res.status(400).send({ error: "Invalid authorization details" });
+			ctx.res.status(400).send({ error: "Invalid authorization details" });
 			return;
 		}
 		const authorizationDetails = JSON.parse(params.authorization_details) as AuthorizationDetailsSchemaType;
@@ -113,20 +127,18 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		// if VP token auth is used, then use the verificationScopeName constant to verify the client
 		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
 			newAuthorizationServerState.scope = params.scope + ' ' + this.verificationScopeName;
-			req.query.scope += newAuthorizationServerState.scope;
+			ctx.req.query.scope += newAuthorizationServerState.scope;
 		}
 
-	
-		const insertedState = await this.authorizationServerStateRepository.save(newAuthorizationServerState);
-		await storeAuthorizationServerStateIdToWebClient(res, insertedState.id); // now it has been assigned a new state id
-	
+		const { newStateRecord } = await this.updateAuthorizationServerState(ctx, newAuthorizationServerState)
+
 		let redirected = false;
-		(res.redirect as any) = (url: string): void => {
+		(ctx.res.redirect as any) = (url: string): void => {
 			redirected = true;
 			// Perform the actual redirect
-			res.location(url);
-			res.statusCode = 302;
-			res.end();
+			ctx.res.location(url);
+			ctx.res.statusCode = 302;
+			ctx.res.end();
 		};
 		
 		console.log("Did auth mechanism = ", DID_AUTHENTICATION_MECHANISM_USED)
@@ -134,7 +146,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_ID_TOKEN ||
 				DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
 	
-			await this.openidForPresentationReceivingService.authorizationRequestHandler(req, res, insertedState.id);
+			await this.openidForPresentationReceivingService.authorizationRequestHandler(ctx, newStateRecord.id);
 			if (redirected) {
 				return;
 			}
@@ -143,12 +155,12 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 		else {
 			console.log("Redirecting...")
-			res.redirect(CONSENT_ENTRYPOINT);
+			ctx.res.redirect(CONSENT_ENTRYPOINT);
 			return;
 		}
 	}
 
-	async sendAuthorizationResponse(_req: Request, res: Response, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void> {
+	async sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void> {
 		const stateId = bindedUserSessionId;
 
 		const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
@@ -187,27 +199,26 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 		await this.authorizationServerStateRepository.save(state);
 
-		res.redirect(authorizationResponseURL.toString());
+		ctx.res.redirect(authorizationResponseURL.toString());
 	}
 
 
-	async tokenRequestHandler(req: Request, res: Response): Promise<void> {
-		console.log("URL = ", req.url)
-		console.log("Body ", req.body)
+	async tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		console.log("Body ", ctx.req.body)
 
 		let body = null;
 		let response = null;
-		if (!req.body.grant_type) {
+		if (!ctx.req.body.grant_type) {
 			console.log("No grant type was found");
-			res.status(400).send({ error: "No grant type was found"});
+			ctx.res.status(500).send({});
 			return;
 		}
 	
-		switch (req.body.grant_type) {
+		switch (ctx.req.body.grant_type) {
 		case GrantType.AUTHORIZATION_CODE:
-			body = tokenRequestBodySchemaForAuthorizationCodeGrant.parse(req.body);
-			// if (!req.headers.authorization) {
-			// 	return res.status(401).send("No authorization header was provided");
+			body = tokenRequestBodySchemaForAuthorizationCodeGrant.parse(ctx.req.body);
+			// if (!ctx.req.headers.authorization) {
+			// 	return ctx.res.status(401).send("No authorization header was provided");
 			// }
 			try {
 
@@ -224,16 +235,16 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				// }
 				// if (!userSession.categorizedRawCredentials)
 				// 	throw new Error("Could not get categorized raw credential");
-				response = await authorizationCodeGrantTokenEndpoint(body, req.headers.authorization);
+				response = await authorizationCodeGrantTokenEndpoint(body, ctx.req.headers.authorization);
 			}
 			catch (err) {
 				console.error("Error = ", err)
-				res.status(400).json({ error: JSON.stringify(err) })
+				ctx.res.status(500).json({ error: "Failed"})
 				return
 			}
 			break;
 		case GrantType.PRE_AUTHORIZED_CODE:
-			body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(req.body);
+			body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(ctx.req.body);
 			let state = await this.authorizationServerStateRepository.createQueryBuilder("state")
 				.where("state.pre_authorized_code = :code", { code: body["pre-authorized_code"] })
 				.getOne();
@@ -243,14 +254,14 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			break;
 		default:
 			console.log("Grant type is not supported");
-			res.status(400).send("Granttype not supported");
+			ctx.res.status(400).send("Granttype not supported");
 			return;
-			// body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(req.body);
+			// body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(ctx.req.body);
 			// response = await preAuthorizedCodeGrantTokenEndpoint(body);
 			// break;
 		}
-		res.setHeader("Cache-Control", "no-store");
-		res.json(response);
+		ctx.res.setHeader("Cache-Control", "no-store");
+		ctx.res.json(response);
 	}
 
 }

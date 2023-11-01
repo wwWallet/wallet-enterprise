@@ -33,8 +33,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 
 	if (SKIP_CONSENT) {
 		return await openidForCredentialIssuingAuthorizationServerService.sendAuthorizationResponse(
-			req,
-			res,
+			{req, res},
 			req.authorizationServerState.id,
 			req.authorizationServerState.authorization_details
 		);
@@ -50,8 +49,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 				})
 				.filter((ad) => ad != null) as AuthorizationDetailsSchemaType;
 			return await openidForCredentialIssuingAuthorizationServerService.sendAuthorizationResponse(
-				req,
-				res,
+				{ req, res },
 				req.authorizationServerState.id,
 				authorizationDetails
 			);
@@ -72,7 +70,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 	if (req.authorizationServerState.grant_type == GrantType.PRE_AUTHORIZED_CODE) {
 		credentialViewsWithCredentialOffers = await Promise.all(allCredentialViews.map(async (credentialView) => {
 			const { url } = await openidForCredentialIssuingAuthorizationServerService
-				.generateCredentialOfferURL(req, credentialView.credential_supported_object);
+				.generateCredentialOfferURL({req, res}, credentialView.credential_supported_object);
 			let credentialOfferQR = await new Promise((resolve) => {
 				qrcode.toDataURL(url.toString(), {
 					margin: 1,

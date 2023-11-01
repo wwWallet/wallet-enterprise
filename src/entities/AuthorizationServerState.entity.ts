@@ -108,6 +108,19 @@ export class AuthorizationServerState {
 	ssn?: string;
 
 
+	/**
+	 * this state random string will be used in order to expect a vid on a direct_post endpoint
+	 */
+	@Column({ name: "vid_auth_state", type: "varchar", nullable: true })
+	vid_auth_state?: string;
+
+	/**
+	 * extracted from the vid
+	 */
+	@Column({ name: "vid_data", type: "varchar", nullable: true })
+	personalIdentifier?: string;
+
+
 	// @Column({ name: "ediplomas_response", type: 'blob', nullable: true })
 	// private _ediplomas_response?: Buffer;
 	// set ediplomas_response(value: EdiplomasResponse | undefined) {

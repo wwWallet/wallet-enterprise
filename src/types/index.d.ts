@@ -8,7 +8,6 @@ declare global {
     export interface Request {
       lang: Language;
 			authorizationServerState: AuthorizationServerState;
-
     }
 
   }
@@ -17,7 +16,11 @@ declare global {
 
 declare module 'express-session' {
   interface Session {
-    authenticationChain: {
+		authorizationServerStateIdentifier?: number; // keep the id (PK) from the AuthorizationServerState
+		authenticationChain: {
+			vidAuthenticationComponent?: {
+				personalIdentifier?: string;
+			},
 			localAuthenticationComponent?: {
 				username?: string;
 			},

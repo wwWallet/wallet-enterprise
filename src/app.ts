@@ -13,7 +13,7 @@ import { FilesystemKeystoreService } from './services/FilesystemKeystoreService'
 import { authorizationServerMetadataConfiguration } from './authorizationServiceConfiguration';
 import { CredentialReceivingService } from './services/CredentialReceivingService';
 import { ExpressAppService } from './services/ExpressAppService';
-import { authorizationServerStateMiddleware, createNewAuthorizationServerState, storeAuthorizationServerStateIdToWebClient } from './middlewares/authorizationServerState.middleware';
+import { authorizationServerStateMiddleware, createNewAuthorizationServerState } from './middlewares/authorizationServerState.middleware';
 import { CONSENT_ENTRYPOINT } from './authorization/constants';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
 import { CredentialIssuersConfiguration } from './services/interfaces';
@@ -64,17 +64,17 @@ appContainer.resolve(ExpressAppService).configure(app);
 
 
 app.use(LanguageMiddleware);
-
+app.use(authorizationServerStateMiddleware);
 
 
 
 app.use('/verifier-panel', verifierPanelRouter);
 app.use('/verifier', verifierRouter);
 
-app.use(authorizationServerStateMiddleware);
 
 
 app.use('/authorization', authorizationRouter);
+
 
 
 // expose all public keys
@@ -106,7 +106,7 @@ app.post('/', async (req, res) => {
 		const credentialIssuer = credentialIssuersConfigurationService
 			.registeredCredentialIssuerRepository()
 			.getCredentialIssuer(credentialIssuersConfigurationService.defaultCredentialIssuerIdentifier());
-		const authorizationServerState = await createNewAuthorizationServerState();
+		const authorizationServerState = await createNewAuthorizationServerState({req, res});
 
 		if (!credentialIssuer) {
 			return res.render('error', {
@@ -125,7 +125,7 @@ app.post('/', async (req, res) => {
 		}).filter((ad => ad.types.length != 0));
 		await AppDataSource.getRepository(AuthorizationServerState)
 			.save(authorizationServerState);
-		await storeAuthorizationServerStateIdToWebClient(res, authorizationServerState.id);
+		// await storeAuthorizationServerStateIdToWebClient({req, res}, authorizationServerState.id);
 		return res.redirect(CONSENT_ENTRYPOINT);
 	}
 	else if (req.body.verifier == "true") {
