@@ -161,7 +161,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 	
-	async generateAuthorizationRequestURL(presentation_definition_id: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
+	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentation_definition_id: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
 		const nonce = randomUUID();
 		const stateId = randomUUID();
 		nonces.set(nonce, stateId);
@@ -175,6 +175,10 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			nonce: nonce,
 			state: stateId,
 		};
+
+
+		// try to get the redirect uri from the authorization server state in case this is a Dynamic User Authentication during OpenID4VCI authorization code flow
+		const redirectUri = ctx.req?.authorizationServerState?.redirect_uri ?? "openid://cb";
 
 		verifierStates.set(stateId, { callbackEndpoint });
 		payload = await this.addVPtokenRequestSpecificAttributes(stateId, payload, presentation_definition_id);
@@ -195,7 +199,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		};
 
 		const searchParams = new URLSearchParams(redirectParameters);
-		const authorizationRequestURL = new URL("http://localhost:3000/cb" + "?" + searchParams.toString()); // must be openid://cb
+		const authorizationRequestURL = new URL(redirectUri + "?" + searchParams.toString()); // must be openid://cb
 		return { url: authorizationRequestURL, stateId };
 	}
 

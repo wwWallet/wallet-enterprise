@@ -92,7 +92,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		});
 	}
 
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL(presentationDefinition.id, config.url + "/verifier/success");	
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition.id, config.url + "/verifier/success");	
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(url.toString(), {
 			margin: 1,
