@@ -1,24 +1,24 @@
-FROM node:16-bullseye-slim
-WORKDIR /home/node/app
+FROM node:16-bullseye-slim as dependencies
 
-# Copy package.json and yarn.lock and npmrc to the container
-COPY package.json yarn.lock .npmrc ./
+WORKDIR /dependencies
+
+# Install dependencies first so rebuild of these layers is only needed when dependencies change
+COPY package.json yarn.lock ./
+RUN --mount=type=secret,id=npmrc,required=true,target=./.npmrc,uid=1000 \
+    yarn install
 
 
-RUN mkdir -p /home/node/app/node_modules
-COPY --chown=node:node . .
-RUN yarn install
+FROM node:16-bullseye-slim as development
 
-# Copy the rest of the application code to the container
+ENV NODE_PATH=/node_modules
+COPY --from=dependencies /dependencies/node_modules /node_modules
 
+WORKDIR /app
 ENV NODE_ENV development
-
-RUN mkdir -p dist
-
-
-RUN chown -R node:node  /home/node/app/node_modules
-RUN chown -R node:node  /home/node/app/dist
-
 EXPOSE 8003
+CMD ["yarn", "dev-docker"]
+
+# Set user last so everything is readonly by default
 USER node
-CMD ["yarn", "dev"]
+
+# Don't need the rest of the sources since they'll be mounted from host
