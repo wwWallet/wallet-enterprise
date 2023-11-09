@@ -1,0 +1,23 @@
+extends ../layout.pug
+block layout-content
+
+	form#IssuerSelection(name="client" method="POST")
+		.main-container
+			p(class="dropdownLabel") Choose a wallet
+			div(class='dropdownContainer')
+				p.label Select a wallet which you want to use
+				select(name="client_id" class='issuerDropdown')
+					option(value="" disabled selected) Select a wallet
+					for client in clients
+						option(value=client.client_id) #{client.friendlyName}
+	
+				p.invalid-feedback#invalid-issuer You have not been awarded by this Institution
+				p.invalid-feedback#no-issuer You have to select an Institution
+				button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
+	block footer
+	include ../footer.pug
+
+	link(rel="stylesheet" href="/styles/styles.css")
+	link(rel="stylesheet" href="/styles/selection.css")
+	script(src="/js/alert.js")
+	script(src="/js/select-client.js")

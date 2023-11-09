@@ -63,8 +63,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				}
 			}
 		};
-
-		const credentialOfferURL = new URL("openid-credential-offer://");
+		console.log("Authz state = ", )
+		const redirect_uri = ctx.req?.authorizationServerState.redirect_uri ?? "openid-credential-offer://";
+		const credentialOfferURL = new URL(redirect_uri);
 		credentialOfferURL.searchParams.append('credential_offer', JSON.stringify(credentialOffer));
 		console.log("Credential offer = ", credentialOfferURL)
 		return { url: credentialOfferURL };

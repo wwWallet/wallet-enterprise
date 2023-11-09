@@ -18,6 +18,9 @@ declare module 'express-session' {
   interface Session {
 		authorizationServerStateIdentifier?: number; // keep the id (PK) from the AuthorizationServerState
 		authenticationChain: {
+			clientSelectionComponent?: {
+				client_id?: string;
+			},
 			vidAuthenticationComponent?: {
 				personalIdentifier?: string;
 			},

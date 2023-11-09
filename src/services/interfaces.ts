@@ -70,5 +70,6 @@ export interface DidKeyResolverService {
 
 export interface CredentialIssuersConfiguration {
 	registeredCredentialIssuerRepository(): CredentialIssuersRepository;
+	registeredClients(): { client_id: string; friendlyName: string; redirectUri: string; }[];
 	defaultCredentialIssuerIdentifier(): string;
 }

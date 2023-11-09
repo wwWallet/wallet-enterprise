@@ -176,7 +176,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			state: stateId,
 		};
 
-
 		// try to get the redirect uri from the authorization server state in case this is a Dynamic User Authentication during OpenID4VCI authorization code flow
 		const redirectUri = ctx.req?.authorizationServerState?.redirect_uri ?? "openid://cb";
 
