@@ -229,6 +229,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 				if (!state)
 					throw new Error("Could not get session");
+
+				state.authorization_code = null; // invalidate the authorization code
+				await this.authorizationServerStateRepository.save(state);
 				// if (!userSession.categorizedRawCredentials) {
 				// 	userSession = await redisModule.getUserSession(userSession.id);
 				// 	if (!userSession)
@@ -236,7 +239,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				// }
 				// if (!userSession.categorizedRawCredentials)
 				// 	throw new Error("Could not get categorized raw credential");
-				response = await authorizationCodeGrantTokenEndpoint(body, ctx.req.headers.authorization);
+				response = await authorizationCodeGrantTokenEndpoint(state, ctx.req.headers.authorization);
 			}
 			catch (err) {
 				console.error("Error = ", err)
@@ -245,13 +248,32 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			}
 			break;
 		case GrantType.PRE_AUTHORIZED_CODE:
-			body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(ctx.req.body);
-			let state = await this.authorizationServerStateRepository.createQueryBuilder("state")
-				.where("state.pre_authorized_code = :code", { code: body["pre-authorized_code"] })
-				.getOne();
-			if (!state)
-				throw new Error("Could not get session");
-			response = await preAuthorizedCodeGrantTokenEndpoint(body);
+			try {
+				body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(ctx.req.body);
+				if (body["pre-authorized_code"] == 'undefined') {
+					throw new Error("Pre authorized code is undefined");
+				}
+				console.log("Greg body = ", body)
+				let state = await this.authorizationServerStateRepository
+					.createQueryBuilder("state")
+					.where("state.pre_authorized_code = :code", { code: body["pre-authorized_code"] })
+					.getOne();
+				console.log("Found state = ", state)
+				if (!state) {
+					throw new Error(`No authorization server state was found for authorization code ${body["pre-authorized_code"]}`);
+				}
+				state.pre_authorized_code = null; // invalidate the pre-authorized code to prevent reuse
+				await AppDataSource.getRepository(AuthorizationServerState).save(state);
+
+				console.log("State on token req = ", state);
+				response = await preAuthorizedCodeGrantTokenEndpoint(state);
+			}
+			catch(err) {
+				console.log("Error on token request pre authorized code")
+				console.log(err);
+				ctx.res.status(500).json({ error: "Failed"});
+				return;
+			}
 			break;
 		default:
 			console.log("Grant type is not supported");

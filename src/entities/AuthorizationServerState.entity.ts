@@ -50,11 +50,11 @@ export class AuthorizationServerState {
 
 
 	@Column({ name: "authorization_code", type: "varchar", nullable: true })
-	authorization_code?: string;
+	authorization_code?: string | null;
 
 
 	@Column({ name: "pre_authorized_code", type: "varchar", nullable: true })
-	pre_authorized_code?: string;
+	pre_authorized_code?: string | null;
 
 
 	@Column({ name: "state", type: "varchar", nullable: true })
