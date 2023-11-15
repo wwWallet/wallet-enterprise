@@ -43,7 +43,7 @@ block layout-content
 												td
 													div #{row.value}
 												td
-													input(type="checkbox" class="scopeCheckbox" id=row.name name=row.name value=row.value checked)
+													input(type="checkbox" class="scopeCheckbox" id=row.name name=row.name value=row.value checked disabled)
 									br
 									if grant_type != "authorization_code"
 										button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}', '${credential.credentialOfferURL}')`) Get credential

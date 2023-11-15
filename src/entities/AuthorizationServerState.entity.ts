@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { AuthorizationDetailsSchemaType, GrantType } from "../types/oid4vci";
+import { UserAuthenticationMethod } from "../types/UserAuthenticationMethod.enum";
 
 
 @Entity({ name: "authorization_server_state" })
@@ -119,6 +120,10 @@ export class AuthorizationServerState {
 	 */
 	@Column({ name: "vid_data", type: "varchar", nullable: true })
 	personalIdentifier?: string;
+
+	@Column({ name: "authentication_method", type: "enum", enum: UserAuthenticationMethod, nullable: true })
+	authenticationMethod?: UserAuthenticationMethod;
+
 
 
 	// @Column({ name: "ediplomas_response", type: 'blob', nullable: true })

@@ -7,10 +7,11 @@ import { CTWalletSamePreAuthorisedSupportedCredential } from "./SupportedCredent
 import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
 import { CredentialIssuer } from "../lib/CredentialIssuerConfig/CredentialIssuer";
 import { VIDSupportedCredential } from "./SupportedCredentialsConfiguration/VIDSupportedCredential";
+import { CredentialIssuersConfiguration } from "../services/interfaces";
 
 
 @injectable()
-export class CredentialIssuersConfigurationService {
+export class CredentialIssuersConfigurationService implements CredentialIssuersConfiguration {
 	readonly credentialIssuerIdentifierVID = config.url;
 
 
@@ -41,6 +42,10 @@ export class CredentialIssuersConfigurationService {
 			vidIssuer,
 			vidIssuer2
 		]);
+	}
+
+	public registeredClients(): { client_id: string; friendlyName: string; redirectUri: string; }[] {
+		return [ ]
 	}
 
 	public defaultCredentialIssuerIdentifier(): string {

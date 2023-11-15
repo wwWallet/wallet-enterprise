@@ -1,7 +1,8 @@
 import { Language } from "./language.type";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
+import { UserAuthenticationMethod } from "./UserAuthenticationMethod.enum";
 // to make the file a module and avoid the TypeScript error
-export {}
+// to make the file a module and avoid the TypeScript error
 
 declare global {
   namespace Express {
@@ -18,6 +19,9 @@ declare module 'express-session' {
   interface Session {
 		authorizationServerStateIdentifier?: number; // keep the id (PK) from the AuthorizationServerState
 		authenticationChain: {
+			authenticationMethodSelectionComponent?: {
+				authentication_method: UserAuthenticationMethod
+			},
 			clientSelectionComponent?: {
 				client_id?: string;
 			},

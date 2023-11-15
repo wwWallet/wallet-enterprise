@@ -106,8 +106,11 @@ app.post('/', async (req, res) => {
 		const credentialIssuer = credentialIssuersConfigurationService
 			.registeredCredentialIssuerRepository()
 			.getCredentialIssuer(credentialIssuersConfigurationService.defaultCredentialIssuerIdentifier());
+		
 		const authorizationServerState = await createNewAuthorizationServerState({req, res});
-
+		
+		authorizationServerState.credential_issuer_identifier = credentialIssuersConfigurationService.defaultCredentialIssuerIdentifier();
+		
 		if (!credentialIssuer) {
 			return res.render('error', {
 				msg: "Issuer doest not exist",
