@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npx tsc",
     "dev": "nodemon --config nodemon.json --exec \"npx tsc && yarn start\"",
+    "dev-docker": "npx nodemon --config nodemon.json --exec \"npx tsc --outdir /app/dist && yarn start\"",
     "start": "node -r source-map-support/register dist/src/app.js",
     "build:prod": "rm -rf node_modules && yarn install && yarn build && rm -rf node_modules && yarn install --production",
     "snapshot": "paketo"
