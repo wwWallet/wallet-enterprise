@@ -3,13 +3,13 @@ block layout-content
 
 	form#IssuerSelection(name="AuthenticationMethod" method="POST")
 		.main-container
-			p(class="dropdownLabel") Choose the method you want to be authenticated with
+			p(class="dropdownLabel") Authentication Method
 			div(class='dropdownContainer')
-				p.label Select an authentication method
+				p.label Choose between authenticating via presenting a Verifiable ID or via a conventional 3rd-party authentication service (e.g., National Authentication Service, Google):
 				select(name="auth_method" class='issuerDropdown')
 					option(value="" disabled selected) Select an authentication method
-					option(value="SSO") TAXIS authentication
 					option(value="VID_AUTH") Authentication with Verifiable ID
+					option(value="SSO") National Authentication Service
 
 				p.invalid-feedback#invalid-issuer You have not been awarded by this Institution
 				p.invalid-feedback#no-issuer You have to select an Institution
