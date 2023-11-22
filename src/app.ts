@@ -15,21 +15,20 @@ import { CredentialReceivingService } from './services/CredentialReceivingServic
 import { ExpressAppService } from './services/ExpressAppService';
 import { authorizationServerStateMiddleware, createNewAuthorizationServerState } from './middlewares/authorizationServerState.middleware';
 import { CONSENT_ENTRYPOINT } from './authorization/constants';
-import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
-import { CredentialIssuersConfiguration } from './services/interfaces';
-import { TYPES } from './services/types';
 import session from 'express-session';
 
 import { verifierPanelRouter } from './verifier/verifierPanelRouter';
 import locale from './configuration/locale';
 import { verifierRouter } from './verifier/verifierRouter';
+import { GrantType } from './types/oid4vci';
+import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
 
 initDataSource();
 
 const credentialReceivingService = appContainer.resolve(CredentialReceivingService);
 
 const walletKeystore = appContainer.resolve(FilesystemKeystoreService);
-const credentialIssuersConfigurationService = appContainer.get<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfiguration);
+// const credentialIssuersConfigurationService = appContainer.get<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfiguration);
 
 const app: Express = express();
 
@@ -102,33 +101,12 @@ app.get('/', async (req: Request, res: Response) => {
 
 
 app.post('/', async (req, res) => {
+	await createNewAuthorizationServerState({req, res});
+	req.authorizationServerState.grant_type = GrantType.PRE_AUTHORIZED_CODE;
+	await AppDataSource.getRepository(AuthorizationServerState)
+		.save(req.authorizationServerState);
+
 	if (req.body.initiate_pre_authorized == "true") {
-		const credentialIssuer = credentialIssuersConfigurationService
-			.registeredCredentialIssuerRepository()
-			.getCredentialIssuer(credentialIssuersConfigurationService.defaultCredentialIssuerIdentifier());
-		
-		const authorizationServerState = await createNewAuthorizationServerState({req, res});
-		
-		authorizationServerState.credential_issuer_identifier = credentialIssuersConfigurationService.defaultCredentialIssuerIdentifier();
-		
-		if (!credentialIssuer) {
-			return res.render('error', {
-				msg: "Issuer doest not exist",
-				code: 0,
-				lang: req.lang,
-				locale: locale[req.lang]
-			})
-		}
-		authorizationServerState.authorization_details = credentialIssuer.supportedCredentials.map((sc) => {
-			return { 
-				type: 'openid_credential',
-				types: sc.exportCredentialSupportedObject().types ?? [],
-				format: sc.exportCredentialSupportedObject().format ?? ""
-			}
-		}).filter((ad => ad.types.length != 0));
-		await AppDataSource.getRepository(AuthorizationServerState)
-			.save(authorizationServerState);
-		// await storeAuthorizationServerStateIdToWebClient({req, res}, authorizationServerState.id);
 		return res.redirect(CONSENT_ENTRYPOINT);
 	}
 	else if (req.body.verifier == "true") {

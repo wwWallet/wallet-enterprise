@@ -122,7 +122,11 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			newAuthorizationServerState.credential_issuer_identifier = authorizationDetails[0].locations[0];
 		}
 		else {
-			newAuthorizationServerState.credential_issuer_identifier = this.credentialIssuersConfiguration.defaultCredentialIssuerIdentifier();
+			const defaultCredentialIssuerIdentifier = this.credentialIssuersConfiguration.defaultCredentialIssuerIdentifier();
+			if (!defaultCredentialIssuerIdentifier) {
+				throw new Error("Credential issuer could not be resolved because no default issuer exists and issuer is not specified on location of authorization details");
+			}
+			newAuthorizationServerState.credential_issuer_identifier = defaultCredentialIssuerIdentifier;
 		}
 		
 		// if VP token auth is used, then use the verificationScopeName constant to verify the client

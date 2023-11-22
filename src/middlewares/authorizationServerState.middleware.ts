@@ -9,6 +9,7 @@ export async function createNewAuthorizationServerState(ctx: { req: Request, res
 	const newAuthorizationServerState = new AuthorizationServerState();
 	const result = await AppDataSource.getRepository(AuthorizationServerState)
 		.save(newAuthorizationServerState);
+	ctx.req.authorizationServerState = result;
 	ctx.req.session.authorizationServerStateIdentifier = result.id
 	return result;
 }

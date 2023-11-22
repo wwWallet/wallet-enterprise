@@ -57,11 +57,11 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 		}
 		catch(err) {
 			console.log(err);
-			return res.render('error', {
-				msg: `Invalid schema of form submission - ${err}`,
-				lang: req.lang,
-				locale: locale[req.lang]
-			});
+			// return res.render('error', {
+			// 	msg: `Invalid schema of form submission - ${err}`,
+			// 	lang: req.lang,
+			// 	locale: locale[req.lang]
+			// });
 		}
 	} // end of POST
 
