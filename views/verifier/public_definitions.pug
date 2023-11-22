@@ -1,0 +1,11 @@
+extends ../layout.pug
+block layout-content
+	.container
+		h1 Job positions
+		.card-container
+			for definition in presentationDefinitions
+				.card
+					.card-title #{definition.title}
+					p.card-text #{definition.description}
+					.card-buttons
+						button.btn.btn-primary(onclick=`window.location.href = "/verifier/public/definitions/presentation-request/${definition.id}"`) Apply

@@ -14,19 +14,19 @@ import { JSONPath } from "jsonpath-plus";
 
 
 
-const verifierRouter = Router();
+const verifierPanelRouter = Router();
 const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
 const verifierConfiguration = appContainer.get<VerifierConfigurationInterface>(TYPES.VerifierConfigurationServiceInterface);
 
 
 verifierPanelAuthChain.components.map(c => {
-	verifierRouter.use(async (req, res, next) => {
+	verifierPanelRouter.use(async (req, res, next) => {
 		c.authenticate(req, res, next)
 	});
 })
 
 
-verifierRouter.get('/', async (req, res) => {
+verifierPanelRouter.get('/', async (req, res) => {
 	
 	return res.render('verifier/definitions.pug', {
 		lang: req.lang,
@@ -36,7 +36,7 @@ verifierRouter.get('/', async (req, res) => {
 })
 
 
-verifierRouter.get('/filter/by/definition/:definition_id', async (req, res) => {
+verifierPanelRouter.get('/filter/by/definition/:definition_id', async (req, res) => {
 	const definition_id = req.params.definition_id;
 	if (!definition_id) {
 		return res.status(500).send({ error: "No definition id was specified" });
@@ -68,7 +68,7 @@ type VerifiableCredentialView = {
 }
 
 
-verifierRouter.get('/presentation/:presentation_id', async (req, res) => {
+verifierPanelRouter.get('/presentation/:presentation_id', async (req, res) => {
 	const presentation_id = req.params.presentation_id;
 	if (!presentation_id) {
 		return res.status(500).send({ error: "No presentation_id was specified" });
@@ -128,4 +128,4 @@ verifierRouter.get('/presentation/:presentation_id', async (req, res) => {
 	})
 })
 
-export { verifierRouter };
+export { verifierPanelRouter };

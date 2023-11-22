@@ -6,24 +6,29 @@ import path from 'path';
 import cors from 'cors';
 import { LanguageMiddleware } from './middlewares/language.middleware';
 import { authorizationRouter } from './authorization/router';
-import { initDataSource } from './AppDataSource';
+import AppDataSource, { initDataSource } from './AppDataSource';
 import createHttpError, { HttpError} from 'http-errors';
 import { appContainer } from './services/inversify.config';
 import { FilesystemKeystoreService } from './services/FilesystemKeystoreService';
 import { authorizationServerMetadataConfiguration } from './authorizationServiceConfiguration';
 import { CredentialReceivingService } from './services/CredentialReceivingService';
-import { CredentialIssuersConfigurationService } from './configuration/CredentialIssuersConfigurationService';
 import { ExpressAppService } from './services/ExpressAppService';
-import { authorizationServerStateMiddleware } from './middlewares/authorizationServerState.middleware';
-import { verifierRouter } from './verifier/router';
+import { authorizationServerStateMiddleware, createNewAuthorizationServerState } from './middlewares/authorizationServerState.middleware';
+import { CONSENT_ENTRYPOINT } from './authorization/constants';
+import session from 'express-session';
+
+import { verifierPanelRouter } from './verifier/verifierPanelRouter';
 import locale from './configuration/locale';
-import qs from 'qs';
-import { applicationMode, ApplicationModeType } from './configuration/applicationMode';
+import { verifierRouter } from './verifier/verifierRouter';
+import { GrantType } from './types/oid4vci';
+import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
 
 initDataSource();
 
 const credentialReceivingService = appContainer.resolve(CredentialReceivingService);
 
+const walletKeystore = appContainer.resolve(FilesystemKeystoreService);
+// const credentialIssuersConfigurationService = appContainer.get<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfiguration);
 
 const app: Express = express();
 
@@ -35,6 +40,7 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.static(path.join(__dirname, '../../public')));
 
 app.use(cookieParser());
+app.use(session({ secret: config.appSecret, cookie: { expires: new Date(Date.now() + (30 * 86400 * 1000)) }}))
 
 
 app.use(bodyParser.urlencoded({ extended: true })); // support url encoded bodies
@@ -50,7 +56,6 @@ app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, '../../views'));
 
 
-const walletKeystore = appContainer.resolve(FilesystemKeystoreService);
 
 appContainer.resolve(ExpressAppService).configure(app);
 
@@ -58,17 +63,17 @@ appContainer.resolve(ExpressAppService).configure(app);
 
 
 app.use(LanguageMiddleware);
-
-
-
-
-app.use('/verifier-panel', verifierRouter);
-
-
 app.use(authorizationServerStateMiddleware);
 
 
+
+app.use('/verifier-panel', verifierPanelRouter);
+app.use('/verifier', verifierRouter);
+
+
+
 app.use('/authorization', authorizationRouter);
+
 
 
 // expose all public keys
@@ -84,37 +89,31 @@ app.get('/init', async (_req, res) => {
 
 
 
-
-
 app.get('/', async (req: Request, res: Response) => {
-	const firstCredentialIssuer = appContainer.resolve(CredentialIssuersConfigurationService)
-	.registeredCredentialIssuerRepository()
-	.getAllCredentialIssuers()[0];
-
-	if (firstCredentialIssuer
-		&& ( applicationMode == ApplicationModeType.ISSUER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER)) {
-		const firstCredentialIssuerIdentifier = firstCredentialIssuer.credentialIssuerIdentifier;
-		return res.render('index', {
-			title: "Index",
-			credentialIssuerIdentifier: firstCredentialIssuerIdentifier,
-			lang: req.lang,
-			locale: locale[req.lang]
-		})
-	}
-	else if (applicationMode == ApplicationModeType.VERIFIER) {
-		return res.render('verifier/index', {
-			title: "Index",
-			lang: req.lang,
-			locale: locale[req.lang]
-		})
-	}
-	else {
-		return res.send({ error: "Error occured" })
-	}
-
+	
+	req.session.authenticationChain = {};
+	return res.render('index', {
+		title: "Index",
+		lang: req.lang,
+		locale: locale[req.lang]
+	})
 });
 
 
+app.post('/', async (req, res) => {
+	await createNewAuthorizationServerState({req, res});
+	req.authorizationServerState.grant_type = GrantType.PRE_AUTHORIZED_CODE;
+	await AppDataSource.getRepository(AuthorizationServerState)
+		.save(req.authorizationServerState);
+
+	if (req.body.initiate_pre_authorized == "true") {
+		return res.redirect(CONSENT_ENTRYPOINT);
+	}
+	else if (req.body.verifier == "true") {
+		return res.redirect('/verifier/public/definitions');
+	}
+
+})
 
 
 app.get('/.well-known/openid-configuration', async (_req: Request, res: Response) => {
@@ -122,55 +121,6 @@ app.get('/.well-known/openid-configuration', async (_req: Request, res: Response
 })
 
 
-
-app.get('/init/view/:client_type', async (req: Request, res: Response) => {
-	const credentialIssuerIdentifier = req.query["issuer"] as string;
-	if (!credentialIssuerIdentifier) {
-		console.error("Credential issuer identifier not found in params")
-		return res.redirect('/');
-	}
-
-	const selectedCredentialIssuer = appContainer.resolve(CredentialIssuersConfigurationService)
-		.registeredCredentialIssuerRepository()
-		.getCredentialIssuer(credentialIssuerIdentifier);
-	if (!selectedCredentialIssuer) {
-		console.error("Credential issuer not map")
-		return res.redirect('/')
-	}
-	const client_type = req.params.client_type;
-	if (!client_type) {
-		return res.redirect('/');
-	}
-
-	const credentialOfferObject = {
-		credential_issuer: selectedCredentialIssuer.credentialIssuerIdentifier,
-		credentials: [
-			...selectedCredentialIssuer.supportedCredentials.map(sc => sc.exportCredentialSupportedObject())
-		],
-		grants: {
-			authorization_code: { issuer_state: "123xxx" }
-		}
-	};
-	const credentialOfferURL = "openid-credential-offer://?" + qs.stringify(credentialOfferObject);
-
-	const parsed = qs.parse(credentialOfferURL.split('?')[1]);
-	console.log("parsed = ", parsed)
-	// credentialOfferURL.searchParams.append("credential_offer", qs.stringify(credentialOfferObject));
-	
-	switch (client_type) {
-	case "DESKTOP":
-		return res.render('issuer/init', {
-			url: credentialOfferURL,
-			qrcode: "",
-			lang: req.lang,
-			locale: locale[req.lang]
-		})
-	case "MOBILE":
-		return res.redirect(credentialOfferURL);
-	default:
-		return res.redirect('/');
-	}
-})
 
 
 // catch 404 and forward to error handler

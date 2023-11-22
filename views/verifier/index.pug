@@ -7,11 +7,10 @@ block layout-content
 				.ItemLayout
 					i.fa.fa-id-card-o.LargeIcon
 					p #{locale.index.phrase}
-					button.Btn.Large.Landing(id="mainBtn") #{locale.index.proceed}
+					button.Btn.Large.Landing(onclick="window.location.href = '/verifier/public/definitions'; ") #{locale.index.proceed}
 					input(type="hidden" id="credentialIssuerIdentifier" value=credentialIssuerIdentifier)
 
 	block footer
 	include ../footer.pug
 
 	link(rel="stylesheet" href="/styles/index.css")
-	script(src="/js/index.js")

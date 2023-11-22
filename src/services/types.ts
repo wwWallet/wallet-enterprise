@@ -6,7 +6,7 @@ const TYPES = {
 	VerifierConfigurationServiceInterface: Symbol.for("VerifierConfigurationServiceInterface"),
 	OpenidForCredentialIssuingAuthorizationServerService: Symbol.for("OpenidForCredentialIssuingAuthorizationServerService"),
 	CredentialReceivingService: Symbol.for("CredentialReceivingService"),
-	CredentialIssuersConfigurationService: Symbol.for("CredentialIssuersConfigurationService"),
+	CredentialIssuersConfiguration: Symbol.for("CredentialIssuersConfiguration"),
 	CredentialIssuersService: Symbol.for("CredentialIssuersService"),
 	ExpressAppService: Symbol.for("ExpressAppService"),
 	DidKeyResolverService: Symbol.for("DidKeyResolverService")

@@ -18,6 +18,16 @@ tr:nth-child(even) {
   background-color: #f2f2f2;
 }
 
+tr td:last-child {
+	text-align: center;
+}
+
+.scopeCheckbox {
+	accent-color: #003476;
+	width: 16px;
+	height: 16px;
+}
+
 
 section.layout {
 	display: flex;

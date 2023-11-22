@@ -2,7 +2,18 @@
 	font-style: bold;
 	font-weight: 600;
 }
-
+.title {
+	color: #000;
+	padding: 0 0 0 0;
+	margin-bottom: 0;
+	font-size: 24px;
+	font-weight: 600;
+}
+.text-area {
+	font-size: 18px;
+	display: table-cell;
+	vertical-align: middle;
+}
 #Index .disclaimer {
 	background-color: #f1f1f1;
 	font-size: 16px;

@@ -4,8 +4,9 @@ import { SupportedCredentialProtocol } from "./SupportedCredentialProtocol";
 import { Request, Response } from 'express';
 import * as _ from 'lodash';
 import { verifyProof } from "../../openid4vci/Proof/verifyProof";
-import base64url from "base64url";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
+import { jwtDecrypt } from "jose";
+import { keyPairPromise } from "../../openid4vci/utils/generateAccessToken";
 
 export class CredentialIssuer {
 
@@ -89,9 +90,10 @@ export class CredentialIssuer {
 			throw new Error("Invalid access token");
 		}
 		const access_token = req.headers.authorization.split(' ')[1];
+		const { payload: { userSession }} = await jwtDecrypt(access_token, (await keyPairPromise).privateKey)
 		// verify access_token, also validate the audience and the issuer (must be the authorization server)
 
-		const { userSession } = JSON.parse(base64url.decode(access_token.split('.')[1])) as { userSession: any };
+		// const { userSession } = JSON.parse(base64url.decode(access_token.split('.')[1])) as { userSession: any };
 		const deserializedSession = AuthorizationServerState.deserialize(userSession);
 		return { userSession: deserializedSession };
 	}
@@ -174,6 +176,11 @@ export class CredentialIssuer {
 	 */
 	private async returnSingleCredential(userSession: AuthorizationServerState, _access_token: string, credentialRequest: CredentialRequestBody): Promise<{ acceptance_token?: string, credential?: any, format?: string }> {
 		console.log("Credential request = ", credentialRequest)
+		// incorrect credential issuer
+		if (userSession.credential_issuer_identifier !== this.credentialIssuerIdentifier) {
+			throw new Error('Invalid credential issuer');
+		}
+		
 		let body: CredentialRequestBody;
 		try {
 			body = credentialRequestBodySchema.parse(credentialRequest);
@@ -219,7 +226,7 @@ export class CredentialIssuer {
 	
 	
 
-		const resolvedSupportedCredential = this.supportedCredentials
+		let resolvedSupportedCredential = this.supportedCredentials
 			.filter(sc => 
 				sc.getFormat() == body.format && 
 				_.isEqual(sc.getTypes(), body.types)
@@ -246,9 +253,12 @@ export class CredentialIssuer {
 	async getProfile(req: Request, res: Response) {
 		
 		const authorization_server_state = AuthorizationServerState.deserialize(req.body.authorization_server_state);
+		// incorrect credential issuer
+		if (authorization_server_state.credential_issuer_identifier !== this.credentialIssuerIdentifier) {
+			return res.send({});
+		}
 		const types = req.body.types;
 		const authorizationDetails = authorization_server_state.authorization_details;
-		console.log("State = ", authorization_server_state);
 		console.log("Authorization details = ", authorization_server_state.authorization_details)
 		if (!authorizationDetails) {
 			return res.status(400).send({ err: "Authorization details not provided" });

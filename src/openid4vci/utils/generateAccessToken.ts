@@ -1,10 +1,11 @@
 import { TokenResponseSchemaType } from '../../types/oid4vci';
-import { SignJWT } from 'jose';
 import * as crypto from 'node:crypto';
-import { keystoreService } from '../../services/instances';
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
-
+import * as jose from 'jose';
 const accessTokenExpirationInSeconds = 8000;
+
+
+export const keyPairPromise = jose.generateKeyPair('RSA-OAEP-256');
 
 export async function generateAccessToken(userSession: AuthorizationServerState): Promise<TokenResponseSchemaType> {
 
@@ -30,20 +31,25 @@ export async function generateAccessToken(userSession: AuthorizationServerState)
 	// store user session in access token
 	console.log("User session on AT generation: ", userSession);
 	console.log("Serialized user session", AuthorizationServerState.serialize(userSession))
-	const nonSignedJwtStruct = new SignJWT({ userSession: AuthorizationServerState.serialize(userSession) })
-		.setAudience(credentialIssuersIdentifiers)
-		.setExpirationTime('1h')
-		.setSubject('username');
+	// const nonSignedJwtStruct = new SignJWT({ userSession: AuthorizationServerState.serialize(userSession) })
+	// 	.setAudience(credentialIssuersIdentifiers)
+	// 	.setExpirationTime('1h')
+	// 	.setSubject('username');
 	// const { jws } = await keystoreService.signJwt("authorization_server", nonSignedJwtStruct, "JWT");
 
-	const { jws } = await keystoreService.signJwt("authorization_server", nonSignedJwtStruct, "JWT");
+	// const { jws } = await keystoreService.signJwt("authorization_server", nonSignedJwtStruct, "JWT");
 	// redisModule.storeAccessToken(userSession.access_token, userSession.id)  // store access token
 
-	
+	const jwe = await new jose.EncryptJWT({ userSession: AuthorizationServerState.serialize(userSession) })
+		.setAudience(credentialIssuersIdentifiers)
+		.setExpirationTime('1h')
+		.setSubject('username')
+		.setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
+		.encrypt((await keyPairPromise).publicKey);
 
 	const tokenResponse: TokenResponseSchemaType = {
 		token_type: "Bearer",
-		access_token: jws,
+		access_token: jwe,
 		expires_in: userSession.expires_in,
 		c_nonce: userSession.c_nonce,
 		c_nonce_expires_in: userSession.c_nonce_expires_in,

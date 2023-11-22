@@ -12,7 +12,6 @@ import { AuthorizationServerState } from '../entities/AuthorizationServerState.e
 import AppDataSource from '../AppDataSource';
 import { Repository } from 'typeorm';
 import { ApplicationModeType, applicationMode } from '../configuration/applicationMode';
-import { clearState } from '../middlewares/authorizationServerState.middleware';
 
 @injectable()
 export class ExpressAppService {
@@ -31,20 +30,21 @@ export class ExpressAppService {
 	public configure(app: Application) {
 		// exposed in any mode
 		app.post('/verification/direct_post', this.directPostEndpoint());
-
+		app.get('/verification/definition', async (req, res) => { this.presentationsReceivingService.getPresentationDefinitionHandler({req, res}); });
+		
 		if (applicationMode == ApplicationModeType.VERIFIER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER) {
 			app.get('/verification/authorize', async (req, res) => {
-				await clearState(res);
-				this.presentationsReceivingService.authorizationRequestHandler(req, res, undefined);
+				req.session.authorizationServerStateIdentifier = undefined;
+				this.presentationsReceivingService.authorizationRequestHandler({req, res}, undefined);
 			});
 		}
 
 		if (applicationMode == ApplicationModeType.ISSUER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER) {
 			app.get('/openid4vci/authorize', async (req, res) => {
-				this.authorizationServerService.authorizationRequestHandler(req, res);
+				this.authorizationServerService.authorizationRequestHandler({req, res});
 			});
 			app.post('/openid4vci/token', async (req, res) => {
-				this.authorizationServerService.tokenRequestHandler(req, res);
+				this.authorizationServerService.tokenRequestHandler({req, res});
 			});
 
 			this.credentialIssuersService.exposeAllIssuers(app);
@@ -61,12 +61,20 @@ export class ExpressAppService {
 				// Perform the actual redirect
 				res.end();
 			};
+
+			//@ts-ignore
+			(res.send as any) = (payload: string): void => {
+				redirected = true;
+				res.status(200);
+				res.end();
+				// Perform the actual redirect
+			};
 		
 			
 			let authorizationServerStateId;
 			let verifier_state_id;
 			try {
-				const { bindedUserSessionId, verifierStateId } = await this.presentationsReceivingService.responseHandler(req, res);
+				const { bindedUserSessionId, verifierStateId } = await this.presentationsReceivingService.responseHandler({req, res});
 				authorizationServerStateId = bindedUserSessionId;
 				verifier_state_id = verifierStateId;
 			}
@@ -97,10 +105,10 @@ export class ExpressAppService {
 							.where("id = :id", { id: authorizationServerStateId })
 							.getOne();
 						if (state && state.authorization_details) {
-							await this.authorizationServerService.sendAuthorizationResponse(req, res, state.id)
+							await this.authorizationServerService.sendAuthorizationResponse({req, res}, state.id)
 						}
 						else {
-							await this.presentationsReceivingService.sendAuthorizationResponse(req, res, verifier_state_id);
+							await this.presentationsReceivingService.sendAuthorizationResponse({req, res}, verifier_state_id);
 						}
 					}
 					catch(e) {

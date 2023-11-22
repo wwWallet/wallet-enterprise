@@ -4,13 +4,25 @@ block layout-content
 	.main-container
 		form#DiplomaSelection(method="POST")
 
-			section.layout
+			p Consent
+			// Container for the spinner (initially hidden)
+			#spinner-container
+				.spinner
+					.spinner-circle
+
+			section.layout(style="display: none;")
 				section.container-header
-					h1 Consent
-					button.Btn.Small.SelectMultiBtn(type="button") Select
-				section.consent-description Inspect your credentials by clicking on them and authorize the sharing of them with the client
+					section.consent-description The following credentials have been found. Please review their details and select the one you want to receive.
+					if grant_type == "authorization_code"
+						button.Btn.Small.SelectMultiBtn(type="button" id="selectVc") Select
 
 				section.MainLayout
+					dialog#qrDialog
+						img#qrImage(src="" alt="QR Code")
+						.centered
+							button#qrURL.Btn.Small Open with wallet
+							button.Btn.Small(type="button" id="closeDialogBtn") Close
+
 					section.CredentialsArea
 						//- form.diplomas(name='selectDiplomas' method="post")
 						for credential in credentialViewList
@@ -30,27 +42,35 @@ block layout-content
 													b #{row.name}
 												td
 													div #{row.value}
+												td
+													input(type="checkbox" class="scopeCheckbox" id=row.name name=row.name value=row.value checked disabled)
+									br
+									if grant_type != "authorization_code"
+										button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}', '${credential.credentialOfferURL}')`) Get credential
 				.GetMultiBtnArea
 					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
-					button.Btn.Small.GetMultiBtn(type="submit" disabled) Get credentials
-				.DetailsArea
-					section.DetailsLayout
-						h4 Details of authorization
-						.ConsentDetails
-							table
-								tr
-									td
-										b Client
-									td
-										div #{redirect_uri}
-								tr
-									td
-										b Expiration
-									td
-										div 1 year
+					if grant_type == "authorization_code"
+						button.Btn.Small.GetMultiBtn(type="submit" disabled) Get credentials
+				if grant_type == "authorization_code"
+					.DetailsArea
+						section.DetailsLayout
+							h4 Details of authorization
+							.ConsentDetails
+								table
+									tr
+										td
+											b Client
+										td
+											div #{redirect_uri}
+									tr
+										td
+											b Expiration
+										td
+											div 1 year
 	.BarBtnContainer
 		button#BarBtn.Btn.Large.GetMultiBtn(type="button" disabled) Get credentials
 
 	link(rel="stylesheet" href="/styles/consent.css")
 	link(rel="stylesheet" href="/styles/inspect.css")
 	script(src='/js/consent.js')
+	script(src='/js/qr-popup.js')

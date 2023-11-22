@@ -3,10 +3,11 @@ import { WalletKeystore } from "./interfaces";
 import { SignVerifiableCredentialJWT } from "@wwwallet/ssi-sdk";
 import fs from 'fs';
 import path from "path";
-import { DidEbsiKeyTypeObject, DidKeyKeyTypeObject, EbsiLegalPersonMethodIdentifier, Identifier, KeyMethodIdentifier, SigningAlgorithm } from "../lib/Identifier";
+import { DidEbsiKeyTypeObject, DidKeyKeyTypeObject, EbsiLegalPersonMethodIdentifier, Identifier, KeyMethodIdentifier } from "../lib/Identifier";
 import { z } from 'zod';
 import { JWK, SignJWT, importJWK } from "jose";
 import 'reflect-metadata';
+import config from "../../config";
 
 
 const KeyDescriptorSchema = z.object({
@@ -34,11 +35,11 @@ const KeyIdentifierKeySchema = z.object({
 @injectable()
 export class FilesystemKeystoreService implements WalletKeystore {
 
+	// this map is indexed using the walletIdentifier
+	private walletIdentifiers: Map<string, Identifier> = new Map<string, Identifier>()
+	
 	constructor(
-		private readonly algorithm: SigningAlgorithm = SigningAlgorithm.ES256,
 
-		// this map is indexed using the walletIdentifier
-		private walletIdentifiers: Map<string, Identifier> = new Map<string, Identifier>()
 	) { 
 		this.loadWalletsFromFilesystem();
 	}
@@ -98,12 +99,12 @@ export class FilesystemKeystoreService implements WalletKeystore {
 
 	async signVcJwt(walletIdentifier: string, vcjwt: SignVerifiableCredentialJWT<any>): Promise<{ credential: string; }> {
 		// throw new Error("Method not implemented.");
-
 		const identifier = this.walletIdentifiers.get(walletIdentifier);
 		if (!identifier) {
 			throw new Error("Invalid identifier instance");
 		}
 
+		//@ts-ignore
 		let kid, iss, privateKey, privateKeyJwk;
 		
 		if (identifier instanceof EbsiLegalPersonMethodIdentifier) {
@@ -120,14 +121,23 @@ export class FilesystemKeystoreService implements WalletKeystore {
 			throw new Error("Cannot select identifer");
 		}
 
-		privateKey = await importJWK(privateKeyJwk as JWK, this.algorithm)
+
+		vcjwt.setIssuer({
+			id: iss,
+			name: iss, // a friendly name should be used here
+			iconUrl: `${config.url}/images/uoa.svg`,
+			image: `${config.url}/images/uoa.svg`,
+			logoUrl: `${config.url}/images/uoa.svg`
+		});
+
+		privateKey = await importJWK(privateKeyJwk as JWK, (privateKeyJwk as JWK).alg)
 
 		const credential = await vcjwt.setProtectedHeader({ 
-				alg: this.algorithm,
+				alg: (privateKeyJwk as JWK).alg as string,
 				kid: kid as string,
 				typ: "JWT"
 			})
-			.setIssuer(iss as string)
+			// .setIssuer(iss as string)
 			.sign(privateKey);
 		return { credential };
 	}
@@ -154,9 +164,9 @@ export class FilesystemKeystoreService implements WalletKeystore {
 		}
 
 		
-		privateKey = await importJWK(privateKeyJwk as JWK, this.algorithm)
+		privateKey = await importJWK(privateKeyJwk as JWK, (privateKeyJwk as JWK).alg)
 		const jws = await signjwt
-			.setProtectedHeader({ kid, alg: this.algorithm, typ: typ })
+			.setProtectedHeader({ kid, alg: (privateKeyJwk as JWK).alg as string, typ: typ })
 			.setIssuedAt()
 			.setIssuer(iss as string)
 			.sign(privateKey);

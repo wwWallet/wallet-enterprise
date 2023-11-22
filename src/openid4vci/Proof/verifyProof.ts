@@ -12,10 +12,12 @@ const proofHeaderSchema = z.object({
 })
 
 const proofBodySchema = z.object({
-	iss: z.string(),
+	iss: z.string().optional(),
+	did: z.string().optional(), // fallback for "iss"
 	aud: z.string(),
 	iat: z.coerce.date(),
-	nonce: z.string(),
+	nonce: z.string().optional(),
+	c_nonce: z.string().optional() // fallback for 'nonce'
 })
 
 type Proof = {
@@ -61,8 +63,10 @@ async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState
 
 	const proofPayload = proofBodySchema.parse(JSON.parse(new TextDecoder().decode(base64url.decode(proof.jwt.split('.')[1]))));
 
-	const holderDID: string = proofPayload.iss; // did of the Holder
-
+	const holderDID: string | undefined = proofPayload.iss ?? proofPayload.did; // did of the Holder
+	if (!holderDID) {
+		throw new Error("Holder DID cannot be derived from proof")
+	}
 
 	const publicKeyJwk = await appContainer.get<DidKeyResolverService>(TYPES.DidKeyResolverService).getPublicKeyJwk(holderDID);
 	
@@ -71,7 +75,7 @@ async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState
 	try {
 		// check for audience (must be issuer url)
 		const { payload } = await jwtVerify(proof.jwt, holderPublicKey);
-		if (payload["nonce"] !== session.c_nonce) {
+		if (payload["nonce"] !== session.c_nonce && payload["c_nonce"] !== session.c_nonce) { // use c_nonce attribute as a fallback for nonce
 			throw new Error("INVALID C_NONCE");
 		}
 	}

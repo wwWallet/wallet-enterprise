@@ -17,7 +17,7 @@
   "description": "",
   "dependencies": {
     "@transmute/did-key-ed25519": "^0.3.0-unstable.10",
-    "@wwwallet/ssi-sdk": "^1.0.2",
+    "@wwwallet/ssi-sdk": "^1.0.3",
     "ajv": "^8.11.0",
     "axios": "^0.27.2",
     "base64url": "^3.0.1",

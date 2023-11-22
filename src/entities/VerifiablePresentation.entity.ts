@@ -1,4 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { VerifiableCredentialFormat } from "../types/oid4vci";
 
 export enum VerificationStatus {
 	REVOKED,
@@ -16,7 +17,7 @@ export class VerifiablePresentationEntity {
 	presentation_definition_id?: string; // same with scope
 
 
-	@Column({ name: "raw_presentation", type: "blob", nullable: true })
+	@Column({ name: "raw_presentation", type: "longtext", nullable: true })
 	// @ts-ignore
 	private _raw_presentation?: Buffer;
 	set raw_presentation(value: string | null) {
@@ -53,8 +54,8 @@ export class VerifiablePresentationEntity {
 	}
 
 
-	@Column({ name: "format", type: "varchar", nullable: true })
-	format?: string;
+	@Column({ name: "format", type: "enum", enum: VerifiableCredentialFormat, nullable: true })
+	format?: VerifiableCredentialFormat;
 
 
 
@@ -65,4 +66,7 @@ export class VerifiablePresentationEntity {
 	@Column({ name: "status", type: "boolean", nullable: true })
 	status?: boolean;
 
+
+	@Column({ name: "state", type: "varchar", nullable: true })
+	state?: string;
 }

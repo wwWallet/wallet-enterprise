@@ -1,9 +1,10 @@
 import { inject, injectable } from "inversify";
 import 'reflect-metadata';
 import { TYPES } from "./types";
-import { CredentialIssuersConfigurationService } from "../configuration/CredentialIssuersConfigurationService";
 import { Application } from "express";
 import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
+import { CredentialIssuersConfiguration } from "./interfaces";
+import { authorizationServerMetadataConfiguration } from "../authorizationServiceConfiguration";
 
 @injectable()
 export class CredentialIssuersService {
@@ -11,7 +12,7 @@ export class CredentialIssuersService {
 	private credentialIssuersRepository: CredentialIssuersRepository;
 
 	constructor(
-		@inject(TYPES.CredentialIssuersConfigurationService) private credentialIssuersConfigurationService: CredentialIssuersConfigurationService,
+		@inject(TYPES.CredentialIssuersConfiguration) private credentialIssuersConfigurationService: CredentialIssuersConfiguration,
 	) { 
 		this.credentialIssuersRepository = this.credentialIssuersConfigurationService.registeredCredentialIssuerRepository();
 	}
@@ -22,7 +23,12 @@ export class CredentialIssuersService {
 				const prefix = new URL(iss.credentialIssuerIdentifier).pathname != "/" 
 					? new URL(iss.credentialIssuerIdentifier).pathname
 					: "";
-				app.get(`${prefix}/.well-known/openid-credential-issuer`, async (_req, res) => { res.send(iss.exportIssuerMetadata()); });
+				app.get(`${prefix}/.well-known/openid-credential-issuer`, async (_req, res) => { 
+					res.send({
+						...authorizationServerMetadataConfiguration,
+						...iss.exportIssuerMetadata()
+					});
+				});
 				app.post(`${prefix}/openid4vci/credential`, async (req, res) => iss.credentialRequestHandler(req, res));
 				app.post(`${prefix}/openid4vci/deferred`, async (req, res) => iss.deferredCredentialRequestHandler(req, res));
 

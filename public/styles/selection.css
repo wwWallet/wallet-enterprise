@@ -1,0 +1,47 @@
+#IssuerSelection p.invalid-feedback {
+	display: none;
+	position: absolute;
+	left: 25%;
+	right: 25%;
+	color: var(--error-red);
+	margin: auto;
+	padding-top: 20px;
+}
+
+#IssuerSelection p.label {
+	text-align: start;
+	color: rgb(104, 103, 103);
+	display: block;
+	font-size: 1.2em;
+	margin-bottom: 15px;
+}
+.dropdownContainer {
+	margin: 3em auto;
+	text-align: center;
+}
+
+.issuerDropdown {
+	padding: 15px;
+}
+
+.Btn {
+	margin: 60px auto;
+	width: 150px;
+}
+
+.dropdownLabel {
+	font-size: 35px;
+	color: #003476;
+	font-weight: 700;
+}
+
+.issuerDropdown {
+	transition: all 100ms;
+	background-color: hsl(0, 0%, 100%);
+	border-color: hsl(0, 0%, 87%);
+	border-radius: 4px;
+	border-style: solid;
+	border-width: 1px;
+	width: 100%;
+	font-size: 18px;
+}

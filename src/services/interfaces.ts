@@ -3,7 +3,8 @@ import { JWK, SignJWT } from "jose";
 import { Request , Response} from 'express'
 import { OpenidForPresentationsConfiguration } from "./types/OpenidForPresentationsConfiguration.type";
 import 'reflect-metadata';
-import { AuthorizationDetailsSchemaType } from "../types/oid4vci";
+import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oid4vci";
+import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
 
 
 export interface WalletKeystore {
@@ -14,32 +15,39 @@ export interface WalletKeystore {
 }
 
 export interface OpenidForCredentialIssuingAuthorizationServerInterface {
-	metadataRequestHandler(req: Request, res: Response): Promise<void>;
-	authorizationRequestHandler(req: Request, res: Response): Promise<void>;
+	generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported): Promise<{ url: URL }>;
+	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	authorizationRequestHandler(rctx: { req: Request, res: Response }): Promise<void>;
+	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 
-	sendAuthorizationResponse(req: Request, res: Response, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void>;
+	sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void>;
 
-	tokenRequestHandler(req: Request, res: Response): Promise<void>;
-	// credentialRequestHandler(req: Request, res: Response): Promise<void>;
-	// batchCredentialRequestHandler(req: Request, res: Response): Promise<void>;
+	tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	// credentialRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	// batchCredentialRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 }
 
 
 
 export interface OpenidForPresentationsReceivingInterface {
-	metadataRequestHandler(req: Request, res: Response): Promise<void>;
+	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 
 	
-	authorizationRequestHandler(req: Request, res: Response, userSessionIdToBindWith?: number): Promise<void>;
+	authorizationRequestHandler(ctx: { req: Request, res: Response }, userSessionIdToBindWith?: number): Promise<void>;
 
+	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentation_definition_id: string, directPostEndpoint?: string): Promise<{ url: URL; stateId: string }>;
+	getPresentationDefinitionHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	getPresentationByState(state: string): Promise<{ status: boolean, presentation?: string }>;
+	
 	/**
 	 * @throws
 	 * @param req 
 	 * @param res 
 	 */
-	responseHandler(req: Request, res: Response): Promise<{ verifierStateId: string, bindedUserSessionId?: number }>;
+	responseHandler(ctx: { req: Request, res: Response }): Promise<{ verifierStateId: string, bindedUserSessionId?: number, vp_token?: string }>;
 
-	sendAuthorizationResponse(req: Request, res: Response, verifierStateId: string): Promise<void>;
+	sendAuthorizationResponse(ctx: { req: Request, res: Response }, verifierStateId: string): Promise<void>;
 
 }
 
@@ -58,4 +66,10 @@ export interface CredentialReceiving {
 
 export interface DidKeyResolverService {
 	getPublicKeyJwk(did: string): Promise<JWK>;
+}
+
+export interface CredentialIssuersConfiguration {
+	registeredCredentialIssuerRepository(): CredentialIssuersRepository;
+	registeredClients(): { client_id: string; friendlyName: string; redirectUri: string; }[];
+	defaultCredentialIssuerIdentifier(): string | null;
 }
