@@ -16,9 +16,10 @@ block layout-content
 					tr
 						td #[strong #{locale.personalInfo.ssn}]
 						td #{info.ssn}
-					tr
-						td #[strong #{locale.personalInfo.taxisId}]
-						td #{info.taxis_id}
+					if info.taxis_id
+						tr
+							td #[strong #{locale.personalInfo.taxisId}]
+							td #{info.taxis_id}
 			hr
 			p #{locale.personalInfo.acknowledgement}
 			
