@@ -140,6 +140,7 @@ app.post('/demo/generate-credential-offer', async (req: Request, res: Response) 
 			taxis_id,
 		} = req.body;
 		await createNewAuthorizationServerState({ req, res });
+		req.authorizationServerState.credential_issuer_identifier = credential_issuer_identifier;
 		req.authorizationServerState.grant_type = GrantType.PRE_AUTHORIZED_CODE;
 
 		const issuer = credentialIssuersConfigurationService.registeredCredentialIssuerRepository().getCredentialIssuer(credential_issuer_identifier);
@@ -150,6 +151,7 @@ app.post('/demo/generate-credential-offer', async (req: Request, res: Response) 
 			return _.isEqual(sc.getTypes(), types) && sc.getFormat() == format
 		})[0];
 
+
 		if (!supportedCredential) {
 			return res.status(404).send({ msg: "Supported credential not found" });
 		}
@@ -159,7 +161,8 @@ app.post('/demo/generate-credential-offer', async (req: Request, res: Response) 
 			{ format: supportedCredentialObject.format, types: supportedCredentialObject.types ?? [], type: 'openid_credential' }
 		];
 
-
+		console.log("Supported credential = ", supportedCredentialObject);
+		
 		req.authorizationServerState.ssn = ssn;
 		req.authorizationServerState.taxis_id = taxis_id;
 		req.authorizationServerState.personalIdentifier = personalIdentifier;
