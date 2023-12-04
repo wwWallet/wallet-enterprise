@@ -22,6 +22,9 @@ import locale from './configuration/locale';
 import { verifierRouter } from './verifier/verifierRouter';
 import { GrantType } from './types/oid4vci';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
+import { openidForCredentialIssuingAuthorizationServerService } from './services/instances';
+import { CredentialIssuersConfigurationService } from './configuration/CredentialIssuersConfigurationService';
+import _ from 'lodash';
 
 initDataSource();
 
@@ -121,7 +124,60 @@ app.get('/.well-known/openid-configuration', async (_req: Request, res: Response
 })
 
 
+const credentialIssuersConfigurationService = appContainer.resolve(CredentialIssuersConfigurationService)
 
+
+app.post('/demo/generate-credential-offer', async (req: Request, res: Response) => {
+	try {
+		const {
+			credential_issuer_identifier,
+			credential_definition: {
+				types,
+				format
+			},
+			ssn,
+			personalIdentifier,
+			taxis_id,
+		} = req.body;
+		await createNewAuthorizationServerState({ req, res });
+		req.authorizationServerState.credential_issuer_identifier = credential_issuer_identifier;
+		req.authorizationServerState.grant_type = GrantType.PRE_AUTHORIZED_CODE;
+
+		const issuer = credentialIssuersConfigurationService.registeredCredentialIssuerRepository().getCredentialIssuer(credential_issuer_identifier);
+		if (!issuer) {
+			return res.status(404).send({ msg: "Issuer not found" });
+		}
+		const supportedCredential = issuer.supportedCredentials.filter(sc => {
+			return _.isEqual(sc.getTypes(), types) && sc.getFormat() == format
+		})[0];
+
+
+		if (!supportedCredential) {
+			return res.status(404).send({ msg: "Supported credential not found" });
+		}
+
+		const supportedCredentialObject = supportedCredential.exportCredentialSupportedObject()
+		req.authorizationServerState.authorization_details = [
+			{ format: supportedCredentialObject.format, types: supportedCredentialObject.types ?? [], type: 'openid_credential' }
+		];
+
+		console.log("Supported credential = ", supportedCredentialObject);
+		
+		req.authorizationServerState.ssn = ssn;
+		req.authorizationServerState.taxis_id = taxis_id;
+		req.authorizationServerState.personalIdentifier = personalIdentifier;
+
+		await AppDataSource.getRepository(AuthorizationServerState)
+			.save(req.authorizationServerState);
+
+
+		const { url } = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, supportedCredentialObject);
+		res.status(200).send({ url });
+	} catch (e) {
+		console.log(e);
+		return res.status(404).send({ msg: "Issuer not found" });
+	}
+})
 
 // catch 404 and forward to error handler
 app.use((req, _res, next) => {
