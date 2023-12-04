@@ -26,6 +26,10 @@
 	/* padding-bottom: 15px; */
 }
 
+#Header .header-content#vid-issuer {
+	height: 9%;
+}
+
 #Header .header-content a{
 	font-size: 35px;
 	color: #fff;
@@ -64,7 +68,6 @@
 #img-gunet {
 	margin-left: auto;
 	position: relative;
-	left: 40;
 	top: -20;
 }
 
@@ -86,7 +89,11 @@
 
 .ribbon {
 	width: 150px;
-	height: 113px;
+	/* height: 106px; */
+	height: 100%;
+	height: -moz-available; /* WebKit-based browsers will ignore this. */
+	height: -webkit-fill-available; /* Mozilla-based browsers will ignore this. */
+	height: fill-available;
 	overflow: hidden;
 	position: absolute;
 	top: 0;
