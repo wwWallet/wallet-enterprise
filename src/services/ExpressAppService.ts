@@ -32,12 +32,6 @@ export class ExpressAppService {
 		app.post('/verification/direct_post', this.directPostEndpoint());
 		app.get('/verification/definition', async (req, res) => { this.presentationsReceivingService.getPresentationDefinitionHandler({req, res}); });
 		
-		if (applicationMode == ApplicationModeType.VERIFIER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER) {
-			app.get('/verification/authorize', async (req, res) => {
-				req.session.authorizationServerStateIdentifier = undefined;
-				this.presentationsReceivingService.authorizationRequestHandler({req, res}, undefined);
-			});
-		}
 
 		if (applicationMode == ApplicationModeType.ISSUER || applicationMode == ApplicationModeType.ISSUER_AND_VERIFIER) {
 			app.get('/openid4vci/authorize', async (req, res) => {

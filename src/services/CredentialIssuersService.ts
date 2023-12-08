@@ -5,6 +5,7 @@ import { Application } from "express";
 import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
 import { CredentialIssuersConfiguration } from "./interfaces";
 import { authorizationServerMetadataConfiguration } from "../authorizationServiceConfiguration";
+import { CredentialIssuer } from "../lib/CredentialIssuerConfig/CredentialIssuer";
 
 @injectable()
 export class CredentialIssuersService {
@@ -15,6 +16,14 @@ export class CredentialIssuersService {
 		@inject(TYPES.CredentialIssuersConfiguration) private credentialIssuersConfigurationService: CredentialIssuersConfiguration,
 	) { 
 		this.credentialIssuersRepository = this.credentialIssuersConfigurationService.registeredCredentialIssuerRepository();
+	}
+
+	public getIssuerByIdentifier(credentialIssuerIdentifier: string): CredentialIssuer {
+		const result = this.credentialIssuersRepository.getCredentialIssuer(credentialIssuerIdentifier);
+		if (!result) {
+			throw new Error("Credential issuer does not exist");
+		}
+		return result;
 	}
 
 	public exposeAllIssuers(app: Application) {

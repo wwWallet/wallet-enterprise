@@ -9,9 +9,7 @@ import { authorizationRouter } from './authorization/router';
 import AppDataSource, { initDataSource } from './AppDataSource';
 import createHttpError, { HttpError} from 'http-errors';
 import { appContainer } from './services/inversify.config';
-import { FilesystemKeystoreService } from './services/FilesystemKeystoreService';
 import { authorizationServerMetadataConfiguration } from './authorizationServiceConfiguration';
-import { CredentialReceivingService } from './services/CredentialReceivingService';
 import { ExpressAppService } from './services/ExpressAppService';
 import { authorizationServerStateMiddleware, createNewAuthorizationServerState } from './middlewares/authorizationServerState.middleware';
 import { CONSENT_ENTRYPOINT } from './authorization/constants';
@@ -28,9 +26,7 @@ import _ from 'lodash';
 
 initDataSource();
 
-const credentialReceivingService = appContainer.resolve(CredentialReceivingService);
 
-const walletKeystore = appContainer.resolve(FilesystemKeystoreService);
 // const credentialIssuersConfigurationService = appContainer.get<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfiguration);
 
 const app: Express = express();
@@ -77,18 +73,6 @@ app.use('/verifier', verifierRouter);
 
 app.use('/authorization', authorizationRouter);
 
-
-
-// expose all public keys
-app.get('/jwks', async (_req: Request, res: Response) => {
-	const { keys } = await walletKeystore.getAllPublicKeys();
-	res.send({ keys });
-})
-
-app.get('/init', async (_req, res) => {
-	credentialReceivingService.sendAuthorizationRequest();
-	res.send({})
-})
 
 
 

@@ -7,16 +7,17 @@ import { verifyProof } from "../../openid4vci/Proof/verifyProof";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import { jwtDecrypt } from "jose";
 import { keyPairPromise } from "../../openid4vci/utils/generateAccessToken";
+import { Signer } from "../../services/interfaces";
 
 export class CredentialIssuer {
 
 	public credentialIssuerIdentifier: string = "";
-	public walletId: string = "";
 	public supportedCredentials: SupportedCredentialProtocol[] = [];
 	public authorizationServerURL: string = "";
 
 	private credentialEndpointURL: string = "";
 
+	private signer: Signer | undefined = undefined;
 
 	private deferredCredentialEndpointURL?: string = undefined;
 	private batchCredentialEndpointURL?: string = undefined;
@@ -28,9 +29,15 @@ export class CredentialIssuer {
 		return this;
 	}
 
-	setWalletId(id: string): this {
-		this.walletId = id;
+	setSigner(signer: Signer): this {
+		this.signer = signer;
 		return this;
+	}
+
+	getSigner(): Signer {
+		if (!this.signer)
+			throw new Error("Signer is not defined");
+		return this.signer;
 	}
 
 	setAuthorizationServerURL(authorizationServerURL: string): this {

@@ -1,10 +1,8 @@
 import { Container } from "inversify";
-import { OpenidForPresentationsReceivingInterface, WalletKeystore, CredentialReceiving, OpenidForCredentialIssuingAuthorizationServerInterface, DidKeyResolverService, VerifierConfigurationInterface, CredentialIssuersConfiguration } from "./interfaces";
+import { OpenidForPresentationsReceivingInterface, OpenidForCredentialIssuingAuthorizationServerInterface, DidKeyResolverService, VerifierConfigurationInterface, CredentialIssuersConfiguration } from "./interfaces";
 import { TYPES } from "./types";
-import { FilesystemKeystoreService } from "./FilesystemKeystoreService";
 import { OpenidForPresentationsReceivingService } from "./OpenidForPresentationReceivingService";
 import 'reflect-metadata';
-import { CredentialReceivingService } from "./CredentialReceivingService";
 import { OpenidForCredentialIssuingAuthorizationServerService } from "./OpenidForCredentialIssuingAuthorizationServerService";
 import { CredentialIssuersConfigurationService } from "../configuration/CredentialIssuersConfigurationService";
 import { CredentialIssuersService } from "./CredentialIssuersService";
@@ -27,9 +25,6 @@ appContainer.bind<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfigu
 	.to(CredentialIssuersConfigurationService);
 
 
-appContainer.bind<WalletKeystore>(TYPES.FilesystemKeystoreService)
-	.to(FilesystemKeystoreService);
-
 appContainer.bind<OpenidForPresentationsReceivingInterface>(TYPES.OpenidForPresentationsReceivingService)
 	.to(OpenidForPresentationsReceivingService);
 
@@ -38,10 +33,6 @@ appContainer.bind<OpenidForCredentialIssuingAuthorizationServerInterface>(TYPES.
 	.to(OpenidForCredentialIssuingAuthorizationServerService);
 
 
-
-
-appContainer.bind<CredentialReceiving>(TYPES.CredentialReceivingService)
-	.to(CredentialReceivingService);
 
 appContainer.bind<CredentialIssuersService>(TYPES.CredentialIssuersService)
 	.to(CredentialIssuersService);
