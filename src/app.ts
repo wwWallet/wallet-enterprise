@@ -17,6 +17,8 @@ import session from 'express-session';
 
 import { verifierPanelRouter } from './verifier/verifierPanelRouter';
 import locale from './configuration/locale';
+import titles from './configuration/titles';
+
 import { verifierRouter } from './verifier/verifierRouter';
 import { GrantType } from './types/oid4vci';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
@@ -80,7 +82,7 @@ app.get('/', async (req: Request, res: Response) => {
 	
 	req.session.authenticationChain = {};
 	return res.render('index', {
-		title: "Index",
+    title: titles.index,
 		lang: req.lang,
 		locale: locale[req.lang]
 	})
