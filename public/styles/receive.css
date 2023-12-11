@@ -6,9 +6,9 @@
 }
 
 /* Used for the alignment of the QR code with "Open with Wallet" button" */
-.layout {
+/* .layout {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
+} */
 

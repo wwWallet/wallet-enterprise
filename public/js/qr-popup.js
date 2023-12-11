@@ -6,6 +6,8 @@ const closeDialogBtn = document.getElementById('closeDialogBtn');
 function openDialog(qrCodeURL, url) {
 	qrImage.src = qrCodeURL;
 	qrURL.onclick = (e) => {
+		url = url.replace('openid-credential-offer://', 'https://demo.wwwallet.org/cb');
+		console.log(url);
 		e.preventDefault();
 		window.location.href = url;
 	}
