@@ -97,7 +97,7 @@ export class FilesystemKeystoreService implements WalletKeystore {
 	}
 
 
-	async signVcJwt(walletIdentifier: string, vcjwt: SignVerifiableCredentialJWT<any>): Promise<{ credential: string; }> {
+	async signVcJwt(walletIdentifier: string, vcjwt: SignVerifiableCredentialJWT): Promise<{ credential: string; }> {
 		// throw new Error("Method not implemented.");
 		const identifier = this.walletIdentifiers.get(walletIdentifier);
 		if (!identifier) {

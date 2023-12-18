@@ -10,7 +10,7 @@ import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository"
 export interface WalletKeystore {
 	getAllPublicKeys(): Promise<{ keys: JWK[] }>;
 	getPublicKeyJwk(walletIdentifier: string): Promise<{ jwk: JWK }>;
-	signVcJwt(walletIdentifier: string, vcjwt: SignVerifiableCredentialJWT<any>): Promise<{ credential: string }>;
+	signVcJwt(walletIdentifier: string, vcjwt: SignVerifiableCredentialJWT): Promise<{ credential: string }>;
 	signJwt(walletIdentifier: string, signjwt: SignJWT, typ: string): Promise<{ jws: string }>
 }
 
