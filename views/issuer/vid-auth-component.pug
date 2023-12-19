@@ -11,6 +11,7 @@ block layout-content
           img(src=authorizationRequestQR width=200 height=200)
           - const modifiedURL = authorizationRequestURL.replace("openid://", "https://demo.wwwallet.org/")
           button.Btn.Medium.openwithwalletbutton(type="button" onclick=`window.location.href = '${modifiedURL}';`) Open with wwWallet
+          button.Btn.Medium.openwithwalletbuttonnative(type="button" onclick=`window.location.href = '${authorizationRequestURL}';`) Open with a Native Wallet
 
           input(type='hidden' name='state' id='state' value=state)
           input(type='hidden' name='authorizationRequestQR' id='authorizationRequestQR' value=authorizationRequestQR)
