@@ -18,14 +18,17 @@ block layout-content
 
 				section.MainLayout
 					dialog#qrDialog
-						button#closeDialogBtn.Btn.Close
-							i.fa.fa-times
-						img#qrImage(src="" alt="QR Code" style="width:-webkit-fill-available;")
-						.centered
-							div
-								button#qrURLwwwallet.Btn.Small.openwithwalletbutton Open with wwWallet
-							div
-								button#qrURLnative.Btn.Small.openwithwalletbuttonnative Open with a Native Wallet
+						.dialog-header
+							h4 Credential Offer
+							button#closeDialogBtn.Btn.Close(type="button")
+								i.fa.fa-times
+						.dialog-body
+							img#qrImage(src="" alt="QR Code" style="width:-webkit-fill-available;")
+							.centered
+								div
+									button#qrURLwwwallet.Btn.Small.openwithwalletbutton Open with wwWallet
+								div
+									button#qrURLnative.Btn.Small.openwithwalletbuttonnative Open with a Native Wallet
 
 					section.CredentialsArea
 						//- form.diplomas(name='selectDiplomas' method="post")
