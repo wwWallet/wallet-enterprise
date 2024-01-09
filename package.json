@@ -19,7 +19,7 @@
     "@digitalbazaar/did-io": "^2.0.0",
     "@digitalbazaar/did-method-key": "^5.1.0",
     "@transmute/did-key-ed25519": "^0.3.0-unstable.10",
-    "@wwwallet/ssi-sdk": "^1.0.4",
+    "@wwwallet/ssi-sdk": "^1.0.6",
     "ajv": "^8.11.0",
     "axios": "^0.27.2",
     "base64url": "^3.0.1",

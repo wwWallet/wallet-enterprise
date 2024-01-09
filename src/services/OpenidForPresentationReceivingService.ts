@@ -369,10 +369,10 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 	
 	//@ts-ignore
-	private async isNotValidYet(vcjwt: string): Promise<boolean> {
-		const payload = JSON.parse(base64url.decode(vcjwt.split('.')[1])) as { nbf: number };
-		return payload.nbf ? payload.nbf > Math.floor(Date.now() / 1000) : false;
-	}
+	// private async isNotValidYet(vcjwt: string): Promise<boolean> {
+	// 	const payload = JSON.parse(base64url.decode(vcjwt.split('.')[1])) as { nbf: number };
+	// 	return payload.nbf ? payload.nbf > Math.floor(Date.now() / 1000) : false;
+	// }
 
 	//@ts-ignore
 	private async isRevoked(_vcjwt: string): Promise<boolean> {
