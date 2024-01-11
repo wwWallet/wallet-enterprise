@@ -24,7 +24,7 @@ import titles from './configuration/titles';
 import { verifierRouter } from './verifier/verifierRouter';
 import { GrantType } from './types/oid4vci';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
-import { openidForCredentialIssuingAuthorizationServerService } from './services/instances';
+import { openidForCredentialIssuingAuthorizationServerService, openidForPresentationReceivingService } from './services/instances';
 import { CredentialIssuersConfigurationService } from './configuration/CredentialIssuersConfigurationService';
 import _ from 'lodash';
 
@@ -180,6 +180,13 @@ app.post('/demo/generate-credential-offer', async (req: Request, res: Response) 
 		return res.status(404).send({ msg: "Issuer not found" });
 	}
 })
+
+
+app.post('/demo/presentation-request', async (req: Request, res: Response) => {
+	const { presentation_definition_id } = req.body;
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentation_definition_id);	
+	res.send({ url });
+});
 
 // catch 404 and forward to error handler
 app.use((req, _res, next) => {
