@@ -62,7 +62,7 @@ export interface CredentialReceiving {
 
 
 
-export interface DidKeyResolverService {
+export interface DidKeyResolverServiceInterface {
 	getPublicKeyJwk(did: string): Promise<JWK>;
 }
 

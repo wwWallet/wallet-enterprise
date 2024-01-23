@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Request , Response} from 'express'
-import { DidKeyResolverService, OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
+import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
 import { VerifiableCredentialFormat } from "../types/oid4vci";
 import { AuthorizationRequestQueryParamsSchemaType } from "../types/oid4vci";
 import { TYPES } from "./types";
@@ -16,6 +16,7 @@ import AppDataSource from "../AppDataSource";
 import { verificationCallback } from "../configuration/verificationCallback";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import config from "../../config";
+import { DidKeyResolverService } from "./DidKeyResolverService";
 
 
 type VerifierState = {
