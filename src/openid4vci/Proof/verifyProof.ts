@@ -74,7 +74,9 @@ async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState
 	const holderPublicKey = await importJWK(publicKeyJwk, proofHeader.alg);
 	try {
 		// check for audience (must be issuer url)
-		const { payload } = await jwtVerify(proof.jwt, holderPublicKey);
+		const { payload } = await jwtVerify(proof.jwt, holderPublicKey, {
+			clockTolerance: '15 minutes'
+		});
 		if (payload["nonce"] !== session.c_nonce && payload["c_nonce"] !== session.c_nonce) { // use c_nonce attribute as a fallback for nonce
 			throw new Error("INVALID C_NONCE");
 		}
