@@ -27,6 +27,8 @@ type VerifierState = {
 
 const verifierStates = new Map<string, VerifierState>();
 
+const CLOCK_TOLERANCE = '15 minutes';
+
 const clientStates = new Map<string, string>(); // key: state given by the client, value: verifierStateId
 const nonces = new Map<string, string>(); // key: nonce, value: verifierStateId
 
@@ -229,6 +231,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 			try {
 				const { payload } = await jwtVerify(id_token, pubKey, {
+					clockTolerance: CLOCK_TOLERANCE
 					// audience: this.configurationService.getConfiguration().baseUrl,
 				});
 				const { nonce } = payload;
@@ -301,6 +304,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 			try {
 				const { payload } = await jwtVerify(vp_token, pubKey, {
+					clockTolerance: CLOCK_TOLERANCE
 					// audience: this.configurationService.getConfiguration().baseUrl,
 				});
 				const { nonce } = payload;
