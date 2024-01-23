@@ -27,6 +27,8 @@ type VerifierState = {
 
 const verifierStates = new Map<string, VerifierState>();
 
+const CLOCK_TOLERANCE = '15 minutes';
+
 const clientStates = new Map<string, string>(); // key: state given by the client, value: verifierStateId
 const nonces = new Map<string, string>(); // key: nonce, value: verifierStateId
 
@@ -147,6 +149,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 			try {
 				const { payload } = await jwtVerify(id_token, pubKey, {
+					clockTolerance: CLOCK_TOLERANCE
 					// audience: this.configurationService.getConfiguration().baseUrl,
 				});
 				const { nonce } = payload;
@@ -219,6 +222,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 			try {
 				const { payload } = await jwtVerify(vp_token, pubKey, {
+					clockTolerance: CLOCK_TOLERANCE
 					// audience: this.configurationService.getConfiguration().baseUrl,
 				});
 				const { nonce } = payload;
@@ -334,7 +338,22 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 	private async validateVpToken(vp_token: string, presentation_submission: PresentationSubmission): Promise<{ error?: Error, error_description?: Error}> {
-		const payload = JSON.parse(base64url.decode(vp_token.split('.')[1])) as { vp: { verifiableCredential: string[] } };
+		const payload = JSON.parse(base64url.decode(vp_token.split('.')[1])) as { nonce: string, vp: { verifiableCredential: string[] } };
+
+		const verifierStateId = nonces.get(payload.nonce);
+		if (!verifierStateId) {
+			return { error: new Error("WRONG_NONCE"), error_description: new Error("Verifier state was not found based on the nonce of the vp token")}
+		}
+		const verifierState = verifierStates.get(verifierStateId);
+		if (!verifierState) {
+			return { error: new Error("STATE_NOT_FOUND"), error_description: new Error("Verifier could not be received") };
+		}
+		if (verifierState.presentation_definition?.input_descriptors.length != presentation_submission.descriptor_map.length) {
+			return { error: new Error("NOT_ENOUGH_CREDENTIALS") , error_description: new Error("Holder did not send all the requested credentials") };
+		}
+
+
+		console.log("Presentation SUB = ", presentation_submission)
 		for (const desc of presentation_submission.descriptor_map) {
 			const path = desc?.path as string;
 			let vcjwt = JSONPath({ json: payload.vp, path: path });

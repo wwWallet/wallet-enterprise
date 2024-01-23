@@ -25,6 +25,15 @@ verifierRouter.get('/public/definitions', async (req, res) => {
 })
 
 
+verifierRouter.get('/success/status', async (req, res) => { // response with the status of the presentation (this endpoint should be protected)
+	const state = req.query.state;
+	const {status, presentation} = await openidForPresentationReceivingService.getPresentationByState(state as string);
+	if (!presentation) {
+		return res.send({ status: false, error: "Presentation not received" });
+	}
+	return res.send({ status, presentation });
+})
+
 verifierRouter.get('/success', async (req, res) => {
 	const state = req.query.state;
 	const {status, presentation} = await openidForPresentationReceivingService.getPresentationByState(state as string);
