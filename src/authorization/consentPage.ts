@@ -17,6 +17,7 @@ const consentSubmitSchema = z.object({
 })
 
 export async function consent(req: Request, res: Response, _next: NextFunction) {
+	console.log("AUTZ = ", req.authorizationServerState)
 	if (!req.authorizationServerState || !req.authorizationServerState.authorization_details) {
 		res.render('error', {
 			lang: req.lang,
@@ -69,7 +70,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 	let credentialViewsWithCredentialOffers = null;
 	if (req.authorizationServerState.grant_type == GrantType.PRE_AUTHORIZED_CODE) {
 		credentialViewsWithCredentialOffers = await Promise.all(allCredentialViews.map(async (credentialView) => {
-			const { url } = await openidForCredentialIssuingAuthorizationServerService
+			const { url, user_pin_required, user_pin } = await openidForCredentialIssuingAuthorizationServerService
 				.generateCredentialOfferURL({req, res}, credentialView.credential_supported_object);
 			let credentialOfferQR = await new Promise((resolve) => {
 				qrcode.toDataURL(url.toString(), {
@@ -86,6 +87,8 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 				...credentialView,
 				credentialOfferURL: url.toString(),
 				credentialOfferQR,
+				user_pin_required,
+				user_pin
 			};
 			return credViewWithCredentialOffer;
 		}));
