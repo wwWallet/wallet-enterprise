@@ -2,11 +2,12 @@ const qrDialog = document.getElementById('qrDialog');
 const qrImage = document.getElementById('qrImage');
 const qrURL = document.getElementById('qrURL');
 const closeDialogBtn = document.getElementById('closeDialogBtn');
+const wwwalletUrl = document.getElementById('wwwalletURL')
 
 function openDialog(qrCodeURL, url) {
 	qrImage.src = qrCodeURL;
 	qrURLwwwallet.onclick = (e) => {
-		url = url.replace('openid-credential-offer://', 'https://demo.wwwallet.org/cb');
+		url = url.replace('openid-credential-offer://', wwwalletUrl.value);
 		console.log(url);
 		e.preventDefault();
 		window.location.href = url;

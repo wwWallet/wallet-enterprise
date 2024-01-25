@@ -74,6 +74,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		else {
 			return res.render('verifier/QR.pug', {
 				state: req.body.state,
+				wwwalletURL: config.wwwalletURL,
 				authorizationRequestURL: req.body.authorizationRequestURL,
 				authorizationRequestQR: req.body.authorizationRequestQR,
 				lang: req.lang,
@@ -116,6 +117,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 
 	console.log("URL = ", url)
 	return res.render('verifier/QR.pug', {
+		wwwalletURL: config.wwwalletURL,
 		authorizationRequestURL: url.toString(),
 		authorizationRequestQR,
 		state: url.searchParams.get('state'),
