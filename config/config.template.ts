@@ -10,4 +10,5 @@ export = {
 		password: "DB_PASSWORD",
 		dbname: "DB_NAME"
 	},
+	wwwalletURL: "WWWALLET_URL"
 }

@@ -3,6 +3,7 @@ const qrImage = document.getElementById('qrImage');
 const qrURL = document.getElementById('qrURL');
 const closeDialogBtn = document.getElementById('closeDialogBtn');
 const userPinTextElement = document.getElementById('userPinText');
+const wwwalletUrl = document.getElementById('wwwalletURL')
 
 function openDialog(qrCodeURL, url, user_pin_required, user_pin) {
 	qrImage.src = qrCodeURL;
@@ -10,7 +11,7 @@ function openDialog(qrCodeURL, url, user_pin_required, user_pin) {
 		userPinTextElement.textContent = user_pin;
 	}
 	qrURLwwwallet.onclick = (e) => {
-		url = url.replace('openid-credential-offer://', 'https://demo.wwwallet.org/cb');
+		url = url.replace('openid-credential-offer://', wwwalletUrl.value);
 		console.log(url);
 		e.preventDefault();
 		window.location.href = url;

@@ -9,7 +9,7 @@ import { CredentialView } from "./types";
 import locale from "../configuration/locale";
 import { SKIP_CONSENT } from "../configuration/consent/consent.config";
 import * as qrcode from 'qrcode';
-
+import config from '../../config';
 
 
 const consentSubmitSchema = z.object({
@@ -96,6 +96,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 
 	return res.render('issuer/consent.pug', {
 		title: 'Consent',
+		wwwalletURL: config.wwwalletURL,
 		redirect_uri: req.authorizationServerState.redirect_uri ? new URL(req.authorizationServerState.redirect_uri).hostname : "", 
 		credentialViewList: req.authorizationServerState.grant_type == GrantType.PRE_AUTHORIZED_CODE ?
 			credentialViewsWithCredentialOffers :
