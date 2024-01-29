@@ -2,13 +2,13 @@ const qrDialog = document.getElementById('qrDialog');
 const qrImage = document.getElementById('qrImage');
 const qrURL = document.getElementById('qrURL');
 const closeDialogBtn = document.getElementById('closeDialogBtn');
-const userPinTextElement = document.getElementById('userPinText');
+const userPinTextElement = document.getElementById('userPinTextElement');
 const wwwalletUrl = document.getElementById('wwwalletURL')
 
 function openDialog(qrCodeURL, url, user_pin_required, user_pin) {
 	qrImage.src = qrCodeURL;
 	if (user_pin_required && user_pin_required == 'true') {
-		userPinTextElement.textContent = user_pin;
+		userPinTextElement.innerHTML = `PIN: ${user_pin}`;
 	}
 	qrURLwwwallet.onclick = (e) => {
 		url = url.replace('openid-credential-offer://', wwwalletUrl.value);
