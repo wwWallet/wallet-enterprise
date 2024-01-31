@@ -283,8 +283,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 						body.user_pin != undefined &&
 						body.user_pin !== state.user_pin) {
 					
-					response = { ...response, error_description: "Invalid pin" }
-					throw new Error("Invalid PIN was given");
+					response = { error: "invalid_request", error_description: "Invalid pin" }
+					ctx.res.status(400).json({ error: "invalid_request", ...response });
+					return;
 				}
 				state.pre_authorized_code = null; // invalidate the pre-authorized code to prevent reuse
 				await AppDataSource.getRepository(AuthorizationServerState).save(state);
@@ -295,7 +296,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			catch(err) {
 				console.log("Error on token request pre authorized code")
 				console.log(err);
-				ctx.res.status(500).json({ error: "ERROR", ...response });
+				ctx.res.status(400).json({ error: "invalid_request", ...response });
 				return;
 			}
 			break;
