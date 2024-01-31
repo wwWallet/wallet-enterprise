@@ -225,7 +225,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		console.log("Body ", ctx.req.body)
 
 		let body = null;
-		let response = null;
+		let response = { };
 		if (!ctx.req.body.grant_type) {
 			console.log("No grant type was found");
 			ctx.res.status(500).send({});
@@ -277,6 +277,15 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				if (!state) {
 					throw new Error(`No authorization server state was found for authorization code ${body["pre-authorized_code"]}`);
 				}
+				// compare pin
+				if (state.user_pin_required &&
+						state.user_pin_required == true &&
+						body.user_pin != undefined &&
+						body.user_pin !== state.user_pin) {
+					
+					response = { ...response, error_description: "Invalid pin" }
+					throw new Error("Invalid PIN was given");
+				}
 				state.pre_authorized_code = null; // invalidate the pre-authorized code to prevent reuse
 				await AppDataSource.getRepository(AuthorizationServerState).save(state);
 
@@ -286,7 +295,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			catch(err) {
 				console.log("Error on token request pre authorized code")
 				console.log(err);
-				ctx.res.status(500).json({ error: "Failed"});
+				ctx.res.status(500).json({ error: "ERROR", ...response });
 				return;
 			}
 			break;
