@@ -268,14 +268,18 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			try {
 				body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(ctx.req.body);
 				if (body["pre-authorized_code"] == 'undefined') {
-					throw new Error("Pre authorized code is undefined");
+					response = { error: "invalid_request", error_description: "INVALID_PRE_AUTHORIZED_CODE" }
+					ctx.res.status(400).json({ error: "invalid_request", ...response });
+					return;
 				}
 				let state = await this.authorizationServerStateRepository
 					.createQueryBuilder("state")
 					.where("state.pre_authorized_code = :code", { code: body["pre-authorized_code"] })
 					.getOne();
 				if (!state) {
-					throw new Error(`No authorization server state was found for authorization code ${body["pre-authorized_code"]}`);
+					response = { error: "invalid_request", error_description: "INVALID_PRE_AUTHORIZED_CODE" }
+					ctx.res.status(400).json({ error: "invalid_request", ...response });
+					return;
 				}
 				// compare pin
 				if (state.user_pin_required &&
@@ -283,7 +287,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 						body.user_pin != undefined &&
 						body.user_pin !== state.user_pin) {
 					
-					response = { error: "invalid_request", error_description: "Invalid pin" }
+					response = { error: "invalid_request", error_description: "INVALID_PIN" }
 					ctx.res.status(400).json({ error: "invalid_request", ...response });
 					return;
 				}
