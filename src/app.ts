@@ -173,8 +173,8 @@ app.post('/demo/generate-credential-offer', async (req: Request, res: Response) 
 			.save(req.authorizationServerState);
 
 
-		const { url } = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, supportedCredentialObject);
-		res.status(200).send({ url });
+		const { url, user_pin, user_pin_required } = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, supportedCredentialObject);
+		res.status(200).send({ url, user_pin, user_pin_required });
 	} catch (e) {
 		console.log(e);
 		return res.status(404).send({ msg: "Issuer not found" });
