@@ -183,8 +183,8 @@ app.post('/demo/generate-credential-offer', async (req: Request, res: Response) 
 
 
 app.post('/demo/presentation-request', async (req: Request, res: Response) => {
-	const { presentation_definition_id, launchpad_callback_url } = req.body;
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentation_definition_id, launchpad_callback_url);	
+	const { presentation_definition_id, callback_url } = req.body;
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentation_definition_id, callback_url);	
 	res.send({ url });
 });
 
