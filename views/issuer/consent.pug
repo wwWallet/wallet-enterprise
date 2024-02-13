@@ -29,6 +29,8 @@ block layout-content
 									button#qrURLwwwallet.Btn.Dialog.openwithwalletbutton Open with wwWallet
 								div
 									button#qrURLnative.Btn.Dialog.openwithwalletbuttonnative Open with a Native Wallet
+								div#userPinTextElement
+
 
 					section.CredentialsArea
 						//- form.diplomas(name='selectDiplomas' method="post")
@@ -53,7 +55,7 @@ block layout-content
 													input(type="checkbox" class="scopeCheckbox" id=row.name name=row.name value=row.value checked disabled)
 									br
 									if grant_type != "authorization_code"
-										button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}', '${credential.credentialOfferURL}')`) Get credential
+										button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}', '${credential.credentialOfferURL}', '${credential.user_pin_required}', '${credential.user_pin}')`) Get credential
 				.GetMultiBtnArea
 					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
 					if grant_type == "authorization_code"
@@ -76,7 +78,8 @@ block layout-content
 											div 1 year
 	.BarBtnContainer
 		button#BarBtn.Btn.Large.GetMultiBtn(type="button" disabled) Get credentials
-
+	input(id='wwwalletURL' type='hidden' value=wwwalletURL)
+	
 	link(rel="stylesheet" href="/styles/consent.css")
 	link(rel="stylesheet" href="/styles/inspect.css")
 	script(src='/js/consent.js')

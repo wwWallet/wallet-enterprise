@@ -13,7 +13,7 @@ export interface Signer {
 }
 
 export interface OpenidForCredentialIssuingAuthorizationServerInterface {
-	generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported): Promise<{ url: URL }>;
+	generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported): Promise<{ url: URL, user_pin_required: boolean, user_pin: string | undefined }>;
 	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 	
 	authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;

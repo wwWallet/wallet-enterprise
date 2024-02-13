@@ -10,5 +10,5 @@ export = {
 		password: "DB_PASSWORD",
 		dbname: "DB_NAME"
 	},
-	didResolverServiceUrl: "http://did-resolver:4555"
+	wwwalletURL: "WWWALLET_URL"
 }
