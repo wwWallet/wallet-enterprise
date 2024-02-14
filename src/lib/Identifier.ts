@@ -31,8 +31,6 @@ export type DidEbsiKeyTypeObject = {
 
 
 export const KeyDescriptorSchema = z.object({
-	id: z.string(),
-	kid: z.string(),
 	privateKeyJwk: z.any(),
 	publicKeyJwk: z.any()
 });

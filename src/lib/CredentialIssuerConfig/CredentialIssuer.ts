@@ -7,7 +7,7 @@ import { verifyProof } from "../../openid4vci/Proof/verifyProof";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import { jwtDecrypt } from "jose";
 import { keyPairPromise } from "../../openid4vci/utils/generateAccessToken";
-import { Signer } from "../../services/interfaces";
+import { CredentialSigner } from "../../services/interfaces";
 
 export class CredentialIssuer {
 
@@ -17,7 +17,7 @@ export class CredentialIssuer {
 
 	private credentialEndpointURL: string = "";
 
-	private signer: Signer | undefined = undefined;
+	private signer: CredentialSigner | undefined = undefined;
 
 	private deferredCredentialEndpointURL?: string = undefined;
 	private batchCredentialEndpointURL?: string = undefined;
@@ -29,12 +29,12 @@ export class CredentialIssuer {
 		return this;
 	}
 
-	setSigner(signer: Signer): this {
+	setSigner(signer: CredentialSigner): this {
 		this.signer = signer;
 		return this;
 	}
 
-	getSigner(): Signer {
+	getCredentialSigner(): CredentialSigner {
 		if (!this.signer)
 			throw new Error("Signer is not defined");
 		return this.signer;

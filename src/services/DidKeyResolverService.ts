@@ -7,7 +7,6 @@ import { didKeyPublicKeyAdapter } from '@wwwallet/ssi-sdk';
 @injectable()
 export class DidKeyResolverService implements DidKeyResolverServiceInterface {
 	async getPublicKeyJwk(did: string): Promise<JWK> {
-		// this is using EBSI's version of did:key
 		return await didKeyPublicKeyAdapter.getPublicKeyJwk(did + '#' + did.split(':')[2]);
 	}
 }

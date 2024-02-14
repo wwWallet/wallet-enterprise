@@ -1,13 +1,13 @@
-import { PresentationDefinitionType, SignVerifiableCredentialJWT } from "@wwwallet/ssi-sdk";
-import { JWK, JWTHeaderParameters, SignJWT } from "jose";
+import { PresentationDefinitionType } from "@wwwallet/ssi-sdk";
+import { JWK, JWTHeaderParameters } from "jose";
 import { Request , Response} from 'express'
 import { OpenidForPresentationsConfiguration } from "./types/OpenidForPresentationsConfiguration.type";
 import 'reflect-metadata';
 import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oid4vci";
 import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
 
-export interface Signer {
-	sign(signJwt: SignJWT | SignVerifiableCredentialJWT, headers: JWTHeaderParameters | {}): Promise<{ jws: string }>;
+export interface CredentialSigner {
+	sign(payload: any, headers: JWTHeaderParameters | {}): Promise<{ jws: string }>;
 	getPublicKeyJwk(): Promise<{ jwk: JWK }>;
 	getDID(): Promise<{ did: string }>;
 }
