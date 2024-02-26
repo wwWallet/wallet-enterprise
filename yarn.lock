@@ -236,6 +236,45 @@
   resolved "https://registry.yarnpkg.com/@redis/time-series/-/time-series-1.0.5.tgz#a6d70ef7a0e71e083ea09b967df0a0ed742bc6ad"
   integrity sha512-IFjIgTusQym2B5IZJG3XKr5llka7ey84fw/NOYqESP5WUfQs9zz1ww/9+qoz4ka/S6KcGBodzlCeZ5UImKbscg==
 
+"@sd-jwt/core@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@sd-jwt/core/-/core-0.2.1.tgz#75b0b273758e6be050e042a75bd6a0c4a2a7258e"
+  integrity sha512-8auyt3mfzgAK+IP9mNc3kSONdo5x2Y8ypNj5gHKP7N81nVeyI+DHethoPQv84JVcqYYcNwHwyrc2Z5k7rg2lFQ==
+  dependencies:
+    "@sd-jwt/decode" "0.2.1"
+    "@sd-jwt/present" "0.2.1"
+    "@sd-jwt/types" "0.2.1"
+    "@sd-jwt/utils" "0.2.1"
+
+"@sd-jwt/decode@0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@sd-jwt/decode/-/decode-0.2.1.tgz#e0fb32dd2a95440ad69237e66ea2cd4770ec7e09"
+  integrity sha512-rs55WB3llrMObxN8jeMl06km/h0WivO9jSWNubO9JUIdlfrVhssU38xoXakvQeSDjAJkUUhfZcvmC2vNo1X6Wg==
+  dependencies:
+    "@sd-jwt/types" "0.2.1"
+    "@sd-jwt/utils" "0.2.1"
+
+"@sd-jwt/present@0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@sd-jwt/present/-/present-0.2.1.tgz#ff9958626b271a60d539dd1e601763ff33c024e8"
+  integrity sha512-yWIAR2C/q1jNUwzAeUlUcf3WCTEcSSGo9pltHW5AXptELjyaWGSmC5p6o9ucDXHvBnicfPONhe5OdUCSpiCntw==
+  dependencies:
+    "@sd-jwt/types" "0.2.1"
+    "@sd-jwt/utils" "0.2.1"
+
+"@sd-jwt/types@0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@sd-jwt/types/-/types-0.2.1.tgz#e1e6b47728dffa90ed244e15e2253bd01793cb96"
+  integrity sha512-nbNik/cq6UIMsN144FcgPZQzaqIsjEEj307j3ZSFORkQBR4Tsmcj54aswTuNh0Z0z/4aSbfw14vOKBZvRWyVLQ==
+
+"@sd-jwt/utils@0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@sd-jwt/utils/-/utils-0.2.1.tgz#35ad83232eab2de911e765d93222acd871982a5e"
+  integrity sha512-9eRrge44dhE3fenawR/RZGxP5iuW9DtgdOVANu/JK5PEl80r0fDsMwm/gDjuv8OgLDCmQ6uSaVte1lYaTG71bQ==
+  dependencies:
+    "@sd-jwt/types" "0.2.1"
+    buffer "*"
+
 "@servie/events@^1.0.0":
   version "1.0.0"
   resolved "https://registry.npmjs.org/@servie/events/-/events-1.0.0.tgz"
@@ -933,7 +972,7 @@ buffer-from@^1.0.0:
   resolved "https://registry.npmjs.org/buffer-from/-/buffer-from-1.1.2.tgz"
   integrity sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==
 
-buffer@^6.0.3:
+buffer@*, buffer@^6.0.3:
   version "6.0.3"
   resolved "https://registry.npmjs.org/buffer/-/buffer-6.0.3.tgz"
   integrity sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==

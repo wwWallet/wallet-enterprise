@@ -7,7 +7,7 @@ import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oi
 import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
 
 export interface CredentialSigner {
-	sign(payload: any, headers: JWTHeaderParameters | {}): Promise<{ jws: string }>;
+	sign(payload: any, headers: JWTHeaderParameters | {}, disclosureFrame: any | undefined): Promise<{ jws: string }>;
 	getPublicKeyJwk(): Promise<{ jwk: JWK }>;
 	getDID(): Promise<{ did: string }>;
 }
