@@ -124,6 +124,13 @@ p {
 	width: 100%;
 }
 
+.Btn.Close {
+	position: absolute;
+	font-size: 30px;
+	right: 0;
+	padding-top: 10px;
+}
+
 .Btn.Tiny {
 	margin: 0;
 	padding: 5px 5px;
@@ -327,4 +334,33 @@ section.layout {
 		margin: 20px 0;
 		text-align: center;
 	}
+}
+
+#qrDialog{
+	padding: 0px;
+}
+
+#userPinTextElement {
+	text-align: center;
+	margin-bottom: 5px;
+	font-size: 18px;
+}
+
+.dialog-header{
+	display: flex!important;
+	background: var(--primary-color);
+	flex-direction: row;
+	justify-content: center;
+}
+.dialog-header h4{
+	margin-top:15px;
+	margin-bottom: 15px;
+	padding-left: 30px;
+	padding-right: 30px;
+	color:white;
+	opacity: 1;
+}
+
+.dialog-body{
+padding: 30px;
 }
