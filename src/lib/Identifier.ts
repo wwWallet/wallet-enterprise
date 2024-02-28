@@ -1,12 +1,13 @@
 import { JWK } from "jose";
+import { z } from "zod";
 
 type SingleKey = {
 	id: string;
 	kid: string;
-	privateKeyJwk: JWK;
-	publicKeyJwk: JWK;
-	privateKeyEncryptionJwk: JWK;
-	publicKeyEncryptionJwk: JWK;
+	privateKeyJwk?: JWK;
+	publicKeyJwk?: JWK;
+	privateKeyEncryptionJwk?: JWK;
+	publicKeyEncryptionJwk?: JWK;
 }
 
 export enum SigningAlgorithm {
@@ -28,26 +29,28 @@ export type DidEbsiKeyTypeObject = {
 	},
 }
 
-export type DidKeyKeyTypeObject = {
-	did: string;
-	alg: string;
-	key: SingleKey;
-}
+
+export const KeyDescriptorSchema = z.object({
+	privateKeyJwk: z.any(),
+	publicKeyJwk: z.any()
+});
 
 
-export abstract class Identifier { 
-	constructor(public id: string) {}
-}
+export const EbsiLegalPersonMethodIdentifierKeySchema = z.object({
+	did: z.string(),
+	didVersion: z.literal(1),
+	keys: z.object({
+		ES256: KeyDescriptorSchema.optional(),
+		ES256K: KeyDescriptorSchema.optional(),
+		EdDSA: KeyDescriptorSchema.optional(),
+	})
+});
 
-export class KeyMethodIdentifier extends Identifier {
-	constructor(public key: DidKeyKeyTypeObject | undefined = undefined, public referenceURI: string | undefined = undefined) {
-		super(key?.did as string)
-	}
-}
 
-export class EbsiLegalPersonMethodIdentifier extends Identifier {
-	constructor(public key: DidEbsiKeyTypeObject | undefined = undefined, public referenceURI: string | undefined = undefined) {
-		super(key?.did as string)
-	}
-}
-
+export const KeyIdentifierKeySchema = z.object({
+	keys: z.object({
+		ES256: KeyDescriptorSchema.optional(),
+		ES256K: KeyDescriptorSchema.optional(),
+		EdDSA: KeyDescriptorSchema.optional(),
+	})
+});

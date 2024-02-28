@@ -6,11 +6,14 @@ type DiplomaEntry = {
 	firstName: string;
 	familyName: string;
 	title: string;
-	taxisId: string;
 	institutionCode: string;
 	institutionName: string;
 	grade: string;
+	ssn: string;
 	level: string;
+	dateOfBirth: string;
+	completionDate: string;
+	awardingDate: string;
 }
 
 type VIDEntry = {
@@ -21,29 +24,51 @@ type VIDEntry = {
 	birthdate: string;
 }
 
-
-
-const vidRepository: VIDEntry[] = [
+const diplomasRepository: DiplomaEntry[] = [
 	{
-		personalIdentifier: "032429484252432",
+		blueprintID: "46",
+		certificateId: "1",
 		firstName: "John",
 		familyName: "Doe",
-		taxisId: "432432432423",
-		birthdate: "18-5-1990"
+		title: "Informatics and Telecommunications",
+		ssn: "032429484252432",
+		institutionCode: "uoa",
+		institutionName: "National and Kapodistrian University of Athens",
+		grade: "8.1",
+		level: "6",
+		dateOfBirth: "1990-07-01",
+		completionDate: "2020-09-01",
+		awardingDate: "2020-06-01",
+	},
+	{
+		blueprintID: "75",
+		certificateId: "1233314134",
+		firstName: "John",
+		familyName: "Doe",
+		title: "Physics",
+		ssn: "032429484252432",
+		institutionCode: "uoa",
+		institutionName: "National and Kapodistrian University of Athens",
+		grade: "9.0",
+		level: "6",
+		dateOfBirth: "1990-07-01",
+		completionDate: "2020-09-01",
+		awardingDate: "2020-06-01",
 	}
 ]
 
 
 
-
-async function getVIDByTaxisId(taxisid: string) {
-	return vidRepository.filter(s => s.taxisId == taxisid)[0];
+async function getDiplomasBySSNAndBlueprintID(ssn: string, blueprintID: string) {
+	return diplomasRepository.filter(d => d.ssn == ssn && d.blueprintID == blueprintID);
 }
 
 
 
+
+
 export { 
-	getVIDByTaxisId,
+	getDiplomasBySSNAndBlueprintID,
 	DiplomaEntry,
 	VIDEntry
 }

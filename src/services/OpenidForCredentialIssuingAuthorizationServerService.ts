@@ -1,18 +1,16 @@
 import { Request, Response } from "express";
-import { CredentialIssuersConfiguration, OpenidForCredentialIssuingAuthorizationServerInterface, OpenidForPresentationsReceivingInterface } from "./interfaces";
-import { AuthorizationDetailsSchemaType, CredentialSupported, GrantType, authorizationDetailsSchema, authorizationRequestQueryParamsSchema, tokenRequestBodySchemaForAuthorizationCodeGrant, tokenRequestBodySchemaForPreAuthorizedCodeGrant } from "../types/oid4vci";
-import { DID_AUTHENTICATION_MECHANISM_USED, DIDAuthenticationMechanism } from "../configuration/authentication/auth.config";
+import { CredentialIssuersConfiguration, OpenidForCredentialIssuingAuthorizationServerInterface } from "./interfaces";
+import { AuthorizationDetailsSchemaType, CredentialSupported, GrantType } from "../types/oid4vci";
 import { inject, injectable } from "inversify";
 import { TYPES } from "./types";
-import { CONSENT_ENTRYPOINT } from "../authorization/constants";
 import crypto from 'node:crypto';
-import { authorizationCodeGrantTokenEndpoint } from "../openid4vci/grant_types/AuthorizationCodeGrant";
 import _ from "lodash";
 import 'reflect-metadata';
-import { preAuthorizedCodeGrantTokenEndpoint } from "../openid4vci/grant_types/PreAuthorizedCodeGrant";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import AppDataSource from "../AppDataSource";
 import { Repository } from "typeorm";
+import { CONSENT_ENTRYPOINT } from "../authorization/constants";
+import { generateAccessToken } from "../openid4vci/utils/generateAccessToken";
 import { REQUIRE_PIN } from "../configuration/consent/consent.config";
 
 
@@ -21,14 +19,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	
 	private authorizationServerStateRepository: Repository<AuthorizationServerState> = AppDataSource.getRepository(AuthorizationServerState);
 
-	/**
-	 * scope which will be used for the verification of the user if VP token is used as an authentication mechanism
-	*/
-	private readonly verificationScopeName = "vid";
 	
 	constructor(
 		@inject(TYPES.CredentialIssuersConfiguration) private credentialIssuersConfiguration: CredentialIssuersConfiguration,
-		@inject(TYPES.OpenidForPresentationsReceivingService) private openidForPresentationReceivingService: OpenidForPresentationsReceivingInterface,
 	) { }
 
 	metadataRequestHandler(): Promise<void> {
@@ -85,12 +78,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	}
 
 
-	/**
-	 * Updates the authorization server state on Database entity and on Session
-	 * @param ctx 
-	 * @param newAuthorizationServerState 
-	 * @returns 
-	 */
 	private async updateAuthorizationServerState(ctx: {req: Request, res: Response}, newAuthorizationServerState: AuthorizationServerState): Promise<{ newStateRecord: AuthorizationServerState }> {
 		const insertedState = await this.authorizationServerStateRepository.save(newAuthorizationServerState); // update session on database
 		ctx.req.session.authorizationServerStateIdentifier = insertedState.id; // update state identifier on session
@@ -98,84 +85,96 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	}
 
 
-	async authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
-		ctx.req.session.authenticationChain = {}; // clear the session
-
-		const params = authorizationRequestQueryParamsSchema.parse(ctx.req.query);
-		if (!params.authorization_details) {
-			ctx.res.status(400).send({ error: "Authorization Details is missing" })
-			return
-		}
-	
-		console.log("Authorization details = ", params.authorization_details)
-		const { success } = authorizationDetailsSchema.safeParse(JSON.parse(params.authorization_details))
-		if (!success) {
-			console.error({ error: "Invalid authorization details" });
-			ctx.res.status(400).send({ error: "Invalid authorization details" });
+	async authorizationRequestPKCEHandler(ctx: {req: Request, res: Response}) {
+		if (ctx.res.headersSent) {
 			return;
 		}
-		const authorizationDetails = JSON.parse(params.authorization_details) as AuthorizationDetailsSchemaType;
-		
-		// TODO: make sure that authorization details are correct and conform to the ones publish on the CredentialIssuerMetadata
-		// TODO: make sure that the client_id exists in the clients table
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+		ctx.req.authorizationServerState.code_challenge = ctx.req.query.code_challenge as string ?? null;
+		ctx.req.authorizationServerState.code_challenge_method = ctx.req.query.code_challenge_method as string ?? null;
+	}
 
+	async authorizationRequestClientIdAndRedirectUriHandler(ctx: {req: Request, res: Response}) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+		ctx.req.authorizationServerState.client_id = ctx.req.query.client_id as string ?? null;
+		ctx.req.authorizationServerState.redirect_uri = ctx.req.query.redirect_uri as string ?? null;
+	}
 
-		const newAuthorizationServerState = new AuthorizationServerState();
-		newAuthorizationServerState.authorization_details = authorizationDetails;
-		newAuthorizationServerState.client_id = params.client_id;
-		newAuthorizationServerState.code_challenge = params.code_challenge;
-		newAuthorizationServerState.code_challenge_method = params.code_challenge_method;
-		newAuthorizationServerState.response_type = params.response_type;
-		newAuthorizationServerState.redirect_uri = params.redirect_uri;
-		newAuthorizationServerState.scope = params.scope;
-		newAuthorizationServerState.grant_type = GrantType.AUTHORIZATION_CODE;
+	async authorizationRequestGrantTypeHandler(ctx: {req: Request, res: Response}) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+		ctx.req.authorizationServerState.grant_type = GrantType.AUTHORIZATION_CODE;
+	}
 
-		if (authorizationDetails[0] && authorizationDetails[0].locations 
-				&& authorizationDetails[0].locations[0]) {
-			newAuthorizationServerState.credential_issuer_identifier = authorizationDetails[0].locations[0];
+	async authorizationRequestResponseTypeHandler(ctx: {req: Request, res: Response}) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+		ctx.req.authorizationServerState.response_type = ctx.req.query.response_type as string ?? null;
+	}
+
+	async authorizationRequestAuthorizationDetailsHandler(ctx: {req: Request, res: Response}) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+
+		console.log("Authz details = ", ctx.req.query.authorization_details)
+		if (!ctx.req.query.authorization_details || typeof ctx.req.query.authorization_details != 'string') {
+			ctx.res.status(400).send({ error: "'authorization_details' parameter is missing" });
+			return;
+		}
+		try {
+			ctx.req.authorizationServerState.authorization_details = JSON.parse(ctx.req.query.authorization_details) as any;
+		}
+		catch (e) {
+			ctx.res.status(400).send({ error: "'authorization_details' parameter could not be parsed" });
+			return
+		}
+
+		if (!ctx.req.authorizationServerState.authorization_details) {
+			ctx.res.status(400).send({ error: "Authorization details failed to be initialized" });
+			return;
+		}
+
+		if (ctx.req.authorizationServerState.authorization_details[0] && ctx.req.authorizationServerState.authorization_details[0].locations 
+			&& ctx.req.authorizationServerState.authorization_details[0].locations[0]) {
+				ctx.req.authorizationServerState.credential_issuer_identifier = ctx.req.authorizationServerState.authorization_details[0].locations[0];
 		}
 		else {
 			const defaultCredentialIssuerIdentifier = this.credentialIssuersConfiguration.defaultCredentialIssuerIdentifier();
 			if (!defaultCredentialIssuerIdentifier) {
 				throw new Error("Credential issuer could not be resolved because no default issuer exists and issuer is not specified on location of authorization details");
 			}
-			newAuthorizationServerState.credential_issuer_identifier = defaultCredentialIssuerIdentifier;
+			ctx.req.authorizationServerState.credential_issuer_identifier = defaultCredentialIssuerIdentifier;
 		}
-		
-		// if VP token auth is used, then use the verificationScopeName constant to verify the client
-		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
-			newAuthorizationServerState.scope = params.scope + ' ' + this.verificationScopeName;
-			ctx.req.query.scope += newAuthorizationServerState.scope;
-		}
+	}
 
-		const { newStateRecord } = await this.updateAuthorizationServerState(ctx, newAuthorizationServerState)
-
-		let redirected = false;
-		(ctx.res.redirect as any) = (url: string): void => {
-			redirected = true;
-			// Perform the actual redirect
-			ctx.res.location(url);
-			ctx.res.statusCode = 302;
-			ctx.res.end();
-		};
-		
-		console.log("Did auth mechanism = ", DID_AUTHENTICATION_MECHANISM_USED)
-		
-		if (DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_ID_TOKEN ||
-				DID_AUTHENTICATION_MECHANISM_USED == DIDAuthenticationMechanism.OPENID4VP_VP_TOKEN) {
-	
-			await this.openidForPresentationReceivingService.authorizationRequestHandler(ctx, newStateRecord.id);
-			if (redirected) {
-				return;
-			}
-			console.log("did not redirect");
-			return;
-		}
-		else {
-			console.log("Redirecting...")
-			ctx.res.redirect(CONSENT_ENTRYPOINT);
-			return;
-		}
+	async authorizationRequestHandler(ctx: {req: Request, res: Response}): Promise<void> {
+		ctx.req.session.authenticationChain = {}; // clear the session
+		await this.authorizationRequestClientIdAndRedirectUriHandler(ctx);
+		await this.authorizationRequestPKCEHandler(ctx);
+		await this.authorizationRequestGrantTypeHandler(ctx);
+		await this.authorizationRequestResponseTypeHandler(ctx);
+		await this.authorizationRequestAuthorizationDetailsHandler(ctx);
+		await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState)
+		ctx.res.redirect(CONSENT_ENTRYPOINT);
 	}
 
 	async sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void> {
@@ -220,100 +219,108 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		ctx.res.redirect(authorizationResponseURL.toString());
 	}
 
-
-	async tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
-		console.log("Body ", ctx.req.body)
-
-		let body = null;
-		let response = { };
-		if (!ctx.req.body.grant_type) {
-			console.log("No grant type was found");
-			ctx.res.status(500).send({});
+	async tokenRequestGrantTypeHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		if (ctx.res.headersSent) {
 			return;
 		}
-	
+
 		switch (ctx.req.body.grant_type) {
 		case GrantType.AUTHORIZATION_CODE:
-			body = tokenRequestBodySchemaForAuthorizationCodeGrant.parse(ctx.req.body);
-			// if (!ctx.req.headers.authorization) {
-			// 	return ctx.res.status(401).send("No authorization header was provided");
-			// }
-			try {
-
-				let state = await this.authorizationServerStateRepository.createQueryBuilder("state")
-					.where("state.authorization_code = :code", { code: body.code })
-					.getOne();
-
-				if (!state)
-					throw new Error("Could not get session");
-
-				state.authorization_code = null; // invalidate the authorization code
-				await this.authorizationServerStateRepository.save(state);
-				// if (!userSession.categorizedRawCredentials) {
-				// 	userSession = await redisModule.getUserSession(userSession.id);
-				// 	if (!userSession)
-				// 		throw new Error("Could not get session");
-				// }
-				// if (!userSession.categorizedRawCredentials)
-				// 	throw new Error("Could not get categorized raw credential");
-				response = await authorizationCodeGrantTokenEndpoint(state, ctx.req.headers.authorization);
-			}
-			catch (err) {
-				console.error("Error = ", err)
-				ctx.res.status(500).json({ error: "Failed"})
-				return
-			}
 			break;
 		case GrantType.PRE_AUTHORIZED_CODE:
-			try {
-				body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(ctx.req.body);
-				if (body["pre-authorized_code"] == 'undefined') {
-					response = { error: "invalid_request", error_description: "INVALID_PRE_AUTHORIZED_CODE" }
-					ctx.res.status(400).json({ error: "invalid_request", ...response });
-					return;
-				}
-				let state = await this.authorizationServerStateRepository
-					.createQueryBuilder("state")
-					.where("state.pre_authorized_code = :code", { code: body["pre-authorized_code"] })
-					.getOne();
-				if (!state) {
-					response = { error: "invalid_request", error_description: "INVALID_PRE_AUTHORIZED_CODE" }
-					ctx.res.status(400).json({ error: "invalid_request", ...response });
-					return;
-				}
-				// compare pin
-				if (state.user_pin_required &&
-						state.user_pin_required == true &&
-						body.user_pin != undefined &&
-						body.user_pin !== state.user_pin) {
-					
-					response = { error: "invalid_request", error_description: "INVALID_PIN" }
-					ctx.res.status(400).json({ error: "invalid_request", ...response });
-					return;
-				}
-				state.pre_authorized_code = null; // invalidate the pre-authorized code to prevent reuse
-				await AppDataSource.getRepository(AuthorizationServerState).save(state);
-
-				console.log("State on token req = ", state);
-				response = await preAuthorizedCodeGrantTokenEndpoint(state);
-			}
-			catch(err) {
-				console.log("Error on token request pre authorized code")
-				console.log(err);
-				ctx.res.status(400).json({ error: "invalid_request", ...response });
-				return;
-			}
 			break;
 		default:
-			console.log("Grant type is not supported");
-			ctx.res.status(400).send("Granttype not supported");
+			ctx.res.status(400).send({ error: `grant_type '${ctx.req.body.grant_type}' is not supported` })
 			return;
-			// body = tokenRequestBodySchemaForPreAuthorizedCodeGrant.parse(ctx.req.body);
-			// response = await preAuthorizedCodeGrantTokenEndpoint(body);
-			// break;
 		}
+	}
+
+	async tokenRequestAuthorizationCodeHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		if (ctx.res.headersSent) {
+			return;
+		}
+
+		if (ctx.req.body.grant_type != GrantType.AUTHORIZATION_CODE) {
+			return; // this is not a job for this handler, let the other ones to decide on the request
+		}
+	
+		if (!ctx.req.body.code) {
+			ctx.res.status(400).send({ error: `the 'code' parameter is missing`})
+			return;
+		}
+
+		let state = await this.authorizationServerStateRepository.createQueryBuilder("state")
+			.where("state.authorization_code = :code", { code: ctx.req.body.code })
+			.getOne();
+		if (!state) {
+			ctx.res.status(400).send({ error: `the authorization code ${ctx.req.body.code} does not exist` });
+			return;
+		}
+
+		state.authorization_code = null; // invalidate the authorization code
+		await this.authorizationServerStateRepository.save(state);
+		ctx.req.authorizationServerState = state;
+	}
+
+	async tokenRequestPreAuthorizedCodeHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (ctx.req.body.grant_type != GrantType.PRE_AUTHORIZED_CODE) {
+			return;
+		}
+		if (!ctx.req.body['pre-authorized_code']) {
+			ctx.res.status(400).send({ error: `the 'pre-authorized_code' parameter is missing` })
+			return;
+		}
+
+		let state = await this.authorizationServerStateRepository.createQueryBuilder("state")
+			.where("state.pre_authorized_code = :code", { code: ctx.req.body['pre-authorized_code'] })
+			.getOne();
+		if (!state) {
+			ctx.res.status(400).send({ error: `pre-authorized_code ${ctx.req.body['pre-authorized_code']} does not exist` });
+			return;
+		}
+
+		state.pre_authorized_code = null; // invalidate the pre-authorized code
+		await this.authorizationServerStateRepository.save(state);
+		ctx.req.authorizationServerState = state;
+	}
+
+	async tokenRequestUserPinHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		if (ctx.res.headersSent) {
+			return;
+		}
+
+		if (ctx.req.body.grant_type != GrantType.PRE_AUTHORIZED_CODE) {
+			return;
+		}
+
+		if (!ctx.req.body.user_pin) {
+			ctx.res.status(400).send({ error: `user_pin parameter is missing` });
+			return;
+		}
+
+		if (!ctx.req?.authorizationServerState?.user_pin) {
+			ctx.res.status(400).send({ error: `user_pin is not defined on state` });
+			return;
+		}
+
+		if (ctx.req?.authorizationServerState?.user_pin != ctx.req.body.user_pin) {
+			ctx.res.status(400).send({ error: "invalid_request", error_description: "INVALID_PIN" });
+			return;
+		}
+	}
+
+	async tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
 		ctx.res.setHeader("Cache-Control", "no-store");
-		ctx.res.json(response);
+		await this.tokenRequestGrantTypeHandler(ctx);
+		await this.tokenRequestAuthorizationCodeHandler(ctx);
+		await this.tokenRequestPreAuthorizedCodeHandler(ctx);
+		// await this.tokenRequestUserPinHandler(ctx); keep this commented to not require userpin
+
+		const response = await generateAccessToken(ctx.req.authorizationServerState);
+		ctx.res.send(response);
 	}
 
 }

@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 
 const TYPES = {
-	FilesystemKeystoreService: Symbol.for("FilesystemKeystoreService"),
 	OpenidForPresentationsReceivingService: Symbol.for("OpenidForPresentationsReceivingService"),
 	VerifierConfigurationServiceInterface: Symbol.for("VerifierConfigurationServiceInterface"),
 	OpenidForCredentialIssuingAuthorizationServerService: Symbol.for("OpenidForCredentialIssuingAuthorizationServerService"),

@@ -2,7 +2,6 @@ import base64url from "base64url";
 import AppDataSource from "../AppDataSource";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 
-// used only if DID_AUTHENTICATION_MECHANISM_USED is OPENID4VP_VP_TOKEN for the Issuance Flow
 export async function verificationCallback(authorizationServerState: AuthorizationServerState, presentation: any) {
 	
 	const vcjwt = presentation.verifiableCredential[0];

@@ -1,10 +1,10 @@
 import { inject, injectable } from "inversify";
 import { Request , Response} from 'express'
-import { DidKeyResolverService, OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface, WalletKeystore } from "./interfaces";
-import { VerifiableCredentialFormat, authorizationRequestQueryParamsSchema } from "../types/oid4vci";
+import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
+import { VerifiableCredentialFormat } from "../types/oid4vci";
 import { AuthorizationRequestQueryParamsSchemaType } from "../types/oid4vci";
 import { TYPES } from "./types";
-import { SignJWT, importJWK, jwtVerify } from "jose";
+import { importJWK, jwtVerify } from "jose";
 import { randomUUID } from "crypto";
 import base64url from "base64url";
 import { PresentationDefinitionType, PresentationSubmission } from "@wwwallet/ssi-sdk";
@@ -16,6 +16,7 @@ import AppDataSource from "../AppDataSource";
 import { verificationCallback } from "../configuration/verificationCallback";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import config from "../../config";
+import { DidKeyResolverService } from "./DidKeyResolverService";
 
 
 type VerifierState = {
@@ -40,8 +41,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	constructor(
 		@inject(TYPES.DidKeyResolverService) private didKeyResolverService: DidKeyResolverService,
 		@inject(TYPES.VerifierConfigurationServiceInterface) private configurationService: VerifierConfigurationInterface,
-		// inject other verifier configurations
-		@inject(TYPES.FilesystemKeystoreService) private walletKeystoreService: WalletKeystore,
 	) {}
 
 
@@ -51,87 +50,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 
-
-	async authorizationRequestHandler(ctx: { req: Request, res: Response }, userSessionIdToBindWith?: number): Promise<void> {
-		const { success } = authorizationRequestQueryParamsSchema.safeParse(ctx.req.query);
-		if (!success) {
-			ctx.res.status(400).send({ error: "Authorization request params are incorrect" });
-			return;
-		}
-		let {
-			state,
-			redirect_uri,
-			client_id,
-			scope
-		} = ctx.req.query as AuthorizationRequestQueryParamsSchemaType;
-		
-		const scopeList = scope.split(' ');
-
-		const flowState: VerifierState = {
-			authorizationRequest: ctx.req.query as AuthorizationRequestQueryParamsSchemaType,
-			issuanceSessionID: userSessionIdToBindWith,
-		};
-
-		const verifierStateId = randomUUID();
-		const nonce = randomUUID();
-		nonces.set(nonce, verifierStateId);
-
-		if (state) {
-			clientStates.set(state, verifierStateId);
-		}
-
-		let responseTypeSetting = "id_token";
-		for (const scopeName of scopeList) {
-			const search = this.configurationService.getPresentationDefinitions().filter(pd => pd.id == scopeName);
-			if (search.length > 0) {
-				responseTypeSetting = "vp_token";
-				break;
-			}
-		}
-		
-		let payload = {
-			client_id: this.configurationService.getConfiguration().client_id,
-			response_type: responseTypeSetting,
-			response_mode: "direct_post",
-			redirect_uri: this.configurationService.getConfiguration().redirect_uri,
-			scope: "openid",
-			nonce: nonce,
-			iss: this.configurationService.getConfiguration().client_id,
-			aud: client_id,
-		};
-		if (state) {
-			payload = { ...payload, state } as any;
-		}
-
-		// update payload according to response type setting
-		switch (responseTypeSetting) {
-		case "id_token":
-			payload = await this.addIDtokenRequestSpecificAttributes(payload);
-			break;
-		}
-
-		const requestJwt = new SignJWT(payload)
-			.setExpirationTime('30s')
-
-		const { jws } = await this.walletKeystoreService.signJwt(
-			this.configurationService.getConfiguration().authorizationServerWalletIdentifier,
-			requestJwt,
-			"JWT");
-
-		const requestJwtSigned = jws;
-		
-		const redirectParameters = {
-			...payload,
-			request: requestJwtSigned,
-		};
-		console.log("Redirect params = ", redirectParameters)
-
-		const searchParams = new URLSearchParams(redirectParameters);
-		const redirectURL = new URL(redirect_uri + "?" + searchParams.toString());
-		verifierStates.set(verifierStateId, { ...flowState, issuanceSessionID: userSessionIdToBindWith })
-		ctx.res.redirect(redirectURL.toString());
-	}
-
+	// @ts-ignore
 	private async addIDtokenRequestSpecificAttributes(payload: any) {
 		return payload;
 	}

@@ -4,7 +4,7 @@ import { ProofType } from "../../types/oid4vci";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import { appContainer } from "../../services/inversify.config";
 import { TYPES } from "../../services/types";
-import { DidKeyResolverService } from "../../services/interfaces";
+import { DidKeyResolverServiceInterface } from "../../services/interfaces";
 
 const proofHeaderSchema = z.object({
 	kid: z.string(),
@@ -68,7 +68,7 @@ async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState
 		throw new Error("Holder DID cannot be derived from proof")
 	}
 
-	const publicKeyJwk = await appContainer.get<DidKeyResolverService>(TYPES.DidKeyResolverService).getPublicKeyJwk(holderDID);
+	const publicKeyJwk = await appContainer.get<DidKeyResolverServiceInterface>(TYPES.DidKeyResolverService).getPublicKeyJwk(holderDID);
 	
 	// c nonce check and proof signature
 	const holderPublicKey = await importJWK(publicKeyJwk, proofHeader.alg);
