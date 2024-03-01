@@ -5,6 +5,7 @@ import { OpenidForPresentationsConfiguration } from "./types/OpenidForPresentati
 import 'reflect-metadata';
 import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oid4vci";
 import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
+import { PresentationClaims } from "../entities/VerifiablePresentation.entity";
 
 export interface CredentialSigner {
 	sign(payload: any, headers: JWTHeaderParameters | {}, disclosureFrame: any | undefined): Promise<{ jws: string }>;
@@ -36,7 +37,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentation_definition_id: string, directPostEndpoint?: string): Promise<{ url: URL; stateId: string }>;
 	getPresentationDefinitionHandler(ctx: { req: Request, res: Response }): Promise<void>;
-	getPresentationByState(state: string): Promise<{ status: boolean, presentation?: string }>;
+	getPresentationByState(state: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims }>;
 	
 	/**
 	 * @throws
