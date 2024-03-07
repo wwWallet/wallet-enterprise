@@ -50,18 +50,6 @@ verifierRouter.get('/success', async (req, res) => {
 	const credentials = presentationPayload.vp.verifiableCredential.map((vcString: any) => {
 		return JSON.parse(base64url.decode(vcString.split('.')[1]));
 	}).map((credential: any) => credential.vc);
-
-	let imagesSrc: string[] = []; // Array to store URLs for credentials with 'Bachelor' type
-
-	credentials.forEach((credential: { type: string | string[]; }) => {
-			if (credential.type.includes('VerifiableId')) {
-				imagesSrc.push('http://wallet-enterprise-vid-issuer:8003/images/vidCard.png');
-			}else if (credential.type.includes('Bachelor')) {
-				imagesSrc.push('http://wallet-enterprise-diploma-issuer:8000/images/EuropassUoaCard.png');
-			}else if (credential.type.includes('EuropeanHealthInsuranceCard')) {
-				imagesSrc.push('http://wallet-enterprise-ehic-issuer:8004/images/ehicCard.png');
-			}
-	});
 	
 	console.log("Credential payloads = ", credentials)
 	return res.render('verifier/success.pug', {
@@ -69,7 +57,6 @@ verifierRouter.get('/success', async (req, res) => {
 		locale: locale[req.lang],
 		status: status,
 		credentialPayloads: credentials,
-		imagesSrc: imagesSrc
 	})
 })
 
