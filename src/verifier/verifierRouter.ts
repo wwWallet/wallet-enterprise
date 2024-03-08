@@ -50,13 +50,13 @@ verifierRouter.get('/success', async (req, res) => {
 	const credentials = presentationPayload.vp.verifiableCredential.map((vcString: any) => {
 		return JSON.parse(base64url.decode(vcString.split('.')[1]));
 	}).map((credential: any) => credential.vc);
-
+	
 	console.log("Credential payloads = ", credentials)
 	return res.render('verifier/success.pug', {
 		lang: req.lang,
 		locale: locale[req.lang],
 		status: status,
-		credentialPayloads: credentials
+		credentialPayloads: credentials,
 	})
 })
 
