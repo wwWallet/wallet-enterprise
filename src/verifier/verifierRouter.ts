@@ -31,7 +31,7 @@ verifierRouter.get('/success/status', async (req, res) => { // response with the
 	if (!presentationClaims) {
 		return res.send({ status: false, error: "Presentation not received" });
 	}
-	return res.send({ status, presentationClaims });
+	return res.send({ status });
 })
 
 verifierRouter.get('/success', async (req, res) => {
