@@ -44,7 +44,6 @@ verifierRouter.get('/success', async (req, res) => {
 			locale: locale[req.lang],
 		})
 	}
-
 	return res.render('verifier/success.pug', {
 		lang: req.lang,
 		locale: locale[req.lang],
