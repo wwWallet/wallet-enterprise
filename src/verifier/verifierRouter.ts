@@ -8,6 +8,7 @@ import { TYPES } from "../services/types";
 import locale from "../configuration/locale";
 import * as qrcode from 'qrcode';
 import config from "../../config";
+import base64url from "base64url";
 
 const verifierRouter = Router();
 // const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
@@ -35,8 +36,8 @@ verifierRouter.get('/success/status', async (req, res) => { // response with the
 
 verifierRouter.get('/success', async (req, res) => {
 	const state = req.query.state;
-	const {status, presentationClaims } = await openidForPresentationReceivingService.getPresentationByState(state as string);
-	if (!presentationClaims) {
+	const {status, presentationClaims, rawPresentation } = await openidForPresentationReceivingService.getPresentationByState(state as string);
+	if (!presentationClaims || !rawPresentation) {
 		return res.render('error.pug', {
 			msg: "Failed to get presentation",
 			code: 0,
@@ -44,11 +45,18 @@ verifierRouter.get('/success', async (req, res) => {
 			locale: locale[req.lang],
 		})
 	}
+	
+	const presentationPayload = JSON.parse(base64url.decode(rawPresentation.split('.')[1])) as any;
+	const credentials = presentationPayload.vp.verifiableCredential.map((vcString: any) => {
+		return JSON.parse(base64url.decode(vcString.split('.')[1]));
+	}).map((credential: any) => credential.vc);
+
 	return res.render('verifier/success.pug', {
 		lang: req.lang,
 		locale: locale[req.lang],
 		status: status,
-		presentationClaims: presentationClaims
+		presentationClaims: presentationClaims,
+		credentialPayloads: credentials,
 	})
 })
 

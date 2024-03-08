@@ -463,16 +463,17 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 
-	public async getPresentationByState(state: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims }> {
+	public async getPresentationByState(state: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, rawPresentation?: string }> {
 		const vp = await this.verifiablePresentationRepository.createQueryBuilder('vp')
 			.where("state = :state", { state: state })
 			.getOne();
-	
-		if (!vp?.raw_presentation || !vp.claims)
+		
+		if (!vp?.raw_presentation || !vp.claims) {
 			return { status: false };
+		}
 
 		if (vp) 
-			return { status: true, presentationClaims: vp.claims };
+			return { status: true, presentationClaims: vp.claims, rawPresentation: vp?.raw_presentation };
 		else
 			return { status: false };
 	}
