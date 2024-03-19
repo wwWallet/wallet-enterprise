@@ -1,4 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { VerifiableCredentialFormat } from "../types/oid4vci";
 
 export enum VerificationStatus {
 	REVOKED,
@@ -86,6 +87,8 @@ export class VerifiablePresentationEntity {
 	@Column({ name: "date", type: "date", nullable: true })
 	date?: Date;
 
+	@Column({ name: "format", type: "enum", enum: VerifiableCredentialFormat, nullable: true })
+	format?: VerifiableCredentialFormat;
 	
 	@Column({ name: "status", type: "boolean", nullable: true })
 	status?: boolean;

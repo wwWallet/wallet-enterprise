@@ -222,15 +222,10 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 		}
 		else if (vp_token) {
-			const header = JSON.parse(base64url.decode(vp_token.split('.')[0])) as { kid: string, alg: string };
-			const jwk = await this.didKeyResolverService.getPublicKeyJwk(header.kid.split('#')[0]);
-			const pubKey = await importJWK(jwk, header.alg as string);
 
 			try {
-				const { payload } = await jwtVerify(vp_token, pubKey, {
-					clockTolerance: CLOCK_TOLERANCE
-					// audience: this.configurationService.getConfiguration().baseUrl,
-				});
+				const payload = JSON.parse(base64url.decode(vp_token.split('.')[1])) as any;
+
 				const { nonce } = payload;
 				// load verifier state by nonce
 				if (!verifierState) {
@@ -382,8 +377,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 				const sdJwt = SdJwt.fromCompact(vcjwt).withHasher(hasherAndAlgorithm);
 	
-				const vcPayload = (JSON.parse(base64url.decode(vcjwt.split('.')[1])) as any).vc;
-				const issuerDID = vcPayload.issuer;
+				const jwtPayload = (JSON.parse(base64url.decode(vcjwt.split('.')[1])) as any);
+				const issuerDID = jwtPayload.iss;
 
 				const issuerPublicKeyJwk = await this.didKeyResolverService.getPublicKeyJwk(issuerDID);
 				const alg = (JSON.parse(base64url.decode(vcjwt.split('.')[0])) as any).alg;
@@ -414,13 +409,20 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				}
 			}
 			else if (desc.format == VerifiableCredentialFormat.JWT_VC) {
-				const vcPayload = JSON.parse(base64url.decode(vcjwt.split('.')[1])) as any;
+				const jwtPayload = (JSON.parse(base64url.decode(vcjwt.split('.')[1])) as any);
+				const issuerDID = jwtPayload.iss;
+				const issuerPublicKeyJwk = await this.didKeyResolverService.getPublicKeyJwk(issuerDID);
+				const alg = (JSON.parse(base64url.decode(vcjwt.split('.')[0])) as any).alg;
+				const issuerPublicKey = await importJWK(issuerPublicKeyJwk, alg);
+
+				await jwtVerify(vcjwt, issuerPublicKey);
+
 				input_descriptor.constraints.fields.map((field) => {
 					if (!presentationClaims[desc.id]) {
 						presentationClaims[desc.id] = []; // initialize
 					}
 					const fieldPath = field.path[0]; // get first path
-					const value = String(JSONPath({ path: fieldPath, json: vcPayload.vc })[0]);
+					const value = String(JSONPath({ path: fieldPath, json: jwtPayload.vc })[0]);
 					const splittedPath = fieldPath.split('.');
 					const claimName = splittedPath[splittedPath.length - 1];
 					presentationClaims[desc.id].push({ name: claimName, value: value } as ClaimRecord);
