@@ -5,19 +5,24 @@ import { VerifiableCredentialFormat } from "../types/oid4vci";
 import { AuthorizationRequestQueryParamsSchemaType } from "../types/oid4vci";
 import { TYPES } from "./types";
 import { importJWK, jwtVerify } from "jose";
-import { randomUUID } from "crypto";
+import { KeyLike, createHash, randomUUID, verify } from "crypto";
 import base64url from "base64url";
 import { PresentationDefinitionType, PresentationSubmission } from "@wwwallet/ssi-sdk";
 import 'reflect-metadata';
 import { JSONPath } from "jsonpath-plus";
 import { Repository } from "typeorm";
-import { VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
+import { ClaimRecord, PresentationClaims, VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
 import AppDataSource from "../AppDataSource";
 import { verificationCallback } from "../configuration/verificationCallback";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import config from "../../config";
 import { DidKeyResolverService } from "./DidKeyResolverService";
+import { HasherAlgorithm, HasherAndAlgorithm, SdJwt, SignatureAndEncryptionAlgorithm, Verifier } from "@sd-jwt/core";
 
+const hasherAndAlgorithm: HasherAndAlgorithm = {
+	hasher: (input: string) => createHash('sha256').update(input).digest(),
+	algorithm: HasherAlgorithm.Sha256
+}
 
 type VerifierState = {
 	callbackEndpoint?: string;
@@ -217,15 +222,10 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 		}
 		else if (vp_token) {
-			const header = JSON.parse(base64url.decode(vp_token.split('.')[0])) as { kid: string, alg: string };
-			const jwk = await this.didKeyResolverService.getPublicKeyJwk(header.kid.split('#')[0]);
-			const pubKey = await importJWK(jwk, header.alg as string);
 
 			try {
-				const { payload } = await jwtVerify(vp_token, pubKey, {
-					clockTolerance: CLOCK_TOLERANCE
-					// audience: this.configurationService.getConfiguration().baseUrl,
-				});
+				const payload = JSON.parse(base64url.decode(vp_token.split('.')[1])) as any;
+
 				const { nonce } = payload;
 				// load verifier state by nonce
 				if (!verifierState) {
@@ -287,7 +287,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				if (state) {
 					msg = { ...msg, state } as any;
 				}
-				const { error, error_description } = await this.validateVpToken(vp_token, presentationSubmissionObject as PresentationSubmission);
+				const { presentationClaims, error, error_description } = await this.validateVpToken(vp_token, presentationSubmissionObject as PresentationSubmission);
 				if (error && error_description) {
 					msg = { ...msg, error: error.message, error_description: error_description?.message };
 					console.error(msg);
@@ -298,13 +298,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 				// store presentation
 				const newVerifiablePresentation = new VerifiablePresentationEntity()
-				newVerifiablePresentation.format = VerifiableCredentialFormat.JWT_VC_JSON;
 				newVerifiablePresentation.presentation_definition_id = presentation_submission.definition_id;
+				newVerifiablePresentation.claims = presentationClaims ?? null;
 				newVerifiablePresentation.status = true;
 				newVerifiablePresentation.raw_presentation = vp_token;
 				newVerifiablePresentation.presentation_submission = presentationSubmissionObject;
 				newVerifiablePresentation.date = new Date();
-				console.log("Verifier state id = ", verifierStateId)
 				newVerifiablePresentation.state = verifierStateId as string;
 
 				this.verifiablePresentationRepository.save(newVerifiablePresentation);
@@ -338,7 +337,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		throw new Error("OpenID4VP Authorization Response failed. Path not implemented");
 	}
 
-	private async validateVpToken(vp_token: string, presentation_submission: PresentationSubmission): Promise<{ error?: Error, error_description?: Error}> {
+	private async validateVpToken(vp_token: string, presentation_submission: PresentationSubmission): Promise<{ presentationClaims?: PresentationClaims, error?: Error, error_description?: Error}> {
+		let presentationClaims: PresentationClaims = {};
 		const payload = JSON.parse(base64url.decode(vp_token.split('.')[1])) as { nonce: string, vp: { verifiableCredential: string[] } };
 
 		const verifierStateId = nonces.get(payload.nonce);
@@ -354,32 +354,82 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		}
 
 
-		console.log("Presentation SUB = ", presentation_submission)
 		for (const desc of presentation_submission.descriptor_map) {
+			if (!presentationClaims[desc.id]) {
+				presentationClaims[desc.id] = [];
+			}
 			const path = desc?.path as string;
-			let vcjwt = JSONPath({ json: payload.vp, path: path });
+			let vcjwt = JSONPath({ json: payload.vp, path: path })[0];
 			if (vcjwt.length == 0) {
 				return { error: new Error("VC_NOT_FOUND"), error_description: new Error(`Path on descriptor ${desc.id} not matching to a credential`)};
 			}
-			vcjwt = vcjwt[0]; // get the first result
+			const input_descriptor = verifierState.presentation_definition.input_descriptors.filter((input_desc) => input_desc.id == desc.id)[0];
+			if (!input_descriptor) {
+				return { error: new Error("Input descriptor not found") };
+			}
 
-			// if (await this.isExpired(vcjwt)) {
-			// 	const msg = { error: new Error("access_denied"), error_description: new Error(`${desc.id} is expired`) };
-			// 	console.error(msg)
-			// 	return msg;
-			// }
-			// if (await this.isNotValidYet(vcjwt)) {
-			// 	const msg = { error: new Error("access_denied"), error_description: new Error(`${desc.id} is not valid yet`) };
-			// 	console.error(msg)
-			// 	return msg;
-			// }
-			// if (await this.isRevoked(vcjwt)) {
-			// 	const msg = { error: new Error("access_denied"), error_description: new Error(`${desc.id} is revoked`) };
-			// 	console.error(msg)
-			// 	return msg;
-			// }
+			if (desc.format == VerifiableCredentialFormat.VC_SD_JWT) {
+				const requiredClaimNames = input_descriptor.constraints.fields.map((field) => {
+					const fieldPath = field.path[0];
+					const splittedPath = fieldPath.split('.');
+					return splittedPath[splittedPath.length - 1]; // return last part of the path
+				});
+
+				const sdJwt = SdJwt.fromCompact(vcjwt).withHasher(hasherAndAlgorithm);
+	
+				const jwtPayload = (JSON.parse(base64url.decode(vcjwt.split('.')[1])) as any);
+				const issuerDID = jwtPayload.iss;
+
+				const issuerPublicKeyJwk = await this.didKeyResolverService.getPublicKeyJwk(issuerDID);
+				const alg = (JSON.parse(base64url.decode(vcjwt.split('.')[0])) as any).alg;
+				const issuerPublicKey = await importJWK(issuerPublicKeyJwk, alg);
+				const verifyCb: Verifier = ({ header, message, signature }) => {
+					if (header.alg !== SignatureAndEncryptionAlgorithm.ES256) {
+							throw new Error('only ES256 is supported')
+					}
+					return verify(null, Buffer.from(message), issuerPublicKey as KeyLike, signature)
+				}
+	
+				const verificationResult = await sdJwt.verify(verifyCb, requiredClaimNames);
+				const prettyClaims = await sdJwt.getPrettyClaims();
+
+				input_descriptor.constraints.fields.map((field) => {
+					if (!presentationClaims[desc.id]) {
+						presentationClaims[desc.id] = []; // initialize
+					}
+					const fieldPath = field.path[0]; // get first path
+					const value = String(JSONPath({ path: fieldPath, json: prettyClaims.vc as any })[0]);
+					const splittedPath = fieldPath.split('.');
+					const claimName = splittedPath[splittedPath.length - 1];
+					presentationClaims[desc.id].push({ name: claimName, value: value } as ClaimRecord);
+				});
+				console.log("Verification result = ", verificationResult)
+				if (!verificationResult.isValid) {
+					return { error: new Error("SD_JWT_VERIFICATION_FAILURE"), error_description: new Error(`Verification result ${JSON.stringify(verificationResult)}`) };
+				}
+			}
+			else if (desc.format == VerifiableCredentialFormat.JWT_VC) {
+				const jwtPayload = (JSON.parse(base64url.decode(vcjwt.split('.')[1])) as any);
+				const issuerDID = jwtPayload.iss;
+				const issuerPublicKeyJwk = await this.didKeyResolverService.getPublicKeyJwk(issuerDID);
+				const alg = (JSON.parse(base64url.decode(vcjwt.split('.')[0])) as any).alg;
+				const issuerPublicKey = await importJWK(issuerPublicKeyJwk, alg);
+
+				await jwtVerify(vcjwt, issuerPublicKey);
+
+				input_descriptor.constraints.fields.map((field) => {
+					if (!presentationClaims[desc.id]) {
+						presentationClaims[desc.id] = []; // initialize
+					}
+					const fieldPath = field.path[0]; // get first path
+					const value = String(JSONPath({ path: fieldPath, json: jwtPayload.vc })[0]);
+					const splittedPath = fieldPath.split('.');
+					const claimName = splittedPath[splittedPath.length - 1];
+					presentationClaims[desc.id].push({ name: claimName, value: value } as ClaimRecord);
+				});
+			}
 		}
-		return {};
+		return { presentationClaims };
 	}
 
 	//@ts-ignore
@@ -415,16 +465,17 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 
-	public async getPresentationByState(state: string): Promise<{ status: boolean, presentation?: string }> {
+	public async getPresentationByState(state: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, rawPresentation?: string }> {
 		const vp = await this.verifiablePresentationRepository.createQueryBuilder('vp')
 			.where("state = :state", { state: state })
 			.getOne();
-	
-		if (!vp?.raw_presentation)
+		
+		if (!vp?.raw_presentation || !vp.claims) {
 			return { status: false };
+		}
 
 		if (vp) 
-			return { status: true, presentation: vp.raw_presentation };
+			return { status: true, presentationClaims: vp.claims, rawPresentation: vp?.raw_presentation };
 		else
 			return { status: false };
 	}

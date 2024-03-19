@@ -7,8 +7,8 @@ import { appContainer } from "../services/inversify.config";
 import { TYPES } from "../services/types";
 import locale from "../configuration/locale";
 import * as qrcode from 'qrcode';
-import base64url from "base64url";
 import config from "../../config";
+import base64url from "base64url";
 
 const verifierRouter = Router();
 // const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
@@ -27,17 +27,17 @@ verifierRouter.get('/public/definitions', async (req, res) => {
 
 verifierRouter.get('/success/status', async (req, res) => { // response with the status of the presentation (this endpoint should be protected)
 	const state = req.query.state;
-	const {status, presentation} = await openidForPresentationReceivingService.getPresentationByState(state as string);
-	if (!presentation) {
+	const {status, presentationClaims, rawPresentation } = await openidForPresentationReceivingService.getPresentationByState(state as string);
+	if (!presentationClaims) {
 		return res.send({ status: false, error: "Presentation not received" });
 	}
-	return res.send({ status, presentation });
+	return res.send({ status, presentationClaims, presentation: rawPresentation });
 })
 
 verifierRouter.get('/success', async (req, res) => {
 	const state = req.query.state;
-	const {status, presentation} = await openidForPresentationReceivingService.getPresentationByState(state as string);
-	if (!presentation) {
+	const {status, presentationClaims, rawPresentation } = await openidForPresentationReceivingService.getPresentationByState(state as string);
+	if (!presentationClaims || !rawPresentation) {
 		return res.render('error.pug', {
 			msg: "Failed to get presentation",
 			code: 0,
@@ -46,16 +46,16 @@ verifierRouter.get('/success', async (req, res) => {
 		})
 	}
 	
-	const presentationPayload = JSON.parse(base64url.decode(presentation.split('.')[1])) as any;
+	const presentationPayload = JSON.parse(base64url.decode(rawPresentation.split('.')[1])) as any;
 	const credentials = presentationPayload.vp.verifiableCredential.map((vcString: any) => {
 		return JSON.parse(base64url.decode(vcString.split('.')[1]));
 	}).map((credential: any) => credential.vc);
-	
-	console.log("Credential payloads = ", credentials)
+
 	return res.render('verifier/success.pug', {
 		lang: req.lang,
 		locale: locale[req.lang],
 		status: status,
+		presentationClaims: presentationClaims,
 		credentialPayloads: credentials,
 	})
 })

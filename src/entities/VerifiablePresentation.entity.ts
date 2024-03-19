@@ -8,6 +8,15 @@ export enum VerificationStatus {
 	VALID
 }
 
+export type ClaimRecord = {
+	name: string;
+	value: string;
+};
+
+export type PresentationClaims = {
+	[descriptor_id: string]: Array<ClaimRecord>;
+}
+
 @Entity({ name: "verifiable_presentation" })
 export class VerifiablePresentationEntity {
 	@PrimaryGeneratedColumn()
@@ -54,14 +63,32 @@ export class VerifiablePresentationEntity {
 	}
 
 
-	@Column({ name: "format", type: "enum", enum: VerifiableCredentialFormat, nullable: true })
-	format?: VerifiableCredentialFormat;
+	@Column({ name: "claims", type: "blob", nullable: true })
+	// @ts-ignore
+	/**
+	 * Includes the claims that were requested from the presentation definition
+	 */
+	private _claims?: Buffer;
+	set claims(value: PresentationClaims | null) {
+		if (value) {
+			this._claims = Buffer.from(JSON.stringify(value));
+			return;
+		}
+		this._claims = undefined;
+	}
 
-
+	get claims(): PresentationClaims | null {
+		if (this._claims) {
+			return JSON.parse(this._claims?.toString()) as PresentationClaims;
+		}
+		return null;
+	}
 
 	@Column({ name: "date", type: "date", nullable: true })
 	date?: Date;
 
+	@Column({ name: "format", type: "enum", enum: VerifiableCredentialFormat, nullable: true })
+	format?: VerifiableCredentialFormat;
 	
 	@Column({ name: "status", type: "boolean", nullable: true })
 	status?: boolean;

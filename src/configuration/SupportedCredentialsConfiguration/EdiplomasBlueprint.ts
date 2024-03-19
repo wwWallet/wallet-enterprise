@@ -120,7 +120,7 @@ export class EdiplomasBlueprint implements SupportedCredentialProtocol {
 			},
 		};
 		const { jws } = await this.getCredentialIssuerConfig().getCredentialSigner()
-			.sign(payload, {});
+			.sign(payload, {}, null);
     const response = {
       format: this.getFormat(),
       credential: jws
