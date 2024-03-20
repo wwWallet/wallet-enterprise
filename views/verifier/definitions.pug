@@ -1,12 +1,11 @@
 extends ../layout.pug
 block layout-content
 	.container
-		h1 Job positions
+		h1 Verifiable Presentations
 		.card-container
 			for definition in presentationDefinitions
 				.card
-					.card-title Software Engineer - Core
-					p.card-text Send your Bachelor Diploma to apply for "Software Engineer - Core"
+					.card-title #{definition.title}
+					p.card-text #{definition.description}
 					.card-buttons
 						button.btn.btn-primary(onclick=`window.location.href = "/verifier-panel/filter/by/definition/${definition.id}"`) See presentations
-
