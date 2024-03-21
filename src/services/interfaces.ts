@@ -3,7 +3,7 @@ import { JWK, JWTHeaderParameters } from "jose";
 import { Request , Response} from 'express'
 import { OpenidForPresentationsConfiguration } from "./types/OpenidForPresentationsConfiguration.type";
 import 'reflect-metadata';
-import { AuthorizationDetailsSchemaType, CredentialSupported } from "../types/oid4vci";
+import { AuthorizationDetailsSchemaType, CredentialSupported, GrantType } from "../types/oid4vci";
 import { CredentialIssuersRepository } from "../lib/CredentialIssuersRepository";
 import { PresentationClaims } from "../entities/VerifiablePresentation.entity";
 
@@ -14,7 +14,7 @@ export interface CredentialSigner {
 }
 
 export interface OpenidForCredentialIssuingAuthorizationServerInterface {
-	generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported): Promise<{ url: URL, user_pin_required: boolean, user_pin: string | undefined }>;
+	generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported, grantType: GrantType, issuerState?: string): Promise<{ url: URL, user_pin_required?: boolean, user_pin?: string }>;
 	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 	
 	authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
