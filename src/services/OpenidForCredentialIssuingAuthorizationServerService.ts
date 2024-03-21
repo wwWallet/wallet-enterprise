@@ -106,6 +106,26 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	}
 
 
+	async authorizationRequestIssuerStateHandler(ctx: {req: Request, res: Response}) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+		if (!ctx.req.query.issuer_state) {
+			return;
+		}
+
+		const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
+			.where("state.issuer_state = :issuer_state", { issuer_state: ctx.req.query.issuer_state })
+			.getOne();
+		if (!state) {
+			return;
+		}
+		ctx.req.authorizationServerState = state;
+	}
+
 	async authorizationRequestPKCEHandler(ctx: {req: Request, res: Response}) {
 		if (ctx.res.headersSent) {
 			return;
@@ -189,11 +209,15 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 	async authorizationRequestHandler(ctx: {req: Request, res: Response}): Promise<void> {
 		ctx.req.session.authenticationChain = {}; // clear the session
+
+		// the following functions will alter the ctx.req.authorizationServerState object
+		await this.authorizationRequestIssuerStateHandler(ctx);
 		await this.authorizationRequestClientIdAndRedirectUriHandler(ctx);
 		await this.authorizationRequestPKCEHandler(ctx);
 		await this.authorizationRequestGrantTypeHandler(ctx);
 		await this.authorizationRequestResponseTypeHandler(ctx);
 		await this.authorizationRequestAuthorizationDetailsHandler(ctx);
+
 		await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState)
 		ctx.res.redirect(CONSENT_ENTRYPOINT);
 	}

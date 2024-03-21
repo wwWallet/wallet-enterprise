@@ -57,6 +57,8 @@ export class AuthorizationServerState {
 	@Column({ name: "pre_authorized_code", type: "varchar", nullable: true })
 	pre_authorized_code?: string | null;
 
+	@Column({ name: "issuer_state", type: "varchar", nullable: true })
+	issuer_state?: string;
 
 	@Column({ name: "state", type: "varchar", nullable: true })
 	state?: string;
