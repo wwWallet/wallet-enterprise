@@ -29,22 +29,24 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	}
 
 
-	async generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported): Promise<{ url: URL, user_pin_required: boolean, user_pin: string | undefined }> {
+	async generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported, grantType: GrantType, issuerState?: string): Promise<{ url: URL, user_pin_required?: boolean, user_pin?: string | undefined }> {
 
 		// force creation of new state with a separate pre-authorized_code which has specific scope
 		let newAuthorizationServerState: AuthorizationServerState = { ...ctx.req.authorizationServerState, id: 0 } as AuthorizationServerState;
-		newAuthorizationServerState.user_pin_required = false;
-		newAuthorizationServerState.pre_authorized_code = crypto.randomBytes(60).toString('base64url');
+		if (grantType == GrantType.PRE_AUTHORIZED_CODE) {
+			newAuthorizationServerState.user_pin_required = false;
+			newAuthorizationServerState.pre_authorized_code = crypto.randomBytes(60).toString('base64url');
+			if (REQUIRE_PIN) {
+				newAuthorizationServerState.user_pin_required = true;
+				newAuthorizationServerState.user_pin = Math.floor(1000 + Math.random() * 9000).toString();
+			}
+		}
+
 		newAuthorizationServerState.authorization_details = [
 			{ types: credentialSupported.types as string[], format: credentialSupported.format, type: 'openid_credential' }
 		];
 
-		newAuthorizationServerState.user_pin_required = false;
 
-		if (REQUIRE_PIN) {
-			newAuthorizationServerState.user_pin_required = true;
-			newAuthorizationServerState.user_pin = Math.floor(1000 + Math.random() * 9000).toString();
-		}
 
 		const insertRes = await this.authorizationServerStateRepository.insert(newAuthorizationServerState);
 		console.log("Insertion result = ", insertRes);
@@ -58,13 +60,32 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 					format: credentialSupported.format
 				}
 			],
-			grants: {
+			grants: { }
+		};
+
+		if (grantType == GrantType.PRE_AUTHORIZED_CODE) {
+			credentialOffer.grants = {
 				"urn:ietf:params:oauth:grant-type:pre-authorized_code": {
 					"pre-authorized_code": newAuthorizationServerState.pre_authorized_code,
 					"user_pin_required": newAuthorizationServerState.user_pin_required
 				}
 			}
-		};
+		}
+		else { // authorization code grant type
+			if (issuerState) { // if issuer state was provided
+				credentialOffer.grants = {
+					authorization_code: {
+						issuer_state: issuerState
+					}
+				};
+			}
+			else {
+				credentialOffer.grants = {
+					authorization_code: { }
+				};
+			}
+		}
+		
 		const redirect_uri = ctx.req?.authorizationServerState.redirect_uri ?? "openid-credential-offer://";
 		const credentialOfferURL = new URL(redirect_uri);
 		credentialOfferURL.searchParams.append('credential_offer', JSON.stringify(credentialOffer));
@@ -84,6 +105,26 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		return { newStateRecord: insertedState };
 	}
 
+
+	async authorizationRequestIssuerStateHandler(ctx: {req: Request, res: Response}) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+		if (!ctx.req.query.issuer_state) {
+			return;
+		}
+
+		const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
+			.where("state.issuer_state = :issuer_state", { issuer_state: ctx.req.query.issuer_state })
+			.getOne();
+		if (!state) {
+			return;
+		}
+		ctx.req.authorizationServerState = state;
+	}
 
 	async authorizationRequestPKCEHandler(ctx: {req: Request, res: Response}) {
 		if (ctx.res.headersSent) {
@@ -168,11 +209,15 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 	async authorizationRequestHandler(ctx: {req: Request, res: Response}): Promise<void> {
 		ctx.req.session.authenticationChain = {}; // clear the session
+
+		// the following functions will alter the ctx.req.authorizationServerState object
+		await this.authorizationRequestIssuerStateHandler(ctx);
 		await this.authorizationRequestClientIdAndRedirectUriHandler(ctx);
 		await this.authorizationRequestPKCEHandler(ctx);
 		await this.authorizationRequestGrantTypeHandler(ctx);
 		await this.authorizationRequestResponseTypeHandler(ctx);
 		await this.authorizationRequestAuthorizationDetailsHandler(ctx);
+
 		await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState)
 		ctx.res.redirect(CONSENT_ENTRYPOINT);
 	}

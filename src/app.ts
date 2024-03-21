@@ -157,7 +157,7 @@ app.post('/demo/generate-credential-offer', async (req: Request, res: Response) 
 			.save(req.authorizationServerState);
 
 
-		const { url, user_pin, user_pin_required } = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, supportedCredentialObject);
+		const { url, user_pin, user_pin_required } = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, supportedCredentialObject, GrantType.PRE_AUTHORIZED_CODE);
 		res.status(200).send({ url, user_pin, user_pin_required });
 	} catch (e) {
 		console.log(e);
@@ -171,6 +171,48 @@ app.post('/demo/presentation-request', async (req: Request, res: Response) => {
 	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentation_definition_id, callback_url);	
 	res.send({ url });
 });
+
+app.post('/demo/generate-credential-offer/with-issuer-state', async (req: Request, res: Response) => {
+	const {
+		issuer_state,
+		credential_issuer_identifier,
+		credential_definition: {
+			types,
+			format
+		}
+	} = req.body;
+
+	if (!issuer_state) {
+		console.log("Issuer state is missing")
+		return res.status(400).send({ error: "issuer_state is missing" });
+	}
+
+	await createNewAuthorizationServerState({ req, res });
+	req.authorizationServerState.credential_issuer_identifier = credential_issuer_identifier;
+	req.authorizationServerState.grant_type = GrantType.AUTHORIZATION_CODE;
+
+	const issuer = credentialIssuersConfigurationService.registeredCredentialIssuerRepository().getCredentialIssuer(credential_issuer_identifier);
+	if (!issuer) {
+		return res.status(404).send({ msg: "Issuer not found" });
+	}
+	const supportedCredential = issuer.supportedCredentials.filter(sc => {
+		return _.isEqual(sc.getTypes(), types) && sc.getFormat() == format
+	})[0];
+
+
+	if (!supportedCredential) {
+		return res.status(404).send({ msg: "Supported credential not found" });
+	}
+
+	const supportedCredentialObject = supportedCredential.exportCredentialSupportedObject()
+	req.authorizationServerState.authorization_details = [
+		{ format: supportedCredentialObject.format, types: supportedCredentialObject.types ?? [], type: 'openid_credential' }
+	];
+	const { url } = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, supportedCredentialObject, GrantType.AUTHORIZATION_CODE, issuer_state);
+	console.log("Returned url = ", url)
+	res.send({ url: url.toString() });
+})
+
 
 // catch 404 and forward to error handler
 app.use((req, _res, next) => {

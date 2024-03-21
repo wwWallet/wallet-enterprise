@@ -71,7 +71,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 	if (req.authorizationServerState.grant_type == GrantType.PRE_AUTHORIZED_CODE) {
 		credentialViewsWithCredentialOffers = await Promise.all(allCredentialViews.map(async (credentialView) => {
 			const { url, user_pin_required, user_pin } = await openidForCredentialIssuingAuthorizationServerService
-				.generateCredentialOfferURL({req, res}, credentialView.credential_supported_object);
+				.generateCredentialOfferURL({req, res}, credentialView.credential_supported_object, GrantType.PRE_AUTHORIZED_CODE);
 			let credentialOfferQR = await new Promise((resolve) => {
 				qrcode.toDataURL(url.toString(), {
 					margin: 1,
