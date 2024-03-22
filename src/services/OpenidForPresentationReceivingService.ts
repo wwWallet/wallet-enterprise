@@ -403,7 +403,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					presentationClaims[desc.id].push({ name: claimName, value: value } as ClaimRecord);
 				});
 				console.log("Verification result = ", verificationResult)
-				if (!verificationResult.isValid) {
+				if (!verificationResult.isSignatureValid || !verificationResult.areRequiredClaimsIncluded) {
 					return { error: new Error("SD_JWT_VERIFICATION_FAILURE"), error_description: new Error(`Verification result ${JSON.stringify(verificationResult)}`) };
 				}
 			}
