@@ -298,14 +298,13 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 				// store presentation
 				const newVerifiablePresentation = new VerifiablePresentationEntity()
-				newVerifiablePresentation.presentation_definition_id = presentation_submission.definition_id;
+				newVerifiablePresentation.presentation_definition_id = (JSON.parse(presentation_submission) as any).definition_id;
 				newVerifiablePresentation.claims = presentationClaims ?? null;
 				newVerifiablePresentation.status = true;
 				newVerifiablePresentation.raw_presentation = vp_token;
 				newVerifiablePresentation.presentation_submission = presentationSubmissionObject;
 				newVerifiablePresentation.date = new Date();
 				newVerifiablePresentation.state = verifierStateId as string;
-
 				this.verifiablePresentationRepository.save(newVerifiablePresentation);
 
 				console.error(msg);
@@ -404,7 +403,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					presentationClaims[desc.id].push({ name: claimName, value: value } as ClaimRecord);
 				});
 				console.log("Verification result = ", verificationResult)
-				if (!verificationResult.isValid) {
+				if (!verificationResult.isSignatureValid || !verificationResult.areRequiredClaimsIncluded) {
 					return { error: new Error("SD_JWT_VERIFICATION_FAILURE"), error_description: new Error(`Verification result ${JSON.stringify(verificationResult)}`) };
 				}
 			}
@@ -475,6 +474,21 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		}
 
 		if (vp) 
+			return { status: true, presentationClaims: vp.claims, rawPresentation: vp?.raw_presentation };
+		else
+			return { status: false };
+	}
+
+	public async getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, rawPresentation?: string }> {
+		const vp = await this.verifiablePresentationRepository.createQueryBuilder('vp')
+			.where("id = :id", { id: id })
+			.getOne();
+
+		if (!vp?.raw_presentation || !vp.claims) {
+			return { status: false };
+		}
+
+		if (vp)
 			return { status: true, presentationClaims: vp.claims, rawPresentation: vp?.raw_presentation };
 		else
 			return { status: false };

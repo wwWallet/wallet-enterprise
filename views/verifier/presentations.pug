@@ -2,10 +2,16 @@ extends ../layout.pug
 block layout-content
 	.container
 		h1 Received Verifiable Presentations
-		.card-container
-		for vp in verifiablePresentations
-			.card
-				.card-title #{vp.id}
-				p.card-text Date received: #{vp.date}
-				.card-buttons
-					button.btn.btn-secondary(onclick=`window.location.href = "/verifier-panel/presentation/${vp.id}"`) Inspect details
+		if verifiablePresentations && verifiablePresentations.length > 0
+			.card-container
+			for vp in verifiablePresentations
+				.card
+					.card-title Unique ID: #{vp.id}
+					p
+						.card-text Date: #{vp.date}
+						.card-text Claims: #{JSON.stringify(vp.claims, null, 2)}
+						.card-text Holder Info: #{vp.holderInfo}
+					.card-buttons
+						button.btn.btn-primary(onclick=`window.location.href = "/verifier-panel/presentation/${vp.id}"`) Inspect details
+		else
+			h4 No Verifiable Presentations
