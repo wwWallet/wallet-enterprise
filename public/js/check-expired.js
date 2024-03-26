@@ -5,9 +5,9 @@ function updateLayoutForExpiredCredentials(credentialPayloads) {
 		if (expirationDate < currentDate) {
 			const credentialBox = document.querySelectorAll('.credential-box')[index];
 			credentialBox.classList.add('expired-credential');
-			const expiredLabel = document.createElement('span');
+			const expiredLabel = document.createElement('div');
+			expiredLabel.className = 'expired-label';
 			expiredLabel.textContent = 'Expired';
-			expiredLabel.style.color = 'red';
 			credentialBox.appendChild(expiredLabel);
 		}
 	});
