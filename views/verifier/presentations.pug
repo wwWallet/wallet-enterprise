@@ -9,7 +9,9 @@ block layout-content
 					.card-title Unique ID: #{vp.id}
 					p
 						.card-text Date: #{vp.date}
-						.card-text Claims: #{JSON.stringify(vp.claims, null, 2)}
+						.card-text Claims:
+						textarea#json-textarea.wide
+							| #{JSON.stringify(vp.claims, null, 2)}
 						.card-text Holder Info: #{vp.holderInfo}
 					.card-buttons
 						button.btn.btn-primary(onclick=`window.location.href = "/verifier-panel/presentation/${vp.id}"`) Inspect details
