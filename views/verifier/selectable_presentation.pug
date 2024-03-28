@@ -1,0 +1,29 @@
+extends ../layout.pug
+block layout-content
+
+	.container
+		h2 Select the fields you wish to present
+		form(action=`/verifier/public/definitions/presentation-request/${presentationDefinitionId}` method='post')
+			.checkbox
+				label
+					input(type='checkbox' checked disabled name='fields' value='type') 
+					| Type
+			.checkbox
+				label
+					input(type='checkbox' name='fields' value='firstName')
+					| First Name
+			.checkbox
+				label
+					input(type='checkbox' name='fields' value='familyName') 
+					| Family Name
+			.checkbox
+				label
+					input(type='checkbox' name='fields' value='personalIdentifier') 
+					| Personal Identifier
+			.checkbox
+				label
+					input(type='checkbox' name='fields' value='dateOfBirth')
+					| Date of Birth
+			button.btn.btn-primary(type='submit') Generate QR
+
+	link(rel="stylesheet" href="/styles/scan-qr-verifier.css")
