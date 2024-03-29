@@ -11,6 +11,7 @@ setTimeout(() => {
 const layout = document.querySelector('.layout');
 
 const cards = document.querySelectorAll('.credential-card');
+const selectCard = document.querySelectorAll('.toggle-card');
 const toggleButtons = document.querySelectorAll('.toggle-details');
 
 const form = document.querySelector('#DiplomaSelection');
@@ -52,25 +53,43 @@ function showDropdown(card) {
 	card.classList.add('expanded');
 }
 
-toggleButtons.forEach(toggleButton => {
-	toggleButton.addEventListener('click', (e) => {
+selectCard.forEach(selectCard => {
+	selectCard.addEventListener('click', (e) => {
 
-		const thisId = e.target.id;
+		const button = e.target.closest('.toggle-card');
+		const thisId = button.id;
 		const card = document.getElementById(thisId).parentElement;
 
-		if(layout.classList.contains('multi')) {
+		if (layout.classList.contains('multi')) {
 			e.target.classList.toggle('selected');
 			toggleInput(thisId);
 		}
-		else {
+	});
+});
+
+toggleButtons.forEach(toggleButton => {
+	toggleButton.addEventListener('click', (e) => {
+
+		const button = e.target.closest('.toggle-details');
+		const thisId = button.id;
+		const card = document.getElementById(thisId).parentElement;
+		const showText = card.querySelector('.show-text');
+		const hideText = card.querySelector('.hide-text');
+
+
+
+
 			if (card.classList.contains('expanded')) {
 				hideDropdown(card);
-				deselectInput(thisId);
+				// deselectInput(thisId);
+				showText.style.display = 'inline';
+				hideText.style.display = 'none';
 			} else {
 				showDropdown(card);
-				selectInput(thisId);
+				// selectInput(thisId);
+				showText.style.display = 'none';
+				hideText.style.display = 'inline';
 			}
-		}
 	});
 });
 
@@ -80,33 +99,24 @@ const consentDescription = document.querySelector('.consent-description');
 const isSelectedCircle = document.querySelector('.is-selected');
 const barBtn = document.querySelector('#BarBtn');
 
-selectMultiButton.addEventListener('click', () => {
-	
+
 	selectMultiButton.classList.toggle('toggled');
 	barBtnContainer.classList.toggle('multi');
 	layout.classList.toggle('multi');
 
-	if (selectMultiButton.classList.contains('toggled')) {
-		selectMultiButton.innerHTML = "Cancel";
+		// selectMultiButton.innerHTML = "Cancel";
 		consentDescription.innerHTML = "Select your credentials by clicking on them and authorize the sharing of all selected credentials with the client";
 		hideAllDropdowns();
-	}
-	else {
-		selectMultiButton.innerHTML = "Select";
-		consentDescription.innerHTML = "Inspect your credentials by clicking on them and authorize the sharing of one of them with the client";
-		deselectAllCards();
-	}
-});
 
 function deselectInput(value) {
 	const inputs = document.querySelectorAll('input');
 
 	inputs.forEach(input => {
-		if(input.value === value)
+		if (input.value === value)
 			input.disabled = true;
 	});
 
-	if(!isOneInputEnabled())
+	if (!isOneInputEnabled())
 		disableSubmitButtons();
 
 }
@@ -115,7 +125,7 @@ function selectInput(value) {
 	const inputs = document.querySelectorAll('input');
 
 	inputs.forEach(input => {
-		if(input.value === value)
+		if (input.value === value)
 			input.disabled = false;
 	});
 
@@ -126,11 +136,11 @@ function toggleInput(value) {
 	const inputs = document.querySelectorAll('input');
 
 	inputs.forEach(input => {
-		if(input.value === value) {
+		if (input.value === value) {
 			input.disabled = !input.disabled;
 		}
 
-		if(isOneInputEnabled()) {
+		if (isOneInputEnabled()) {
 			enableSubmitButtons();
 		}
 		else {
@@ -149,13 +159,13 @@ submitMultiButton.addEventListener('click', (e) => {
 	e.preventDefault();
 
 	let enabledInputFlag = isOneInputEnabled();
-	if(enabledInputFlag)
+	if (enabledInputFlag)
 		form.submit();
 	else
 		noCredentialsError();
 });
 
-function noCredentialsError(timeout=3000) {
+function noCredentialsError(timeout = 3000) {
 
 	const errorText = document.querySelector('#NoCredentialSelectedError');
 
@@ -170,7 +180,7 @@ function isOneInputEnabled() {
 	let enabledInputFlag = false;
 	const inputs = document.querySelectorAll('input');
 	for (const input of inputs) {
-		if(input.disabled === false) {
+		if (input.disabled === false) {
 			enabledInputFlag = true;
 			break;
 		}
@@ -181,7 +191,7 @@ function isOneInputEnabled() {
 
 barBtn.addEventListener('click', (e) => {
 	let enabledInputFlag = isOneInputEnabled();
-	if(enabledInputFlag)
+	if (enabledInputFlag)
 		form.submit();
 	else
 		noCredentialsError();
