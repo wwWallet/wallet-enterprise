@@ -17,6 +17,15 @@ if(urlParams.get('network-error')) {
 	popupAlert('network-error');
 }
 
+const validCredentials = [
+	{ username: 'user1', password: 'secret' },
+	{ username: 'user2', password: 'secret' },
+];
+function isValidCredentials(username, password) {
+	return validCredentials.some(cred => cred.username === username && cred.password === password);
+}
+
+
 document.forms.login.onsubmit = function(event) {
 
 	const formData = new FormData(document.forms.login);
@@ -36,7 +45,7 @@ document.forms.login.onsubmit = function(event) {
 		popupAlert('invalid-password');
 		return;
 	}
-	if (username !== 'user' || password !== "secret") {
+	if (!isValidCredentials(username, password)) {
 		event.preventDefault();
 		console.log('invalid credentials');
 		popupAlert('invalid-credentials');

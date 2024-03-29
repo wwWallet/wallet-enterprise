@@ -7,12 +7,14 @@ block layout-content
 			p #{locale.personalInfo.subtitle}
 			table.info-table.striped
 				tbody
-					tr
-						td #[strong #{locale.personalInfo.firstName}]
-						td John
-					tr
-						td #[strong #{locale.personalInfo.lastName}]
-						td Doe
+					if info.firstName
+						tr
+							td #[strong #{locale.personalInfo.firstName}]
+							td #{info.firstName}
+					if info.lastName
+						tr
+							td #[strong #{locale.personalInfo.lastName}]
+							td #{info.lastName}
 					tr
 						td #[strong #{locale.personalInfo.ssn}]
 						td #{info.ssn}

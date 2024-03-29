@@ -110,6 +110,11 @@ export class AuthorizationServerState {
 	@Column({ name: "ssn", type: "varchar", nullable: true })
 	ssn?: string;
 
+	@Column({ name: "firstName", type: "varchar", nullable: true })
+	firstName?: string;
+
+	@Column({ name: "lastName", type: "varchar", nullable: true })
+	lastName?: string;
 
 	/**
 	 * this state random string will be used in order to expect a vid on a direct_post endpoint
