@@ -47,6 +47,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		];
 
 
+		if (issuerState) {
+			newAuthorizationServerState.issuer_state = issuerState;
+		}
 
 		const insertRes = await this.authorizationServerStateRepository.insert(newAuthorizationServerState);
 		console.log("Insertion result = ", insertRes);
@@ -116,7 +119,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		if (!ctx.req.query.issuer_state) {
 			return;
 		}
-
+	
 		const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
 			.where("state.issuer_state = :issuer_state", { issuer_state: ctx.req.query.issuer_state })
 			.getOne();
