@@ -26,7 +26,7 @@ function deselectAllCards() {
 }
 
 function hideAllDropdowns() {
-	deselectAllInputs();
+	// deselectAllInputs();
 	cards.forEach(card => hideDropdown(card));
 }
 
@@ -53,19 +53,44 @@ function showDropdown(card) {
 	card.classList.add('expanded');
 }
 
+function checkCardSelection() {
+	const cards = document.querySelectorAll('.toggle-card');
+	let isAnyCardSelected = false;
+
+	// Check if at least one card is selected
+	cards.forEach(card => {
+		if (card.classList.contains('selected')) {
+			isAnyCardSelected = true;
+		}
+	});
+
+	// Enable or disable the submit button based on whether any card is selected
+	if (isAnyCardSelected) {
+		enableSubmitButtons();
+	} else {
+		disableSubmitButtons();
+	}
+}
+
+// Attach event listeners to each card for the 'click' event
 selectCard.forEach(selectCard => {
 	selectCard.addEventListener('click', (e) => {
-
 		const button = e.target.closest('.toggle-card');
-		const thisId = button.id;
-		const card = document.getElementById(thisId).parentElement;
+		if (button) {
+			const isSelectedIcon = button.querySelector('.is-selected');
+			const isNotSelectedIcon = button.querySelector('.is-not-selected');
+			button.classList.toggle('selected');
 
-		if (layout.classList.contains('multi')) {
-			e.target.classList.toggle('selected');
-			toggleInput(thisId);
+			// Toggle icon visibility
+			isSelectedIcon.style.display = isSelectedIcon.style.display === 'none' ? 'inline' : 'none';
+			isNotSelectedIcon.style.display = isNotSelectedIcon.style.display === 'none' ? 'inline' : 'none';
+
+			checkCardSelection();
 		}
 	});
 });
+
+
 
 toggleButtons.forEach(toggleButton => {
 	toggleButton.addEventListener('click', (e) => {
@@ -76,20 +101,15 @@ toggleButtons.forEach(toggleButton => {
 		const showText = card.querySelector('.show-text');
 		const hideText = card.querySelector('.hide-text');
 
-
-
-
-			if (card.classList.contains('expanded')) {
-				hideDropdown(card);
-				// deselectInput(thisId);
-				showText.style.display = 'inline';
-				hideText.style.display = 'none';
-			} else {
-				showDropdown(card);
-				// selectInput(thisId);
-				showText.style.display = 'none';
-				hideText.style.display = 'inline';
-			}
+		if (card.classList.contains('expanded')) {
+			hideDropdown(card);
+			showText.style.display = 'inline';
+			hideText.style.display = 'none';
+		} else {
+			showDropdown(card);
+			showText.style.display = 'none';
+			hideText.style.display = 'inline';
+		}
 	});
 });
 
@@ -100,13 +120,13 @@ const isSelectedCircle = document.querySelector('.is-selected');
 const barBtn = document.querySelector('#BarBtn');
 
 
-	selectMultiButton.classList.toggle('toggled');
-	barBtnContainer.classList.toggle('multi');
-	layout.classList.toggle('multi');
+selectMultiButton.classList.toggle('toggled');
+barBtnContainer.classList.toggle('multi');
+layout.classList.toggle('multi');
 
-		// selectMultiButton.innerHTML = "Cancel";
-		consentDescription.innerHTML = "Select your credentials by clicking on them and authorize the sharing of all selected credentials with the client";
-		hideAllDropdowns();
+// selectMultiButton.innerHTML = "Cancel";
+consentDescription.innerHTML = "Select your credentials by clicking on them and authorize the sharing of all selected credentials with the client";
+hideAllDropdowns();
 
 function deselectInput(value) {
 	const inputs = document.querySelectorAll('input');
@@ -116,8 +136,9 @@ function deselectInput(value) {
 			input.disabled = true;
 	});
 
-	if (!isOneInputEnabled())
+	if (!isOneInputEnabled()) {
 		disableSubmitButtons();
+	}
 
 }
 
