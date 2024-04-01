@@ -34,14 +34,14 @@ block layout-content
 
 					section.CredentialsArea
 						//- form.diplomas(name='selectDiplomas' method="post")
-						for credential in credentialViewList
+						for credential, index in credentialViewList
 							.credential-card
 								input(type="hidden" name="selected_credential_id_list[]" value=credential.credential_id disabled)
-								a.credential.toggle-card(id=credential.credential_id style=`background-image: url(${credential.credential_supported_object.display[0].logo.url});`)
+								a.credential.toggle-card(id=`${credential.credential_id}_${index}` style=`background-image: url(${credential.credential_supported_object.display[0].logo.url});`)
 									if grant_type == "authorization_code"
 										i.is-selected.fa.fa-check-square-o(aria-hidden="true" style="display: none;")
 										i.is-not-selected.fa.fa-square-o(aria-hidden="true")
-								a.toggle-details(id=credential.credential_id style="display:inline;")
+								a.toggle-details(id=`${credential.credential_id}_${index}` style="display:inline;")
 									span.show-text
 										| Show Details 
 										i.fa.fa-angle-down(aria-hidden="true")
