@@ -76,12 +76,14 @@ function checkCardSelection() {
 selectCard.forEach(selectCard => {
 	selectCard.addEventListener('click', (e) => {
 		const button = e.target.closest('.toggle-card');
+		const thisId = e.target.id;
 		if (button) {
 			const isSelectedIcon = button.querySelector('.is-selected');
 			const isNotSelectedIcon = button.querySelector('.is-not-selected');
 			button.classList.toggle('selected');
-
-			// Toggle icon visibility
+			if(layout.classList.contains('multi')) {
+				toggleInput(thisId.split('_').slice(0, -1).join('_'));
+			}
 			isSelectedIcon.style.display = isSelectedIcon.style.display === 'none' ? 'inline' : 'none';
 			isNotSelectedIcon.style.display = isNotSelectedIcon.style.display === 'none' ? 'inline' : 'none';
 
