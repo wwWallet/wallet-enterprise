@@ -61,6 +61,31 @@ verifierRouter.get('/success', async (req, res) => {
 })
 
 
+verifierRouter.use('/public/definitions/selectable-presentation-request/:presentation_definition_id', async (req, res) => {
+	const presentation_definition_id = req.params.presentation_definition_id;
+	if (!presentation_definition_id) {
+		return res.render('error', {
+			msg: "No presentation definition was selected",
+			code: 0,
+			lang: req.lang,
+			locale: locale[req.lang]
+		});
+	}
+	const presentationDefinition = verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0];
+	if (!presentationDefinition) {
+		return res.render('error', {
+			msg: "No presentation definition was found",
+			code: 0,
+			lang: req.lang,
+			locale: locale[req.lang]
+		});
+	}
+	return res.render('verifier/selectable_presentation', {
+		presentationDefinitionId: presentationDefinition.id,
+		lang: req.lang,
+		locale: locale[req.lang],
+	});
+})
 
 
 verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
@@ -100,6 +125,26 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			lang: req.lang,
 			locale: locale[req.lang]
 		});
+	}
+
+	// If there are selected fields from a POST request, update the constraints accordingly
+	if (req.method === "POST" && req.body.fields) {
+		let selectedFields = req.body.fields;
+		if (!Array.isArray(selectedFields)) {
+			selectedFields = [selectedFields];
+		}
+		const selectedPaths = new Set(selectedFields.map((field: string) => {
+			if (field === "type") {
+				return `$.${field}`;
+			} else {
+				return `$.credentialSubject.${field}`;
+			}
+		}));
+		// Filter existing paths to keep only those selected by the user and update presentationDefinition
+		const filteredConstraints = presentationDefinition.input_descriptors[0].constraints.fields.filter(field =>
+			selectedPaths.has(field.path.join(','))
+		);
+		presentationDefinition.input_descriptors[0].constraints.fields = filteredConstraints;
 	}
 
 	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition.id, config.url + "/verifier/success");	
