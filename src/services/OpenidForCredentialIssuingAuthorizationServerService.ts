@@ -120,13 +120,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return;
 		}
 	
-		const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
-			.where("state.issuer_state = :issuer_state", { issuer_state: ctx.req.query.issuer_state })
-			.getOne();
-		if (!state) {
-			return;
-		}
-		ctx.req.authorizationServerState = state;
+		ctx.req.authorizationServerState.issuer_state = ctx.req.query.issuer_state as string ?? undefined;
 	}
 
 	async authorizationRequestPKCEHandler(ctx: {req: Request, res: Response}) {
