@@ -36,7 +36,7 @@ block layout-content
 						//- form.diplomas(name='selectDiplomas' method="post")
 						for credential, index in credentialViewList
 							.credential-card
-								input(type="hidden" name="selected_credential_id_list[]" value=credential.credential_id disabled)
+								input(type="hidden" name="selected_credential_id_list[]" id=`${credential.credential_id}_${index}` value=`${credential.credential_id}` disabled)
 								a.credential.toggle-card(id=`${credential.credential_id}_${index}` style=`background-image: url(${credential.credential_supported_object.display[0].logo.url});`)
 									if grant_type == "authorization_code"
 										i.is-selected.fa.fa-check-square-o(aria-hidden="true" style="display: none;")
@@ -66,7 +66,7 @@ block layout-content
 				.GetMultiBtnArea
 					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
 					if grant_type == "authorization_code"
-						button.Btn.Small.GetMultiBtn(type="submit" disabled) Get credentials
+						button.Btn.Small.GetMultiBtn(type="button" disabled) Get credentials
 				if grant_type == "authorization_code"
 					.DetailsArea
 						section.DetailsLayout
@@ -84,7 +84,7 @@ block layout-content
 										td
 											div 1 year
 	.BarBtnContainer
-		button#BarBtn.Btn.Large.GetMultiBtn(type="button" disabled) Get credentials
+		button#BarBtn.Btn.Large.GetMultiBtn(type="submit" disabled) Get credentials
 	input(id='wwwalletURL' type='hidden' value=wwwalletURL)
 
 	link(rel="stylesheet" href="/styles/consent.css")
