@@ -14,7 +14,7 @@ block layout-content
 				section.container-header
 					section.consent-description The following credentials have been found. Please review their details and select the one you want to receive.
 					if grant_type == "authorization_code"
-						button.Btn.Small.SelectMultiBtn(type="button" id="selectVc") Select
+						button.Btn.Small.SelectMultiBtn(type="button" id="selectVc" style="display: none;") Select
 
 				section.MainLayout
 					dialog#qrDialog
@@ -34,13 +34,20 @@ block layout-content
 
 					section.CredentialsArea
 						//- form.diplomas(name='selectDiplomas' method="post")
-						for credential in credentialViewList
+						for credential, index in credentialViewList
 							.credential-card
-								input(type="hidden" name="selected_credential_id_list[]" value=credential.credential_id disabled)
-								a.credential.toggle-details(id=credential.credential_id style=`
-									background-image: url(${credential.credential_supported_object.display[0].logo.url});
-								`)
-									i.is-selected.fa.fa-check-circle-o(aria-hidden="true")
+								input(type="hidden" name="selected_credential_id_list[]" id=`${credential.credential_id}_${index}` value=`${credential.credential_id}` disabled)
+								a.credential.toggle-card(id=`${credential.credential_id}_${index}` style=`background-image: url(${credential.credential_supported_object.display[0].logo.url});`)
+									if grant_type == "authorization_code"
+										i.is-selected.fa.fa-check-square-o(aria-hidden="true" style="display: none;")
+										i.is-not-selected.fa.fa-square-o(aria-hidden="true")
+								a.toggle-details(id=`${credential.credential_id}_${index}` style="display:inline;")
+									span.show-text
+										| Show Details 
+										i.fa.fa-angle-down(aria-hidden="true")
+									span.hide-text(style="display:none;")
+										| Hide Details 
+										i.fa.fa-angle-up(aria-hidden="true")
 								.details
 									i.arrowDown.fa.fa-angle-down(aria-hidden="true")
 									//- button.Btn.Small.GetSingleBtn(type="submit") Get credential
@@ -54,12 +61,12 @@ block layout-content
 												td
 													input(type="checkbox" class="scopeCheckbox" id=row.name name=row.name value=row.value checked disabled)
 									br
-									if grant_type != "authorization_code"
-										button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}', '${credential.credentialOfferURL}', '${credential.user_pin_required}', '${credential.user_pin}')`) Get credential
+								if grant_type != "authorization_code"
+									button.Btn.Small(type='button' onclick=`openDialog('${credential.credentialOfferQR}', '${credential.credentialOfferURL}', '${credential.user_pin_required}', '${credential.user_pin}')`) Get credential
 				.GetMultiBtnArea
 					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
 					if grant_type == "authorization_code"
-						button.Btn.Small.GetMultiBtn(type="submit" disabled) Get credentials
+						button.Btn.Small.GetMultiBtn(type="button" disabled) Get credentials
 				if grant_type == "authorization_code"
 					.DetailsArea
 						section.DetailsLayout
@@ -77,9 +84,9 @@ block layout-content
 										td
 											div 1 year
 	.BarBtnContainer
-		button#BarBtn.Btn.Large.GetMultiBtn(type="button" disabled) Get credentials
+		button#BarBtn.Btn.Large.GetMultiBtn(type="submit" disabled) Get credentials
 	input(id='wwwalletURL' type='hidden' value=wwwalletURL)
-	
+
 	link(rel="stylesheet" href="/styles/consent.css")
 	link(rel="stylesheet" href="/styles/inspect.css")
 	script(src='/js/consent.js')
