@@ -82,7 +82,7 @@ selectCard.forEach(selectCard => {
 			const isNotSelectedIcon = button.querySelector('.is-not-selected');
 			button.classList.toggle('selected');
 			if(layout.classList.contains('multi')) {
-				toggleInput(thisId.split('_').slice(0, -1).join('_'));
+				toggleInput(thisId);
 			}
 			isSelectedIcon.style.display = isSelectedIcon.style.display === 'none' ? 'inline' : 'none';
 			isNotSelectedIcon.style.display = isNotSelectedIcon.style.display === 'none' ? 'inline' : 'none';
@@ -155,11 +155,11 @@ function selectInput(value) {
 	enableSubmitButtons();
 }
 
-function toggleInput(value) {
+function toggleInput(id) {
 	const inputs = document.querySelectorAll('input');
 
 	inputs.forEach(input => {
-		if (input.value === value) {
+		if (input.id === id) {
 			input.disabled = !input.disabled;
 		}
 
