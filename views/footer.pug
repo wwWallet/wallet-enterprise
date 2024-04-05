@@ -37,6 +37,10 @@ div.footer
 						#copyright-tag
 							small
 								span.fa.fa-copyright
-									|  2022 | GUnet
+								|  &nbsp;
+								span#current-year
+								|  | GUnet
 
 	link(rel="stylesheet" href="/styles/footer.css")
+	script.
+		document.getElementById('current-year').textContent = new Date().getFullYear();
