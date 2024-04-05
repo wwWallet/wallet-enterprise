@@ -6,7 +6,7 @@ block layout-content
       form(id="PresentationRequestForm" name="PresentationRequestForm" method="POST")
         .CenteredLayout
 
-          h1 Scan the QR code to send your Verifiable ID
+          h1 Scan the QR code to send your PID
 
           img(src=authorizationRequestQR width=200 height=200)
           - const modifiedURL = authorizationRequestURL.replace("openid://cb", wwwalletURL)
