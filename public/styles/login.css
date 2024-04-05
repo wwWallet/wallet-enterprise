@@ -34,6 +34,11 @@
 	color: var(--error-red);
 }
 
+#Login p.invalid-feedback-show {
+	display: block;
+	color: var(--error-red);
+}
+
 #Login .input-wrap:focus-within {
 	border-bottom: 2px solid transparent;
 	border-image: linear-gradient(300deg, var(--secondary-light-color) 20%, var(--primary-color));
