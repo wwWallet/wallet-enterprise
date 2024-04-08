@@ -400,7 +400,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const value = String(JSONPath({ path: fieldPath, json: prettyClaims.vc as any })[0]);
 					const splittedPath = fieldPath.split('.');
 					const claimName = splittedPath[splittedPath.length - 1];
-					presentationClaims[desc.id].push({ name: claimName, value: JSON.stringify(value) } as ClaimRecord);
+					presentationClaims[desc.id].push({ name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
 				});
 				console.log("Verification result = ", verificationResult)
 				if (!verificationResult.isSignatureValid || !verificationResult.areRequiredClaimsIncluded) {
@@ -424,7 +424,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const value = String(JSONPath({ path: fieldPath, json: jwtPayload.vc })[0]);
 					const splittedPath = fieldPath.split('.');
 					const claimName = splittedPath[splittedPath.length - 1];
-					presentationClaims[desc.id].push({ name: claimName, value: JSON.stringify(value) } as ClaimRecord);
+					presentationClaims[desc.id].push({ name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : valueso } as ClaimRecord);
 				});
 			}
 		}
