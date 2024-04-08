@@ -17,6 +17,8 @@ const consentSubmitSchema = z.object({
 })
 
 export async function consent(req: Request, res: Response, _next: NextFunction) {
+	console.log('Consent Body = ', req.body)
+
 	console.log("AUTZ = ", req.authorizationServerState)
 	if (!req.authorizationServerState || !req.authorizationServerState.authorization_details) {
 		res.render('error', {
@@ -27,7 +29,6 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 		});
 		return;
 	}
-
 
 
 	const allCredentialViews = await getAllCredentialViews(req.authorizationServerState);
