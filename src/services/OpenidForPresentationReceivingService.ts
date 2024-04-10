@@ -60,17 +60,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return payload;
 	}
 
-	private async addVPtokenRequestSpecificAttributes(verifierStateId: string, payload: any, presentation_definition_id: string) {
-		const found = this.configurationService.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id);
-		console.log("Found = ", found[0])
-		if (found.length > 0) {
-			const presentationDefinition = found[0];
-			const verifierState = verifierStates.get(verifierStateId);
-			if (verifierState) {
-				verifierStates.set(verifierStateId, { ...verifierState, presentation_definition: presentationDefinition })
-				payload = { ...payload, presentation_definition_uri: config.url + '/verification/definition?state=' + payload.state };
-				return payload;
-			}
+	private async addVPtokenRequestSpecificAttributes(verifierStateId: string, payload: any, presentationDefinition: object) {
+		const verifierState = verifierStates.get(verifierStateId);
+		if (verifierState) {
+			verifierStates.set(verifierStateId, { ...verifierState, presentation_definition: presentationDefinition as any })
+			payload = { ...payload, presentation_definition_uri: config.url + '/verification/definition?state=' + payload.state };
+			return payload;
 		}
 	}
 	
@@ -87,7 +82,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 	
-	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentation_definition_id: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
+	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationDefinition: object, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
 		const nonce = randomUUID();
 		const stateId = randomUUID();
 		nonces.set(nonce, stateId);
@@ -106,7 +101,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const redirectUri = ctx.req?.authorizationServerState?.redirect_uri ?? "openid://cb";
 
 		verifierStates.set(stateId, { callbackEndpoint });
-		payload = await this.addVPtokenRequestSpecificAttributes(stateId, payload, presentation_definition_id);
+		payload = await this.addVPtokenRequestSpecificAttributes(stateId, payload, presentationDefinition);
 		console.log("Payload = ", payload)
 		// const requestJwt = new SignJWT(payload)
 		// 	.setExpirationTime('30s');
