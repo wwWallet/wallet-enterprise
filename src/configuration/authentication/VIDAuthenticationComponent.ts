@@ -13,6 +13,7 @@ import locale from "../locale";
 import * as qrcode from 'qrcode';
 import { openidForPresentationReceivingService, verifierConfigurationService } from "../../services/instances";
 import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.enum";
+import { PresentationDefinitionTypeWithFormat } from "../verifier/VerifierConfigurationService";
 
 export class VIDAuthenticationComponent extends AuthenticationComponent {
 
@@ -115,7 +116,7 @@ export class VIDAuthenticationComponent extends AuthenticationComponent {
 		}
 
 
-		const presentationDefinition = JSON.parse(JSON.stringify(verifierConfigurationService.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as PresentationDefinitionTypeWithFormat;
+		const presentationDefinition = JSON.parse(JSON.stringify(verifierConfigurationService.getPresentationDefinitions().filter(pd => pd.id == "vid")[0])) as PresentationDefinitionTypeWithFormat;
 
 		const { url, stateId } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition, config.url + CONSENT_ENTRYPOINT);
 	
