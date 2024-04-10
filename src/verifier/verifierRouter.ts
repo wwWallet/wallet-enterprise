@@ -9,6 +9,7 @@ import locale from "../configuration/locale";
 import * as qrcode from 'qrcode';
 import config from "../../config";
 import base64url from "base64url";
+import { PresentationDefinitionTypeWithFormat } from "../configuration/verifier/VerifierConfigurationService";
 
 const verifierRouter = Router();
 // const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
@@ -117,7 +118,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		});
 	}
 
-	const presentationDefinition = verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0];
+	const presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as PresentationDefinitionTypeWithFormat;
 	if (!presentationDefinition) {
 		return res.render('error', {
 			msg: "No presentation definition was found",
@@ -141,13 +142,17 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			}
 		}));
 		// Filter existing paths to keep only those selected by the user and update presentationDefinition
-		const filteredConstraints = presentationDefinition.input_descriptors[0].constraints.fields.filter(field =>
-			selectedPaths.has(field.path.join(','))
+		const availableFields = presentationDefinition.input_descriptors[0].constraints.fields;
+		console.log("Available fields = ", availableFields)
+		const filteredFields = presentationDefinition.input_descriptors[0].constraints.fields.filter(field =>
+			selectedPaths.has(field.path[0])
 		);
-		presentationDefinition.input_descriptors[0].constraints.fields = filteredConstraints;
+
+		console.log("filtered fields = ", filteredFields)
+		presentationDefinition.input_descriptors[0].constraints.fields = filteredFields;
 	}
 
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition.id, config.url + "/verifier/success");	
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition, config.url + "/verifier/success");	
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(url.toString(), {
 			margin: 1,

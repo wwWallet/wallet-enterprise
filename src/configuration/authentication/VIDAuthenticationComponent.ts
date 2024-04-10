@@ -11,7 +11,7 @@ import { CONSENT_ENTRYPOINT } from "../../authorization/constants";
 import { GrantType } from "../../types/oid4vci";
 import locale from "../locale";
 import * as qrcode from 'qrcode';
-import { openidForPresentationReceivingService } from "../../services/instances";
+import { openidForPresentationReceivingService, verifierConfigurationService } from "../../services/instances";
 import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.enum";
 
 export class VIDAuthenticationComponent extends AuthenticationComponent {
@@ -115,8 +115,9 @@ export class VIDAuthenticationComponent extends AuthenticationComponent {
 		}
 
 
+		const presentationDefinition = JSON.parse(JSON.stringify(verifierConfigurationService.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as PresentationDefinitionTypeWithFormat;
 
-		const { url, stateId } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, "vid", config.url + CONSENT_ENTRYPOINT);
+		const { url, stateId } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition, config.url + CONSENT_ENTRYPOINT);
 	
 		// attach the vid_auth_state with an authorization server state
 		req.authorizationServerState.vid_auth_state = stateId;
