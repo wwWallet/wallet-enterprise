@@ -35,7 +35,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 	
 
-	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentation_definition_id: string, directPostEndpoint?: string): Promise<{ url: URL; stateId: string }>;
+	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationDefinition: object, directPostEndpoint?: string): Promise<{ url: URL; stateId: string }>;
 	getPresentationDefinitionHandler(ctx: { req: Request, res: Response }): Promise<void>;
 	getPresentationByState(state: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, rawPresentation?: string }>;
 	getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, rawPresentation?: string }>;

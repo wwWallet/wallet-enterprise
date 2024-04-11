@@ -11,7 +11,6 @@ setTimeout(() => {
 const layout = document.querySelector('.layout');
 
 const cards = document.querySelectorAll('.credential-card');
-const selectCard = document.querySelectorAll('.toggle-card');
 const toggleButtons = document.querySelectorAll('.toggle-details');
 
 const form = document.querySelector('#DiplomaSelection');
@@ -72,25 +71,34 @@ function checkCardSelection() {
 	}
 }
 
-// Attach event listeners to each card for the 'click' event
-selectCard.forEach(selectCard => {
-	selectCard.addEventListener('click', (e) => {
-		const button = e.target.closest('.toggle-card');
-		const thisId = e.target.id;
-		if (button) {
-			const isSelectedIcon = button.querySelector('.is-selected');
-			const isNotSelectedIcon = button.querySelector('.is-not-selected');
-			button.classList.toggle('selected');
-			if(layout.classList.contains('multi')) {
-				toggleInput(thisId);
-			}
-			isSelectedIcon.style.display = isSelectedIcon.style.display === 'none' ? 'inline' : 'none';
-			isNotSelectedIcon.style.display = isNotSelectedIcon.style.display === 'none' ? 'inline' : 'none';
+document.addEventListener('click', (e) => {
+	let targetElement = e.target;
 
-			checkCardSelection();
+	if (targetElement.matches('.is-selected, .is-not-selected')) {
+		targetElement = targetElement.closest('.toggle-card');
+	} else if (!targetElement.matches('.toggle-card')) {
+		return;
+	}
+
+	const button = targetElement;
+	const thisId = button.id;
+
+	if (button) {
+		const isSelectedIcon = button.querySelector('.is-selected');
+		const isNotSelectedIcon = button.querySelector('.is-not-selected');
+		button.classList.toggle('selected');
+
+		if(layout.classList.contains('multi')) {
+				toggleInput(thisId);
 		}
-	});
+
+		isSelectedIcon.style.display = isSelectedIcon.style.display === 'none' ? 'inline' : 'none';
+		isNotSelectedIcon.style.display = isNotSelectedIcon.style.display === 'none' ? 'inline' : 'none';
+
+		checkCardSelection();
+	}
 });
+
 
 
 
