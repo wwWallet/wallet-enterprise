@@ -30,6 +30,7 @@
   flex-wrap: wrap;
 	justify-content: center;
 	flex-direction: column;
+	margin-bottom: 2rem;
 }
 
 #Index .item {
