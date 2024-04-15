@@ -67,22 +67,7 @@ block layout-content
 					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
 					if grant_type == "authorization_code"
 						button.Btn.Small.GetMultiBtn(type="submit" disabled) Get credentials
-				if grant_type == "authorization_code"
-					.DetailsArea
-						section.DetailsLayout
-							h4 Details of authorization
-							.ConsentDetails
-								table
-									tr
-										td
-											b Client
-										td
-											div #{redirect_uri}
-									tr
-										td
-											b Expiration
-										td
-											div 1 year
+
 	.BarBtnContainer
 		button#BarBtn.Btn.Large.GetMultiBtn(type="submit" disabled) Get credentials
 	input(id='wwwalletURL' type='hidden' value=wwwalletURL)

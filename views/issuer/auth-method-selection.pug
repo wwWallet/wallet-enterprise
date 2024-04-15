@@ -5,10 +5,10 @@ block layout-content
 		.main-container
 			p(class="dropdownLabel") Authentication Method
 			div(class='dropdownContainer')
-				p.label Choose between authenticating via presenting a Verifiable ID or via a conventional 3rd-party authentication service (e.g., National Authentication Service, Google):
+				p.label Choose between authenticating via presenting a PID or via a conventional 3rd-party authentication service (e.g., National Authentication Service, Google):
 				select(name="auth_method" class='issuerDropdown')
 					option(value="" disabled selected) Select an authentication method
-					option(value="VID_AUTH") Authentication with Verifiable ID
+					option(value="VID_AUTH") Authentication with PID
 					option(value="SSO") National Authentication Service
 
 				p.invalid-feedback#invalid-issuer You have not been awarded by this Institution
