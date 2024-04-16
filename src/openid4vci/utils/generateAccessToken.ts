@@ -2,13 +2,18 @@ import { TokenResponseSchemaType } from '../../types/oid4vci';
 import * as crypto from 'node:crypto';
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import * as jose from 'jose';
+import { Request, Response } from 'express';
 const accessTokenExpirationInSeconds = 8000;
 
 
 export const keyPairPromise = jose.generateKeyPair('RSA-OAEP-256');
 
-export async function generateAccessToken(userSession: AuthorizationServerState): Promise<TokenResponseSchemaType> {
+export async function generateAccessToken(ctx: { req: Request, res: Response }): Promise<TokenResponseSchemaType | null> {
+	if (ctx.res.headersSent) {
+		return null;
+	}
 
+	const userSession = ctx.req.authorizationServerState;
 	const credentialIssuersIdentifiers: string[] = [];
 	
 	if (userSession.authorization_details) {
