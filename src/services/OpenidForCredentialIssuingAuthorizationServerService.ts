@@ -355,14 +355,24 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	}
 
 	async tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
-		ctx.res.setHeader("Cache-Control", "no-store");
 		await this.tokenRequestGrantTypeHandler(ctx);
 		await this.tokenRequestAuthorizationCodeHandler(ctx);
 		await this.tokenRequestPreAuthorizedCodeHandler(ctx);
 		// await this.tokenRequestUserPinHandler(ctx); keep this commented to not require userpin
 
-		const response = await generateAccessToken(ctx.req.authorizationServerState);
-		ctx.res.send(response);
+		try {
+			const response = await generateAccessToken(ctx);
+			if (response) {
+				ctx.res.setHeader("Cache-Control", "no-store");
+				ctx.res.send(response);
+			}
+		}
+		catch(err) {
+			console.error("Couldn't generate access token. Detailed error:");
+			console.error(err);
+			ctx.res.status(400).send({ error: "Couldn't generate access token" });
+			return;
+		}
 	}
 
 }
