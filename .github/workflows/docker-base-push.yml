@@ -17,6 +17,6 @@ jobs:
     uses: wwwallet/wallet-ecosystem/.github/workflows/docker-build-push.yml@master
     secrets: inherit
     with:
-      image-tag: ghcr.io/wwwallet/wallet-enterprise:base-${{ github.ref_name }}
+      image-tag: ghcr.io/wwwallet/wallet-enterprise:base
       docker-push: true
       dockerfile-path: ./base.Dockerfile
