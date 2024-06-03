@@ -8,16 +8,15 @@ on:
 
 
 jobs:
-  build:
-
+  push-base:
     # Permissions for GITHUB_TOKEN
     permissions:
       contents: read  # To check out repo
-      packages: write # To read NPM registry and push Docker image
+      packages: write  # To read NPM registry
 
     uses: wwwallet/wallet-ecosystem/.github/workflows/docker-build-push.yml@master
     secrets: inherit
     with:
-      image-tag: ghcr.io/wwwallet/wallet-enterprise:${{ github.ref_name }}
+      image-tag: ghcr.io/wwwallet/wallet-enterprise:base
       docker-push: true
-      dockerfile-path: ./Dockerfile
+      dockerfile-path: ./base.Dockerfile

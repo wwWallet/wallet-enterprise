@@ -3,12 +3,11 @@ name: Build Docker image
 on:
   push:
     branches-ignore:
-      - master  # Covered by docker-push.yml
+      - master
   pull_request:
 
 jobs:
-  build:
-
+  build-base:
     # Permissions for GITHUB_TOKEN
     permissions:
       contents: read  # To check out repo
@@ -17,6 +16,6 @@ jobs:
     uses: wwwallet/wallet-ecosystem/.github/workflows/docker-build-push.yml@master
     secrets: inherit
     with:
-      image-tag: ghcr.io/wwwallet/wallet-enterprise:latest
+      image-tag: ghcr.io/wwwallet/wallet-enterprise:base
       docker-push: false
-      dockerfile-path: ./Dockerfile
+      dockerfile-path: ./base.Dockerfile
