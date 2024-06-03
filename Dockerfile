@@ -17,7 +17,7 @@ COPY --from=builder /home/node/app/views ./views
 
 
 RUN --mount=type=secret,id=npmrc,required=true,target=./.npmrc,uid=1000 \
-    yarn install --production
+    yarn cache clean && yarn install --production
 
 ENV NODE_ENV production
 EXPOSE 8003
