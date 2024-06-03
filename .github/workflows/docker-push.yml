@@ -15,9 +15,9 @@ jobs:
       contents: read  # To check out repo
       packages: write # To read NPM registry and push Docker image
 
-    uses: wwwallet/wallet-ecosystem/.github/workflows/docker-build-push.yml@master
+    uses: gunet/wallet-ecosystem/.github/workflows/docker-build-push.yml@dc4eu-rome
     secrets: inherit
     with:
-      image-tag: ghcr.io/wwwallet/wallet-enterprise:${{ github.ref_name }}
+      image-tag: ghcr.io/gunet/wallet-enterprise:${{ github.ref_name }}
       docker-push: true
       dockerfile-path: ./Dockerfile

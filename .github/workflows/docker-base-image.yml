@@ -4,6 +4,7 @@ on:
   push:
     branches-ignore:
       - master
+      - dc4eu-rome
   pull_request:
 
 jobs:
@@ -13,9 +14,9 @@ jobs:
       contents: read  # To check out repo
       packages: read  # To read NPM registry
 
-    uses: wwwallet/wallet-ecosystem/.github/workflows/docker-build-push.yml@master
+    uses: gunet/wallet-ecosystem/.github/workflows/docker-build-push.yml@dc4eu-rome
     secrets: inherit
     with:
-      image-tag: ghcr.io/wwwallet/wallet-enterprise:base
+      image-tag: ghcr.io/gunet/wallet-enterprise:base
       docker-push: false
       dockerfile-path: ./base.Dockerfile
