@@ -24,6 +24,27 @@ block layout-content
 						.login-flex
 							button.Btn.Large
 								| #{locale.login.btnText}
+
+				// Dropdown list of credentials
+				.login-flex
+					p.item Use Other Demo Credentials
+					.demo-creds
+						select#credential-list
+							option(value="") Select credentials
+							option(value='{"username": "user1", "password": "secret"}') user1
+							option(value='{"username": "user2", "password": "secret"}') user2
+						button.Btn.Small(id="use-credential")
+							i.fa.fa-arrow-right
+
 	link(rel="stylesheet" href="/styles/login.css")
 	script(src="/js/alert.js")
 	script(src="/js/login.js")
+	script.
+		document.getElementById('use-credential').addEventListener('click', function() {
+			var selectedCredential = document.getElementById('credential-list').value;
+			if (selectedCredential) {
+				var credentials = JSON.parse(selectedCredential);
+				document.getElementById('username').value = credentials.username;
+				document.getElementById('password').value = credentials.password;
+			}
+		});
