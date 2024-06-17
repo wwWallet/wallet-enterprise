@@ -11,7 +11,7 @@ block layout-content
 						input#csrf-token(type="hidden" name="csrf-token" value="")
 
 						.input-wrap.item
-							input.input-field#username(type='text' name='username' value="user" placeholder='Username')
+							input.input-field#username(type='text' name='username' value="user1" placeholder='Username')
 						.input-wrap.item
 							input.input-field#password(type='password' name='password' value="secret" placeholder='Password')
 
@@ -24,6 +24,54 @@ block layout-content
 						.login-flex
 							button.Btn.Large
 								| #{locale.login.btnText}
+
+						.or-container
+							.line
+							span OR
+							.line
+
+						// Dropdown list of credentials
+						.login-flex
+							.login-select-flex
+								.select-container(style="flex-grow: 1;")
+									select#credential-list(style="width: 100%")
+										option(value="") Select credentials
+										option(value='{"username": "user1", "password": "secret"}') John Doe
+										option(value='{"username": "user2", "password": "secret"}') Jane Duffy
+								button.Btn.Small#use-credential(disabled style="flex-shrink: 0;")
+									span Login
+
 	link(rel="stylesheet" href="/styles/login.css")
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
 	script(src="/js/alert.js")
 	script(src="/js/login.js")
+	script.
+		$(document).ready(function() {
+			$('#credential-list').select2({
+				placeholder: "Select credentials",
+				allowClear: true,
+				minimumResultsForSearch: 0
+			}).on('change', function() {
+				var selected = $(this).val();
+				if (selected) {
+					$('#use-credential').prop('disabled', false);
+				} else {
+					$('#use-credential').prop('disabled', true);
+				}
+			});
+
+			$('#use-credential').prop('disabled', true);
+
+			document.getElementById('use-credential').addEventListener('click', function(event) {
+				event.preventDefault();
+				var selectedCredential = document.getElementById('credential-list').value;
+				if (selectedCredential) {
+					var credentials = JSON.parse(selectedCredential);
+					document.getElementById('username').value = credentials.username;
+					document.getElementById('password').value = credentials.password;
+					document.forms['login'].submit();
+				}
+			});
+		});
