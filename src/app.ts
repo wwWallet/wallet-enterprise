@@ -41,7 +41,7 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.static(path.join(__dirname, '../../public')));
 
 app.use(cookieParser());
-app.use(session({ secret: config.appSecret, cookie: { expires: new Date(Date.now() + (30 * 86400 * 1000)) }}))
+app.use(session({ secret: config.appSecret, cookie: { expires: null, maxAge: 3600*1000 }}))
 
 
 app.use(bodyParser.urlencoded({ extended: true })); // support url encoded bodies

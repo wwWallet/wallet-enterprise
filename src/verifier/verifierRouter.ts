@@ -10,6 +10,32 @@ import * as qrcode from 'qrcode';
 import config from "../../config";
 import base64url from "base64url";
 import { PresentationDefinitionTypeWithFormat } from "../configuration/verifier/VerifierConfigurationService";
+import crypto from 'node:crypto';
+import {
+	HasherAlgorithm,
+	HasherAndAlgorithm,
+	SdJwt,
+} from '@sd-jwt/core'
+
+export enum CredentialFormat {
+	VC_SD_JWT = "vc+sd-jwt",
+	JWT_VC_JSON = "jwt_vc_json"
+}
+
+// const encoder = new TextEncoder();
+
+// Encoding the string into a Uint8Array
+const hasherAndAlgorithm: HasherAndAlgorithm = {
+	hasher: (input: string) => {
+		// return crypto.subtle.digest('SHA-256', encoder.encode(input)).then((v) => new Uint8Array(v));
+		return new Promise((resolve, _reject) => {
+			const hash = crypto.createHash('sha256');
+			hash.update(input);
+			resolve(new Uint8Array(hash.digest()));
+	});
+	},
+	algorithm: HasherAlgorithm.Sha256
+}
 
 const verifierRouter = Router();
 // const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
@@ -47,10 +73,21 @@ verifierRouter.get('/success', async (req, res) => {
 		})
 	}
 	
+	
 	const presentationPayload = JSON.parse(base64url.decode(rawPresentation.split('.')[1])) as any;
-	const credentials = presentationPayload.vp.verifiableCredential.map((vcString: any) => {
-		return JSON.parse(base64url.decode(vcString.split('.')[1]));
-	}).map((credential: any) => credential.vc);
+	const credentials = await Promise.all(presentationPayload.vp.verifiableCredential.map(async (vcString: any) => {
+		if (vcString.includes('~')) {
+			return SdJwt.fromCompact<Record<string, unknown>, any>(vcString)
+				.withHasher(hasherAndAlgorithm)
+				.getPrettyClaims()
+				.then((payload) => payload.vc);
+		}
+		else {
+			return JSON.parse(base64url.decode(vcString.split('.')[1]));
+		}
+	}));
+
+	console.log('credentials = ', credentials)
 
 	return res.render('verifier/success.pug', {
 		lang: req.lang,
