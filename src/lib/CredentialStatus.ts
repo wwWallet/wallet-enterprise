@@ -8,7 +8,7 @@ const axiosConfiguration = {
 };
 
 export const CredentialStatusList = {
-	get: async (): Promise<{ crl: { id: number, revocation_date: Date }[] }> => {
+	get: async (): Promise<{ crl: { id: number, personal_identifier: string, revocation_date: Date }[] }> => {
 		const res = await axios.get(config.crl.url);
 		return res.data;
 	},
