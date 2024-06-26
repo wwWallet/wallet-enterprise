@@ -8,13 +8,15 @@ const axiosConfiguration = {
 };
 
 export const CredentialStatusList = {
-	get: async (): Promise<{ crl: { id: number, revocation_date: Date }[] }> => {
+	get: async (): Promise<{ crl: {
+		issuer_name: any; id: number, revocation_date: Date 
+}[] }> => {
 		const res = await axios.get(config.crl.url);
 		return res.data;
 	},
 
-	insert: async (personal_identifier: string): Promise<{ id: number }> => {
-		const result = await axios.post(config.crl.url + '/insert', { personal_identifier }, axiosConfiguration);
+	insert: async (personal_identifier: string, issuer_name: string): Promise<{ id: number }> => {
+		const result = await axios.post(config.crl.url + '/insert', { personal_identifier, issuer_name }, axiosConfiguration);
 		const { id } = result.data;
 		return { id };
 	},

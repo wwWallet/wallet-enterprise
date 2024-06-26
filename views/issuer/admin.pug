@@ -1,0 +1,28 @@
+extends ../layout.pug
+
+block layout-content
+	section#Index.IssuerOrVerifierLayout
+		div.item.IssuerSection
+			.ItemLayout
+				p.title Admin Panel
+				if credentialStatusList && credentialStatusList.length
+					table
+						thead
+							tr
+								th ID
+								th Revocation Date
+								th Issuer Name
+						tbody
+							each item in credentialStatusList
+								tr
+									td #{item.id}
+									td #{item.revocation_date ? new Date(item.revocation_date).toLocaleString() : 'Not Revoked'}
+									td #{item.issuer_name}
+				else
+					p No credentials found.
+
+	block footer
+	include ../footer.pug
+
+	link(rel="stylesheet" href="/styles/index.css")
+	script(src="/js/index.js")
