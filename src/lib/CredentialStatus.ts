@@ -23,4 +23,8 @@ export const CredentialStatusList = {
 		await axios.post(config.crl.url + '/revoke', { credential_id: credential_id }, axiosConfiguration);
 	},
 
+	revokeByPersonalIdentifier: async (personal_identifier: string): Promise<void> => {
+		await axios.post(config.crl.url + '/revoke', { personal_identifier: personal_identifier }, axiosConfiguration);
+	},
+
 }
