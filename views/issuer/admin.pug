@@ -11,12 +11,14 @@ block layout-content
 							thead
 								tr
 									th ID
+									th Username
 									th Revocation Date
 									th Actions
 							tbody
 								each item in credentialStatusList
 									tr
 										td #{item.id}
+										td #{item.username}
 										td #{item.revocation_date ? new Date(item.revocation_date).toLocaleString() : 'Not Revoked'}
 										td
 											button.Btn.revoke(onclick=`revokeCredential(${item.id})`, disabled=item.revocation_date) Revoke
