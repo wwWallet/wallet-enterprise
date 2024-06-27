@@ -1,0 +1,81 @@
+#Index .ItemLayout{
+	width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: flex-start;
+    align-items: center;
+		background-color: white;
+}
+
+.title{
+	margin-top: 40px;
+	margin-bottom: 20px;
+}
+.overflow-credential-table {
+	width: 50%;
+	overflow-x: auto;
+	margin-bottom: 20px;
+	display: flex;
+	flex-direction: column;
+}
+
+table.credential-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+@media (max-width: 768px) {
+	.overflow-credential-table {
+		width: 90%;
+	}
+}
+
+table.credential-table th,
+table.credential-table td {
+	border: 1px solid #ddd;
+	padding: 8px;
+	text-align: left;
+}
+
+table.credential-table th {
+	background-color: #f2f2f2;
+	font-weight: bold;
+}
+
+table.credential-table tr:nth-child(even) {
+	background-color: #f9f9f9;
+}
+
+table.credential-table tr:hover {
+	background-color: #f1f1f1;
+}
+
+/* table.credential-table td button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+table.credential-table td button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+table.credential-table td button:not(:disabled) {
+  background-color: #007bff;
+  color: white;
+}
+
+table.credential-table td button:not(:disabled):hover {
+  background-color: #0056b3;
+} */
+
+
+button.Btn.revoke:disabled {
+	cursor: not-allowed;
+	background-color: gray;
+	opacity: 0.5;
+}

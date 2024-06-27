@@ -6,23 +6,41 @@ block layout-content
 			.ItemLayout
 				p.title Admin Panel
 				if credentialStatusList && credentialStatusList.length
-					table
-						thead
-							tr
-								th ID
-								th Revocation Date
-								th Issuer Name
-						tbody
-							each item in credentialStatusList
+					div.overflow-credential-table
+						table.credential-table
+							thead
 								tr
-									td #{item.id}
-									td #{item.revocation_date ? new Date(item.revocation_date).toLocaleString() : 'Not Revoked'}
-									td #{item.issuer_name}
+									th ID
+									th Revocation Date
+									th Actions
+							tbody
+								each item in credentialStatusList
+									tr
+										td #{item.id}
+										td #{item.revocation_date ? new Date(item.revocation_date).toLocaleString() : 'Not Revoked'}
+										td
+											button.Btn.revoke(onclick=`revokeCredential(${item.id})`, disabled=item.revocation_date) Revoke
 				else
 					p No credentials found.
 
 	block footer
 	include ../footer.pug
 
+	script(src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js")
+
 	link(rel="stylesheet" href="/styles/index.css")
+	link(rel="stylesheet" href="/styles/admin.css")
 	script(src="/js/index.js")
+	script.
+		async function revokeCredential(credentialId) {
+			try {
+				await axios.post('/admin/revoke', { credential_id: credentialId }, {
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				});
+				location.reload();
+			} catch (error) {
+				console.error('Error revoking credential:', error);
+			}
+		}

@@ -20,7 +20,6 @@ async function fetchCredentialStatusList(codeName: string) {
 }
 
 issuerAdminPanel.get('/', async (req, res) => {
-
     const filteredData = await fetchCredentialStatusList(config.codeName);
 
     return res.render('issuer/admin.pug', {
@@ -29,6 +28,19 @@ issuerAdminPanel.get('/', async (req, res) => {
         locale: locale[req.lang],
         credentialStatusList: filteredData
     });
+});
+
+issuerAdminPanel.post('/revoke', async (req, res) => {
+	console.log('hiii')
+  try {
+    const { credential_id } = req.body;
+    console.log('Credential ID to revoke:', credential_id);
+    await CredentialStatusList.revoke(credential_id);
+    res.status(200).send({ message: 'Credential revoked successfully' });
+  } catch (error) {
+    console.error('Error revoking credential:', error);
+    res.status(500).send({ error: 'Failed to revoke credential' });
+  }
 });
 
 export default issuerAdminPanel;
