@@ -72,9 +72,8 @@ app.use(authorizationServerStateMiddleware);
 app.use('/verifier-panel', verifierPanelRouter);
 app.use('/verifier', verifierRouter);
 
-if (config.codeName){
-	app.use('/admin', issuerAdminPanel);
-}
+app.use('/admin', issuerAdminPanel);
+
 app.use('/authorization', authorizationRouter);
 
 

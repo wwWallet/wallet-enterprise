@@ -5,7 +5,7 @@ block layout-content
 		div.item.IssuerSection
 			.ItemLayout
 				p.title Admin Panel
-				if credentialStatusList && credentialStatusList.length
+				if credentialStatusList.crl && credentialStatusList.crl.length
 					div.overflow-credential-table
 						table.credential-table
 							thead
@@ -15,7 +15,7 @@ block layout-content
 									th Revocation Date
 									th Actions
 							tbody
-								each item in credentialStatusList
+								each item in credentialStatusList.crl
 									tr
 										td #{item.id}
 										td #{item.username}

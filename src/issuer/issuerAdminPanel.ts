@@ -1,18 +1,15 @@
 import { Router } from "express";
 import locale from "../configuration/locale";
 import { CredentialStatusList } from '../lib/CredentialStatus';
-import config from "../../config";
 
 const issuerAdminPanel = Router();
 
-async function fetchCredentialStatusList(codeName: string) {
+async function fetchCredentialStatusList() {
     try {
         const data = await CredentialStatusList.get();
         console.log('Credential Status List:', data);
 
-        const filteredData = data.crl.filter(item => item.issuer_name === codeName);
-
-        return filteredData;
+        return data;
     } catch (error) {
         console.error('Error fetching credential status list:', error);
         return [];
@@ -20,18 +17,17 @@ async function fetchCredentialStatusList(codeName: string) {
 }
 
 issuerAdminPanel.get('/', async (req, res) => {
-    const filteredData = await fetchCredentialStatusList(config.codeName);
+    const data = await fetchCredentialStatusList();
 
     return res.render('issuer/admin.pug', {
         title: 'Admin Panel',
         lang: req.lang,
         locale: locale[req.lang],
-        credentialStatusList: filteredData
+        credentialStatusList: data
     });
 });
 
 issuerAdminPanel.post('/revoke', async (req, res) => {
-	console.log('hiii')
   try {
     const { credential_id } = req.body;
     console.log('Credential ID to revoke:', credential_id);
