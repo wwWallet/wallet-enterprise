@@ -19,6 +19,14 @@ import config from "../../config";
 import { DidKeyResolverService } from "./DidKeyResolverService";
 import { HasherAlgorithm, HasherAndAlgorithm, SdJwt, SignatureAndEncryptionAlgorithm, Verifier } from "@sd-jwt/core";
 
+// https://identity.foundation/presentation-exchange/
+// The fields object MAY contain a name property. If present, its value MUST be a string, and SHOULD be a human-friendly name that describes what the target field represents.
+type CustomInputDescriptorConstraintFieldType = {
+	name?: string;
+	path: string[];
+	filter?: any;
+};
+
 const hasherAndAlgorithm: HasherAndAlgorithm = {
 	hasher: (input: string) => createHash('sha256').update(input).digest(),
 	algorithm: HasherAlgorithm.Sha256
@@ -392,10 +400,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						presentationClaims[desc.id] = []; // initialize
 					}
 					const fieldPath = field.path[0]; // get first path
+					const fieldName = (field as CustomInputDescriptorConstraintFieldType).name;
 					const value = String(JSONPath({ path: fieldPath, json: prettyClaims.vc as any })[0]);
 					const splittedPath = fieldPath.split('.');
-					const claimName = splittedPath[splittedPath.length - 1];
-					presentationClaims[desc.id].push({ name: claimName, value: value } as ClaimRecord);
+					const claimName = fieldName ? fieldName : splittedPath[splittedPath.length - 1];
+					presentationClaims[desc.id].push({ name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
 				});
 				console.log("Verification result = ", verificationResult)
 				if (!verificationResult.isSignatureValid || !verificationResult.areRequiredClaimsIncluded) {
@@ -416,10 +425,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						presentationClaims[desc.id] = []; // initialize
 					}
 					const fieldPath = field.path[0]; // get first path
+					const fieldName = (field as CustomInputDescriptorConstraintFieldType).name;
 					const value = String(JSONPath({ path: fieldPath, json: jwtPayload.vc })[0]);
 					const splittedPath = fieldPath.split('.');
-					const claimName = splittedPath[splittedPath.length - 1];
-					presentationClaims[desc.id].push({ name: claimName, value: value } as ClaimRecord);
+					const claimName = fieldName ? fieldName : splittedPath;
+					presentationClaims[desc.id].push({ name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
 				});
 			}
 		}
