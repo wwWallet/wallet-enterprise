@@ -10,8 +10,20 @@ block layout-content
 					p
 						.card-text Date: #{vp.date}
 						.card-text Claims:
-						textarea#json-textarea.wide
-							| #{JSON.stringify(vp.claims, null, 2)}
+
+						.claims-tables(style="align-items: start;")
+							each claimType in Object.keys(vp.claims)
+								.table-container(style="overflow-x: auto;")
+									table
+										thead
+											tr
+												th Name
+												th Value
+										tbody
+											each claim in vp.claims[claimType]
+												tr
+													td= claim.name
+													td= claim.value
 						.card-text Holder Info: #{vp.holderInfo}
 					.card-buttons
 						button.btn.btn-primary(onclick=`window.location.href = "/verifier-panel/presentation/${vp.id}"`) Inspect details
