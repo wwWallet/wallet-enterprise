@@ -1,39 +1,100 @@
 extends ../layout.pug
 
 block layout-content
-	section#Index.IssuerOrVerifierLayout
-		div.item.IssuerSection
-			.ItemLayout
-				p.title Admin Panel
-				if credentialStatusList.crl && credentialStatusList.crl.length
-					div.overflow-credential-table
-						table.credential-table
-							thead
-								tr
-									th ID
-									th Username
-									th Revocation Date
-									th Actions
-							tbody
-								each item in credentialStatusList.crl
+	.main-container#login-section
+		#Login
+			.login-flex
+				.login-flex.login-box.item
+					p.title Admin Login
+					form#login-form
+
+						.input-wrap.item
+							input.input-field(type='text' id="username" name='username' value="admin" placeholder='Username' required)
+						.input-wrap.item
+							input.input-field(type='password' id="password" name='password' value="secret" placeholder='Password' required)
+						p.invalid-feedback#invalid-credentials(style='display: none') Invalid credentials. Please try again.
+						br
+						.login-flex
+							button.Btn.Large(type="button" onclick="loginUser()") 
+								| Login
+
+	div#admin-panel.hidden
+		section#Index.IssuerOrVerifierLayout
+			.item.IssuerSection
+				.ItemLayout
+					p.title Admin Panel
+					if credentialStatusList.crl && credentialStatusList.crl.length
+						div.overflow-credential-table
+							table.credential-table
+								thead
 									tr
-										td #{item.id}
-										td #{item.username}
-										td #{item.revocation_date ? new Date(item.revocation_date).toLocaleString() : 'Not Revoked'}
-										td
-											button.Btn.revoke(onclick=`revokeCredential(${item.id})`, disabled=item.revocation_date) Revoke
-				else
-					p No credentials found.
+										th ID
+										th Username
+										th Revocation Date
+										th Actions
+								tbody
+									each item in credentialStatusList.crl
+										tr
+											td #{item.id}
+											td #{item.username}
+											td #{item.revocation_date ? new Date(item.revocation_date).toLocaleString() : 'Not Revoked'}
+											td
+												button.Btn.revoke(onclick=`revokeCredential(${item.id})`, disabled=item.revocation_date) Revoke
+					else
+						p No credentials found.
 
 	block footer
 	include ../footer.pug
 
 	script(src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js")
-
 	link(rel="stylesheet" href="/styles/index.css")
 	link(rel="stylesheet" href="/styles/admin.css")
+	link(rel="stylesheet" href="/styles/login.css")
 	script(src="/js/index.js")
 	script.
+		const SESSION_DURATION_MS = 24* 60 * 60 * 1000;
+
+		function loginUser() {
+			const username = document.getElementById('username').value;
+			const password = document.getElementById('password').value;
+			const invalidCredentials = document.getElementById('invalid-credentials');
+			invalidCredentials.style.display = 'none';
+
+			if (username === 'admin' && password === 'secret') {
+				const loginTime = new Date().getTime();
+				sessionStorage.setItem('isLoggedIn', 'true');
+				sessionStorage.setItem('loginTime', loginTime);
+				document.getElementById('login-section').classList.add('hidden');
+				document.getElementById('admin-panel').classList.remove('hidden');
+			} else {
+				invalidCredentials.style.display = 'block';
+			}
+		}
+
+		function checkLoginStatus() {
+			const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+			const loginTime = sessionStorage.getItem('loginTime');
+			const currentTime = new Date().getTime();
+
+			if (isLoggedIn === 'true' && loginTime) {
+				if (currentTime - loginTime < SESSION_DURATION_MS) {
+					document.getElementById('login-section').classList.add('hidden');
+					document.getElementById('admin-panel').classList.remove('hidden');
+				} else {
+					logoutUser();
+				}
+			}
+		}
+
+		function logoutUser() {
+			sessionStorage.removeItem('isLoggedIn');
+			sessionStorage.removeItem('loginTime');
+			document.getElementById('login-section').classList.remove('hidden');
+			document.getElementById('admin-panel').classList.add('hidden');
+		}
+
+		document.addEventListener('DOMContentLoaded', checkLoginStatus);
+
 		async function revokeCredential(credentialId) {
 			try {
 				await axios.post('/admin/revoke', { credential_id: credentialId }, {
