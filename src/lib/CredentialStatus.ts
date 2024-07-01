@@ -13,8 +13,8 @@ export const CredentialStatusList = {
 		return res.data;
 	},
 
-	insert: async (personal_identifier: string): Promise<{ id: number }> => {
-		const result = await axios.post(config.crl.url + '/insert', { personal_identifier }, axiosConfiguration);
+	insert: async (username: string, personal_identifier: string): Promise<{ id: number }> => {
+		const result = await axios.post(config.crl.url + '/insert', { username, personal_identifier }, axiosConfiguration);
 		const { id } = result.data;
 		return { id };
 	},
