@@ -25,6 +25,7 @@ import { AuthorizationServerState } from './entities/AuthorizationServerState.en
 import { openidForCredentialIssuingAuthorizationServerService, openidForPresentationReceivingService } from './services/instances';
 import { CredentialIssuersConfigurationService } from './configuration/CredentialIssuersConfigurationService';
 import _ from 'lodash';
+import issuerAdminPanel from './issuer/issuerAdminPanel';
 
 initDataSource();
 
@@ -71,7 +72,7 @@ app.use(authorizationServerStateMiddleware);
 app.use('/verifier-panel', verifierPanelRouter);
 app.use('/verifier', verifierRouter);
 
-
+app.use('/admin', issuerAdminPanel);
 
 app.use('/authorization', authorizationRouter);
 
