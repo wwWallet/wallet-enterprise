@@ -54,17 +54,20 @@ verifierRouter.get('/public/definitions', async (req, res) => {
 
 verifierRouter.get('/success/status', async (req, res) => { // response with the status of the presentation (this endpoint should be protected)
 	const state = req.query.state;
-	const {status, presentationClaims, rawPresentation } = await openidForPresentationReceivingService.getPresentationByState(state as string);
-	if (!presentationClaims) {
+	const result = await openidForPresentationReceivingService.getPresentationByState(state as string);
+	if (!result.status) {
 		return res.send({ status: false, error: "Presentation not received" });
 	}
-	return res.send({ status, presentationClaims, presentation: rawPresentation });
+	return res.send({ status: result.status, presentationClaims: result.vp.claims, presentation: result.vp.raw_presentation });
 })
 
 verifierRouter.get('/success', async (req, res) => {
 	const state = req.query.state;
-	const {status, presentationClaims, rawPresentation } = await openidForPresentationReceivingService.getPresentationByState(state as string);
-	if (!presentationClaims || !rawPresentation) {
+	const result = await openidForPresentationReceivingService.getPresentationByState(state as string);
+	if (result.status == false || 
+			result.vp.raw_presentation == null ||
+			result.vp.claims == null ||
+			result.vp.date == null) {
 		return res.render('error.pug', {
 			msg: "Failed to get presentation",
 			code: 0,
@@ -73,8 +76,9 @@ verifierRouter.get('/success', async (req, res) => {
 		})
 	}
 	
-	
-	const presentationPayload = JSON.parse(base64url.decode(rawPresentation.split('.')[1])) as any;
+	const { status, raw_presentation, claims, date } = result.vp;
+
+	const presentationPayload = JSON.parse(base64url.decode(raw_presentation.split('.')[1])) as any;
 	const credentials = await Promise.all(presentationPayload.vp.verifiableCredential.map(async (vcString: any) => {
 		if (vcString.includes('~')) {
 			return SdJwt.fromCompact<Record<string, unknown>, any>(vcString)
@@ -93,7 +97,8 @@ verifierRouter.get('/success', async (req, res) => {
 		lang: req.lang,
 		locale: locale[req.lang],
 		status: status,
-		presentationClaims: presentationClaims,
+		verificationTimestamp: date.toISOString(),
+		presentationClaims: claims,
 		credentialPayloads: credentials,
 	})
 })
