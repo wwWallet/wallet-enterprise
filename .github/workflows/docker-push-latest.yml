@@ -6,15 +6,16 @@ on:
 
 
 jobs:
-  push-base:
+  build:
+
     # Permissions for GITHUB_TOKEN
     permissions:
       contents: read  # To check out repo
-      packages: write  # To read NPM registry
+      packages: write # To read NPM registry and push Docker image
 
     uses: gunet/wallet-ecosystem/.github/workflows/docker-build-push.yml@dc4eu-rome
     secrets: inherit
     with:
-      image-tag: ghcr.io/gunet/wallet-enterprise:base
+      image-tag: ghcr.io/gunet/wallet-enterprise:${{ github.ref_name }}
       docker-push: true
-      dockerfile-path: ./base.Dockerfile
+      dockerfile-path: ./Dockerfile
