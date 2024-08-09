@@ -39,10 +39,10 @@ type JwtProof = {
  */
 export async function verifyProof(proof: Proof, session: AuthorizationServerState): Promise<{ did: string }> {
 	switch (proof.proof_type) {
-	case ProofType.JWT:
-		return verifyJwtProof(proof as JwtProof, session);
-	default:
-		throw `Proof type "${proof.proof_type}" not supported`;
+		case ProofType.JWT:
+			return verifyJwtProof(proof as JwtProof, session);
+		default:
+			throw `Proof type "${proof.proof_type}" not supported`;
 	}
 }
 
@@ -61,15 +61,13 @@ async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState
 	console.log("Proof header = ", proofHeader)
 	console.log("Proof body = ", JSON.parse(new TextDecoder().decode(base64url.decode(proof.jwt.split('.')[1]))))
 
-	const proofPayload = proofBodySchema.parse(JSON.parse(new TextDecoder().decode(base64url.decode(proof.jwt.split('.')[1]))));
-
-	const holderDID: string | undefined = proofPayload.iss ?? proofPayload.did; // did of the Holder
+	const holderDID: string | undefined = proofHeader.kid; // did of the Holder
 	if (!holderDID) {
 		throw new Error("Holder DID cannot be derived from proof")
 	}
 
 	const publicKeyJwk = await appContainer.get<DidKeyResolverServiceInterface>(TYPES.DidKeyResolverService).getPublicKeyJwk(holderDID);
-	
+
 	// c nonce check and proof signature
 	const holderPublicKey = await importJWK(publicKeyJwk, proofHeader.alg);
 	try {
@@ -77,11 +75,13 @@ async function verifyJwtProof(proof: JwtProof, session: AuthorizationServerState
 		const { payload } = await jwtVerify(proof.jwt, holderPublicKey, {
 			clockTolerance: '15 minutes'
 		});
+		proofBodySchema.parse(payload)
+
 		if (payload["nonce"] !== session.c_nonce && payload["c_nonce"] !== session.c_nonce) { // use c_nonce attribute as a fallback for nonce
 			throw new Error("INVALID C_NONCE");
 		}
 	}
-	catch(e) {
+	catch (e) {
 		console.log("Error = ", e)
 		throw new Error("Error during the verification of proof");
 	}
