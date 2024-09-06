@@ -123,8 +123,19 @@ verifierRouter.use('/public/definitions/selectable-presentation-request/:present
 			locale: locale[req.lang]
 		});
 	}
+	if (presentationDefinition.input_descriptors.length > 1) {
+		throw new Error("Selectable presentation definition is not supported for more than one descriptors currently");
+	}
+	const selectableFields = presentationDefinition.input_descriptors[0].constraints.fields.map((field: any) => {
+		return [field.name, field.path[0]]
+	}).filter((selectableField: any) => {
+		const [_, path] = selectableField;
+		return path != '$.type'; // non selectable field
+	});
+
 	return res.render('verifier/selectable_presentation', {
 		presentationDefinitionId: presentationDefinition.id,
+		selectableFields,
 		lang: req.lang,
 		locale: locale[req.lang],
 	});
@@ -169,11 +180,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			selectedFields = [selectedFields];
 		}
 		const selectedPaths = new Set(selectedFields.map((field: string) => {
-			if (field === "type") {
-				return `$.${field}`;
-			} else {
-				return `$.credentialSubject.${field}`;
-			}
+			return field;
 		}));
 		// Filter existing paths to keep only those selected by the user and update presentationDefinition
 		const availableFields = presentationDefinition.input_descriptors[0].constraints.fields;
