@@ -7,20 +7,13 @@ block layout-content
 					h2 Select the fields you wish to present
 					.left-layout
 						.checkbox
-							input(type='checkbox' id="type" name='fields' value='type' checked disabled)
+							input(type='checkbox' id="$.type" name='fields' value='$.type' checked disabled)
 							label(for='type') Type
-							input(type='hidden' name='fields' value='type')
-						.checkbox
-							input(type='checkbox' id="firstName" name='fields' value='firstName')
-							label(for='firstName') First Name
-						.checkbox
-							input(type='checkbox' id="familyName" name='fields' value='familyName')
-							label(for='familyName') Family Name
-						.checkbox
-							input(type='checkbox' id="personalIdentifier" name='fields' value='personalIdentifier')
-							label(for='personalIdentifier') Personal Identifier
-						.checkbox
-							input(type='checkbox' id="birthdate" name='fields' value='birthdate')
-							label(for='birthdate') Date of Birth
+							input(type='hidden' name='fields' value='$.type')
+						for selectableField of selectableFields
+							- const [fieldName, fieldPath] = selectableField;
+							.checkbox
+								input(type='checkbox' id=fieldPath name='fields' value=fieldPath)
+								label(for=fieldPath) #{fieldName}
 					button.btn.btn-primary(type='submit') Present
 	link(rel="stylesheet" href="/styles/scan-qr-verifier.css")
