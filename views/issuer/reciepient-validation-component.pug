@@ -1,0 +1,14 @@
+extends ../layout.pug
+block layout-content
+
+	#RecipientValidation(name="RecipientValidation")
+		.main-container
+			p.invalid-feedback Recipient is not eligible to receive this PDA1
+
+	block footer
+	include ../footer.pug
+
+	link(rel="stylesheet" href="/styles/styles.css")
+	link(rel="stylesheet" href="/styles/selection.css")
+	script(src="/js/alert.js")
+	script(src="/js/select-client.js")
