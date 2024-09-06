@@ -6,16 +6,23 @@ block layout-content
       form(id="PresentationRequestForm" name="PresentationRequestForm" method="POST")
         .CenteredLayout
 
-          h1 Scan the QR code to send your PID
-
-          img(src=authorizationRequestQR width=200 height=200)
           - const modifiedURL = authorizationRequestURL.replace("openid://cb", wwwalletURL)
-          button.Btn.Medium.openwithwalletbutton(type="button" onclick=`window.location.href = '${modifiedURL}';`) Open with DC4EU Wallet
-          button.Btn.Medium.openwithwalletbuttonnative(type="button" onclick=`window.location.href = '${authorizationRequestURL}';`) Open with a Native Wallet
+          if authorizationRequestQR
+            h1 Scan the QR to send your PID
+            img(src=authorizationRequestQR width=200 height=200)
+            button.Btn.Medium.openwithwalletbutton(type="button" onclick=`window.location.href = '${modifiedURL}';`) Open with DC4EU Wallet
+            button.Btn.Medium.openwithwalletbuttonnative(type="button" onclick=`window.location.href = '${authorizationRequestURL}';`) Open with a Native Wallet
 
-          input(type='hidden' name='state' id='state' value=state)
-          input(type='hidden' name='authorizationRequestQR' id='authorizationRequestQR' value=authorizationRequestQR)
-          input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
+            input(type='hidden' name='state' id='state' value=state)
+            input(type='hidden' name='authorizationRequestQR' id='authorizationRequestQR' value=authorizationRequestQR)
+            input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
+          else
+            h1 Send your PID to authenticate
+            button.Btn.Medium.openwithwalletbutton(type="button" onclick=`window.location.href = '${modifiedURL}';`) Proceed with DC4EU Wallet
+
+            input(type='hidden' name='state' id='state' value=state)
+            input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
+
 
   script(src="/js/presentation-request.js")
   link(rel="stylesheet" href="/styles/scan-qr-verifier.css")
