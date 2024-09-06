@@ -134,20 +134,12 @@ verifierRouter.use('/public/definitions/selectable-presentation-request/:present
 verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
 	const presentation_definition_id = req.params.presentation_definition_id;
 	if (req.body.state && req.method == "POST") {
-		console.log("Got state = ", req.body.state)
 		const { status } = await openidForPresentationReceivingService.getPresentationByState(req.body.state as string);
 		if (status) {
-			return res.redirect(`/verifier/success?state=${req.body.state}`);
+			return res.send({ url: `/verifier/success?state=${req.body.state}` });
 		}
 		else {
-			return res.render('verifier/QR.pug', {
-				state: req.body.state,
-				wwwalletURL: config.wwwalletURL,
-				authorizationRequestURL: req.body.authorizationRequestURL,
-				authorizationRequestQR: req.body.authorizationRequestQR,
-				lang: req.lang,
-				locale: locale[req.lang],
-			})
+			return res.send({ });
 		}
 	}
 
