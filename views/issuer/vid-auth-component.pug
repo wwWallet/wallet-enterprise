@@ -18,11 +18,43 @@ block layout-content
             input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
           else
             h1 Send your PID to authenticate
-            button.Btn.Medium.openwithwalletbutton(type="button" onclick=`window.location.href = '${modifiedURL}';`) Proceed with DC4EU Wallet
-
+            .downtime
+              p.message
+                span.inline-message You are going to proceed to DC4EU wallet automatically in
+                span#countdown-timer 10
+              .loader
+              // Buttons: Cancel and Proceed Now
+              .buttons
+                button.Btn.Medium(type="button" id="cancelButton") Cancel
+                button.Btn.Medium(type="button" id="proceedNowButton") Proceed Now
+            // Hidden inputs
             input(type='hidden' name='state' id='state' value=state)
             input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
 
-
   script(src="/js/presentation-request.js")
+  script.
+    var countdownElement = document.getElementById('countdown-timer');
+    var countdown = 10;
+    var countdownInterval;
+    function startCountdown() {
+      countdownInterval = setInterval(function() {
+      countdown--;
+      countdownElement.textContent = countdown;
+      if (countdown === 0) {
+        clearInterval(countdownInterval);
+        window.location.href = '#{modifiedURL}';
+      }
+      }, 1000); // 1000 ms = 1 second
+    }
+
+    startCountdown();
+
+    document.getElementById('cancelButton').addEventListener('click', function() {
+      clearInterval(countdownInterval);
+      window.location.href = '#{wwwalletURL}';
+    });
+    document.getElementById('proceedNowButton').addEventListener('click', function() {
+      clearInterval(countdownInterval);
+      window.location.href = '#{modifiedURL}';
+    });
   link(rel="stylesheet" href="/styles/scan-qr-verifier.css")
