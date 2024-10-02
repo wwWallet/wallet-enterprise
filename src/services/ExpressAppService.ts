@@ -55,7 +55,7 @@ export class ExpressAppService {
 				code_challenge_methods_supported: [
 					"S256"
 				],
-				dpop_signing_alg_values_supported: ["RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES256K", "ES384", "ES512", "EdDSA", "Ed25519", "Ed448"]
+				dpop_signing_alg_values_supported: ["ES256"]
 			})
 		});
 	

@@ -24,18 +24,14 @@ import { GrantType } from './types/oid4vci';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
 import { openidForCredentialIssuingAuthorizationServerService, openidForPresentationReceivingService } from './services/instances';
 import _ from 'lodash';
-import { registerAllCredentialConfigurations } from './configuration/CredentialIssuerConfiguration';
 import * as qrcode from 'qrcode';
-
-
-
-// const credentialIssuersConfigurationService = appContainer.get<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfiguration);
+import { configurationExecution } from './configuration/main';
 
 const app: Express = express();
 
-initDataSource();
-registerAllCredentialConfigurations();
-
+initDataSource().then(() => {
+	configurationExecution();
+});
 
 
 app.use(cors({ credentials: true, origin: true }));
