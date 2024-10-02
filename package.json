@@ -20,7 +20,6 @@
     "@digitalbazaar/did-method-key": "^5.1.0",
     "@sd-jwt/core": "^0.2.1",
     "@transmute/did-key-ed25519": "^0.3.0-unstable.10",
-    "@wwwallet/ssi-sdk": "^1.0.8",
     "ajv": "^8.11.0",
     "axios": "^0.27.2",
     "base64url": "^3.0.1",
@@ -53,6 +52,7 @@
     "typeorm": "^0.3.9",
     "winston": "^3.8.2",
     "ws": "^8.9.0",
+    "xlsx": "^0.18.5",
     "xml-js": "^1.6.11",
     "zod": "^3.20.6"
   },
