@@ -1,5 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
-import { AuthorizationDetailsSchemaType, GrantType } from "../types/oid4vci";
+import { GrantType } from "../types/oid4vci";
 import { UserAuthenticationMethod } from "../types/UserAuthenticationMethod.enum";
 
 
@@ -8,7 +8,6 @@ export class AuthorizationServerState {
 
 	@PrimaryGeneratedColumn()
 	id: number = 0;
-
 
 	@Column({ name: "client_id", type: "varchar", nullable: true })
 	client_id?: string;
@@ -31,20 +30,20 @@ export class AuthorizationServerState {
 	code_challenge_method?: string;
 
 
-	@Column({ name: "authorization_details", type: "blob", nullable: true })
+	@Column({ name: "credential_configuration_ids", type: "blob", nullable: true })
 	// @ts-ignore
-	private _authorization_details?: Buffer;
-	set authorization_details(value: AuthorizationDetailsSchemaType | null) {
+	private _credential_configuration_ids?: Buffer;
+	set credential_configuration_ids(value: string[] | null) {
 		if (value) {
-			this._authorization_details = Buffer.from(JSON.stringify(value));
+			this._credential_configuration_ids = Buffer.from(JSON.stringify(value));
 			return;
 		}
-		this._authorization_details = undefined;
+		this._credential_configuration_ids = undefined;
 	}
 	
-	get authorization_details(): AuthorizationDetailsSchemaType | null {
-		if (this._authorization_details) {
-			return JSON.parse(this._authorization_details.toString()) as AuthorizationDetailsSchemaType;
+	get credential_configuration_ids(): string[] | null {
+		if (this._credential_configuration_ids) {
+			return JSON.parse(this._credential_configuration_ids.toString()) as string[];
 		}
 		return null;
 	}
@@ -76,6 +75,33 @@ export class AuthorizationServerState {
 	@Column({ name: "credential_issuer_identifier", type: "varchar", nullable: true })
 	credential_issuer_identifier?: string;
 
+	@Column({ name: "request_uri", type: "varchar", nullable: true})
+	request_uri?: string;
+
+	@Column({ name: "request_uri_expiration_timestamp", type: "int", nullable: true})
+	request_uri_expiration_timestamp?: number;
+
+	@Column({ name: "dpop_jwk", type: "varchar", nullable: true })
+	dpop_jwk?: string;
+
+	@Column({ name: "dpop_jti", type: "varchar", nullable: true })
+	dpop_jti?: string;
+
+	@Column({ name: "access_token", type: "varchar", nullable: true })
+	access_token?: string;
+
+	@Column({ name: "token_type", type: "varchar", nullable: true })
+	token_type?: string;
+
+	@Column({ name: "access_token_expiration_timestamp", type: "int", nullable: true })
+	access_token_expiration_timestamp?: number;
+
+	@Column({ name: "c_nonce", type: "varchar", nullable: true })
+	c_nonce?: string;
+
+	@Column({ name: "c_nonce_expiration_timestamp", type: "int", nullable: true })
+	c_nonce_expiration_timestamp?: number;
+
 	// @Column({ name: "credential_identifiers", type: "varchar", nullable: true })
 	// private _credential_identifiers?: string;
 	// set credential_identifiers(value: string[] | null) {
@@ -95,26 +121,42 @@ export class AuthorizationServerState {
 	
 
 
-	
+	@Column({ name: "authentication_data", type: "blob", nullable: true, default: () => "NULL" })
+	private _authenticationData?: string;
+	get authenticationData(): any | null {
+		if (this._authenticationData) {
+			return JSON.parse(this._authenticationData.toString()) as any;
+		}
+		else {
+			return null;
+		}
+	}
+	set authenticationData(d: any) {
+		this._authenticationData = JSON.stringify(d);
+	}
+
+
 	// not needed to be added as columns in the database
-	expires_in: number = -1;
-	c_nonce: string = "";
-	c_nonce_expires_in: number = -1;
-
-
-
-	@Column({ name: "taxis_id", type: "varchar", nullable: true })
-	taxis_id?: string;
-	
 
 	@Column({ name: "ssn", type: "varchar", nullable: true })
 	ssn?: string;
 
-	@Column({ name: "firstName", type: "varchar", nullable: true })
-	firstName?: string;
+	@Column({ name: "pid_id", type: "varchar", nullable: true })
+	pid_id?: string;
 
-	@Column({ name: "lastName", type: "varchar", nullable: true })
-	lastName?: string;
+	@Column({ name: "family_name", type: "varchar", nullable: true })
+	family_name?: string;
+
+	@Column({ name: "given_name", type: "varchar", nullable: true })
+	given_name?: string;
+
+	@Column({ name: "birth_date", type: "varchar", nullable: true })
+	birth_date?: string;
+
+
+	@Column({ name: "document_number", type: "varchar", nullable: true })
+	document_number?: string;
+
 
 	/**
 	 * this state random string will be used in order to expect a vid on a direct_post endpoint
@@ -122,33 +164,9 @@ export class AuthorizationServerState {
 	@Column({ name: "vid_auth_state", type: "varchar", nullable: true })
 	vid_auth_state?: string;
 
-	/**
-	 * extracted from the vid
-	 */
-	@Column({ name: "vid_data", type: "varchar", nullable: true })
-	personalIdentifier?: string;
 
 	@Column({ name: "authentication_method", type: "enum", enum: UserAuthenticationMethod, nullable: true })
 	authenticationMethod?: UserAuthenticationMethod;
-
-
-
-	// @Column({ name: "ediplomas_response", type: 'blob', nullable: true })
-	// private _ediplomas_response?: Buffer;
-	// set ediplomas_response(value: EdiplomasResponse | undefined) {
-	// 	if (value) {
-	// 		this._ediplomas_response = Buffer.from(JSON.stringify(value));
-	// 		return;
-	// 	}
-	// 	this._ediplomas_response = undefined;
-	// }
-	
-	// get ediplomas_response(): EdiplomasResponse | undefined {
-	// 	if (this._ediplomas_response) {
-	// 		return JSON.parse(this._ediplomas_response.toString()) as EdiplomasResponse;
-	// 	}
-	// 	return undefined;
-	// }
 
 	/**
 	 * convert source into a format ready to be transmitted
@@ -158,8 +176,8 @@ export class AuthorizationServerState {
 	static serialize(source: AuthorizationServerState): any {
 		let dest = new AuthorizationServerState();
 		dest = { ...source } as any;
-		dest.authorization_details = source.authorization_details;
-		dest._authorization_details = undefined; // not to be transmitted
+		dest.credential_configuration_ids = source.credential_configuration_ids;
+		dest._credential_configuration_ids = undefined; // not to be transmitted
 		// dest.credential_identifiers = source.credential_identifiers;
 		// dest._credential_identifiers = undefined; // not to be transmitted
 		// dest.ediplomas_response = source.ediplomas_response;
@@ -175,7 +193,7 @@ export class AuthorizationServerState {
 	static deserialize(source: any): AuthorizationServerState {
 		let dest = new AuthorizationServerState();
 		dest = { ...source };
-		dest.authorization_details = source.authorization_details;
+		dest.credential_configuration_ids = source.credential_configuration_ids;
 		// dest.ediplomas_response = source.ediplomas_response;
 		// dest.credential_identifiers = source.credential_identifiers; 
 		return dest;

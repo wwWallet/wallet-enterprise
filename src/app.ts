@@ -23,16 +23,18 @@ import { verifierRouter } from './verifier/verifierRouter';
 import { GrantType } from './types/oid4vci';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
 import { openidForCredentialIssuingAuthorizationServerService, openidForPresentationReceivingService } from './services/instances';
-import { CredentialIssuersConfigurationService } from './configuration/CredentialIssuersConfigurationService';
 import _ from 'lodash';
+import { registerAllCredentialConfigurations } from './configuration/CredentialIssuerConfiguration';
+import * as qrcode from 'qrcode';
 
-initDataSource();
 
 
 // const credentialIssuersConfigurationService = appContainer.get<CredentialIssuersConfiguration>(TYPES.CredentialIssuersConfiguration);
 
 const app: Express = express();
 
+initDataSource();
+registerAllCredentialConfigurations();
 
 
 
@@ -77,12 +79,25 @@ app.use('/authorization', authorizationRouter);
 
 
 
-
 app.get('/', async (req: Request, res: Response) => {
-	
 	req.session.authenticationChain = {};
+	const result = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, config.issuanceFlow.defaultCredentialConfigurationIds ?? []);
+
+	let credentialOfferQR = await new Promise((resolve) => {
+		qrcode.toDataURL(result.url.toString().replace(config.wwwalletURL, "openid-credential-offer://"), {
+			margin: 1,
+			errorCorrectionLevel: 'L',
+			type: 'image/png'
+		}, 
+		(err, data) => {
+			if (err) return resolve("NO_QR");
+			return resolve(data);
+		});
+	}) as string;
 	return res.render('index', {
     title: titles.index,
+		credentialOfferURL: result.url,
+		credentialOfferQR,
 		lang: req.lang,
 		locale: locale[req.lang]
 	})
@@ -91,7 +106,7 @@ app.get('/', async (req: Request, res: Response) => {
 
 app.post('/', async (req, res) => {
 	await createNewAuthorizationServerState({req, res});
-	req.authorizationServerState.grant_type = GrantType.PRE_AUTHORIZED_CODE;
+	req.authorizationServerState.grant_type = GrantType.AUTHORIZATION_CODE;
 	await AppDataSource.getRepository(AuthorizationServerState)
 		.save(req.authorizationServerState);
 
@@ -110,60 +125,47 @@ app.get('/.well-known/openid-configuration', async (_req: Request, res: Response
 })
 
 
-const credentialIssuersConfigurationService = appContainer.resolve(CredentialIssuersConfigurationService)
+
+// app.post('/demo/generate-credential-offer', async (req: Request, res: Response) => {
+// 	try {
+// 		const {
+// 			credential_issuer_identifier,
+// 			credential_configuration_id,
+// 			ssn,
+// 			personalIdentifier,
+// 			taxis_id,
+// 		} = req.body;
+// 		await createNewAuthorizationServerState({ req, res });
+// 		req.authorizationServerState.credential_issuer_identifier = credential_issuer_identifier;
+// 		req.authorizationServerState.grant_type = GrantType.PRE_AUTHORIZED_CODE;
 
 
-app.post('/demo/generate-credential-offer', async (req: Request, res: Response) => {
-	try {
-		const {
-			credential_issuer_identifier,
-			credential_definition: {
-				types,
-				format
-			},
-			ssn,
-			personalIdentifier,
-			taxis_id,
-		} = req.body;
-		await createNewAuthorizationServerState({ req, res });
-		req.authorizationServerState.credential_issuer_identifier = credential_issuer_identifier;
-		req.authorizationServerState.grant_type = GrantType.PRE_AUTHORIZED_CODE;
-
-		const issuer = credentialIssuersConfigurationService.registeredCredentialIssuerRepository().getCredentialIssuer(credential_issuer_identifier);
-		if (!issuer) {
-			return res.status(404).send({ msg: "Issuer not found" });
-		}
-		const supportedCredential = issuer.supportedCredentials.filter(sc => {
-			return _.isEqual(sc.getTypes(), types) && sc.getFormat() == format
-		})[0];
+// 		const supportedCredential = credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().filter((credConf) => credConf.getId() == credential_configuration_id)[0]
 
 
-		if (!supportedCredential) {
-			return res.status(404).send({ msg: "Supported credential not found" });
-		}
+// 		if (!supportedCredential) {
+// 			return res.status(404).send({ msg: "Supported credential not found" });
+// 		}
 
-		const supportedCredentialObject = supportedCredential.exportCredentialSupportedObject()
-		req.authorizationServerState.authorization_details = [
-			{ format: supportedCredentialObject.format, types: supportedCredentialObject.types ?? [], type: 'openid_credential' }
-		];
-
-		console.log("Supported credential = ", supportedCredentialObject);
+// 		const supportedCredentialObject = supportedCredential.exportCredentialSupportedObject()
+// 		req.authorizationServerState.credential_configuration_ids = [ supportedCredential.getId() ];
+// 		console.log("Supported credential = ", supportedCredentialObject);
 		
-		req.authorizationServerState.ssn = ssn;
-		req.authorizationServerState.taxis_id = taxis_id;
-		req.authorizationServerState.personalIdentifier = personalIdentifier;
+// 		req.authorizationServerState.ssn = ssn;
+// 		req.authorizationServerState.taxis_id = taxis_id;
+// 		req.authorizationServerState.personalIdentifier = personalIdentifier;
 
-		await AppDataSource.getRepository(AuthorizationServerState)
-			.save(req.authorizationServerState);
+// 		await AppDataSource.getRepository(AuthorizationServerState)
+// 			.save(req.authorizationServerState);
 
 
-		const { url, user_pin, user_pin_required } = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, supportedCredentialObject, GrantType.PRE_AUTHORIZED_CODE);
-		res.status(200).send({ url, user_pin, user_pin_required });
-	} catch (e) {
-		console.log(e);
-		return res.status(404).send({ msg: "Issuer not found" });
-	}
-})
+// 		const { url, user_pin, user_pin_required } = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, req.authorizationServerState.credential_configuration_ids, GrantType.PRE_AUTHORIZED_CODE);
+// 		res.status(200).send({ url, user_pin, user_pin_required });
+// 	} catch (e) {
+// 		console.log(e);
+// 		return res.status(404).send({ msg: "Issuer not found" });
+// 	}
+// })
 
 
 app.post('/demo/presentation-request', async (req: Request, res: Response) => {

@@ -1,8 +1,6 @@
-import axios from "axios";
 import * as randomstring from 'randomstring';
 import * as crypto from 'crypto';
 import base64url from "base64url";
-import { CredentialIssuerMetadata } from "../types/oid4vci";
 
 export async function generateCodeChallengeFromVerifier(v: any) {
 	const base64Digest = crypto
@@ -16,25 +14,4 @@ export async function generateCodeChallengeFromVerifier(v: any) {
 
 export function generateCodeVerifier() {
 	return randomstring.generate(128);
-}
-
-export function getIssuerMetadataUrl(issuerUrl: string) { return `${issuerUrl}/.well-known/openid-credential-issuer`; }
-
-/**
- * Can use caching to reduce latency of the metadata retrieval
- * @param issuerUrl 
- * @returns 
- */
-export async function getIssuerMetadata(issuerUrl: string): Promise<CredentialIssuerMetadata | null> {
-	const issuerMetadataURL = getIssuerMetadataUrl(issuerUrl);
-	console.log("issuer metadata url = ", issuerMetadataURL)
-	const fetchIssuerMetadataRes = await axios.get(issuerMetadataURL).catch(e => {
-		console.log('failed to fetch issuer metadata: ', e);
-	})
-
-	if (!fetchIssuerMetadataRes) {
-		return null
-	}
-	const issuerMetadata: CredentialIssuerMetadata = fetchIssuerMetadataRes.data;
-	return issuerMetadata;
 }

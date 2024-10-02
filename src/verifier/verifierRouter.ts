@@ -8,14 +8,15 @@ import { TYPES } from "../services/types";
 import locale from "../configuration/locale";
 import * as qrcode from 'qrcode';
 import config from "../../config";
-import base64url from "base64url";
-import { PresentationDefinitionTypeWithFormat } from "../configuration/verifier/VerifierConfigurationService";
 import crypto from 'node:crypto';
 import {
 	HasherAlgorithm,
 	HasherAndAlgorithm,
 	SdJwt,
 } from '@sd-jwt/core'
+
+import axios from 'axios';
+
 
 export enum CredentialFormat {
 	VC_SD_JWT = "vc+sd-jwt",
@@ -77,21 +78,40 @@ verifierRouter.get('/success', async (req, res) => {
 	}
 	
 	const { status, raw_presentation, claims, date } = result.vp;
+	
+	const credentialImages = [];
 
-	const presentationPayload = JSON.parse(base64url.decode(raw_presentation.split('.')[1])) as any;
-	const credentials = await Promise.all(presentationPayload.vp.verifiableCredential.map(async (vcString: any) => {
-		if (vcString.includes('~')) {
-			return SdJwt.fromCompact<Record<string, unknown>, any>(vcString)
-				.withHasher(hasherAndAlgorithm)
-				.getPrettyClaims()
-				.then((payload) => payload.vc);
+	const credentialPayloads = []
+	if (raw_presentation.includes('~')) {
+		const parsedCredential = await SdJwt.fromCompact<Record<string, unknown>, any>(raw_presentation)
+			.withHasher(hasherAndAlgorithm)
+			.getPrettyClaims();
+		credentialPayloads.push(parsedCredential);
+		console.log("Parsed credential = ", parsedCredential)
+		const credentialIssuerMetadata = await axios.get(parsedCredential.iss + "/.well-known/openid-credential-issuer").catch(() => null);
+		if (!credentialIssuerMetadata) {
+			console.error("Couldnt get image for the credential " + raw_presentation);
+			return res.status(400).send({ error: "Insufficient metadata" })
+		}
+		console.log("Credential issuer metadata = ", credentialIssuerMetadata.data)
+		const fistImageUri = Object.values(credentialIssuerMetadata.data.credential_configurations_supported).map((conf: any) => {
+			if (conf?.vct == parsedCredential?.vct) {
+				return conf?.display[0] ? conf?.display[0]?.background_image?.uri : undefined;
+			}
+			return undefined;
+		}).filter((val) => val)[0];
+		if (fistImageUri) {
+			credentialImages.push(fistImageUri);
 		}
 		else {
-			return JSON.parse(base64url.decode(vcString.split('.')[1]));
+			console.error("Not supported format. Parsing failed")
+			return res.status(400).send({ error: "Not supoorted format" })	
 		}
-	}));
-
-	console.log('credentials = ', credentials)
+	}
+	else {
+		console.error("Not supported format. Parsing failed")
+		return res.status(400).send({ error: "Not supoorted format" })
+	}
 
 	return res.render('verifier/success.pug', {
 		lang: req.lang,
@@ -99,7 +119,8 @@ verifierRouter.get('/success', async (req, res) => {
 		status: status,
 		verificationTimestamp: date.toISOString(),
 		presentationClaims: claims,
-		credentialPayloads: credentials,
+		credentialPayloads: credentialPayloads,
+		credentialImages: credentialImages,
 	})
 })
 
@@ -123,8 +144,17 @@ verifierRouter.use('/public/definitions/selectable-presentation-request/:present
 			locale: locale[req.lang]
 		});
 	}
+	if (presentationDefinition.input_descriptors.length > 1) {
+		throw new Error("Selectable presentation definition is not supported for more than one descriptors currently");
+	}
+	const selectableFields = presentationDefinition.input_descriptors[0].constraints.fields.map((field: any) => {
+		return [field.name, field.path[0]]
+	});
+
+	console.log("Selectable fields = ", selectableFields)
 	return res.render('verifier/selectable_presentation', {
 		presentationDefinitionId: presentationDefinition.id,
+		selectableFields,
 		lang: req.lang,
 		locale: locale[req.lang],
 	});
@@ -133,6 +163,7 @@ verifierRouter.use('/public/definitions/selectable-presentation-request/:present
 
 verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
 	const presentation_definition_id = req.params.presentation_definition_id;
+	console.log("FIELDS = ", req.body.fields)
 	if (req.body.state && req.method == "POST") {
 		const { status } = await openidForPresentationReceivingService.getPresentationByState(req.body.state as string);
 		if (status) {
@@ -152,7 +183,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		});
 	}
 
-	const presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as PresentationDefinitionTypeWithFormat;
+	const presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as any;
 	if (!presentationDefinition) {
 		return res.render('error', {
 			msg: "No presentation definition was found",
@@ -164,21 +195,16 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 
 	// If there are selected fields from a POST request, update the constraints accordingly
 	if (req.method === "POST" && req.body.fields) {
-		let selectedFields = req.body.fields;
-		if (!Array.isArray(selectedFields)) {
-			selectedFields = [selectedFields];
+		let selectedFieldPaths = req.body.fields;
+		if (!Array.isArray(selectedFieldPaths)) {
+			selectedFieldPaths = [selectedFieldPaths];
 		}
-		const selectedPaths = new Set(selectedFields.map((field: string) => {
-			if (field === "type") {
-				return `$.${field}`;
-			} else {
-				return `$.credentialSubject.${field}`;
-			}
-		}));
+		const selectedPaths = new Set(selectedFieldPaths);
+		console.log("Selectd paths", selectedPaths);
 		// Filter existing paths to keep only those selected by the user and update presentationDefinition
 		const availableFields = presentationDefinition.input_descriptors[0].constraints.fields;
 		console.log("Available fields = ", availableFields)
-		const filteredFields = presentationDefinition.input_descriptors[0].constraints.fields.filter(field =>
+		const filteredFields = presentationDefinition.input_descriptors[0].constraints.fields.filter((field: any) =>
 			selectedPaths.has(field.path[0])
 		);
 

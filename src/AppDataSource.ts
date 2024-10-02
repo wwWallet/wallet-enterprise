@@ -5,7 +5,7 @@ import config from "../config";
 const AppDataSource: DataSource = new DataSource({
     type: "mysql",
     host: config.db.host,
-    port: config.db.port,
+    port: Number(config.db.port),
     username: config.db.username,
     password: config.db.password,
     database: config.db.dbname,
