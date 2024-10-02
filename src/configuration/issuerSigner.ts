@@ -1,12 +1,10 @@
 import 'reflect-metadata';
 import { config } from "../../config";
 import { CredentialSigner } from "../services/interfaces";
-import { VIDSupportedCredentialSdJwt } from "./SupportedCredentialsConfiguration/VIDSupportedCredentialSdJwt";
 import fs from 'fs';
 import path from "path";
 import { HasherAlgorithm, HasherAndAlgorithm, SdJwt, SignatureAndEncryptionAlgorithm, Signer } from "@sd-jwt/core";
 import { sign, randomBytes, createHash, KeyObject } from "crypto";
-import { credentialConfigurationRegistryService } from "../services/instances";
 import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
 import { calculateJwkThumbprint, exportJWK, importX509 } from 'jose';
 
@@ -82,10 +80,4 @@ export const issuerSigner: CredentialSigner = {
 		return { jwk: jwk };
 	},
 }
-
-
-export async function registerAllCredentialConfigurations() {
-	credentialConfigurationRegistryService.register(new VIDSupportedCredentialSdJwt());
-}
-
 

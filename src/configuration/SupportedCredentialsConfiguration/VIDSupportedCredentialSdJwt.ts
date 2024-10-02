@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import { CredentialSigner } from "../../services/interfaces";
 import { JWK } from "jose";
 import { Request } from "express";
-import { issuerSigner } from "../CredentialIssuerConfiguration";
+import { issuerSigner } from "../issuerSigner";
 import { parsePidData } from "../datasetParser";
 import path from "node:path";
 
@@ -132,9 +132,7 @@ export class VIDSupportedCredentialSdJwt implements SupportedCredentialProtocol 
 			document_number: true,
 		}
 		const { jws } = await this.getCredentialSigner()
-			.sign({
-				...payload
-			}, {}, disclosureFrame);
+			.sign(payload, {}, disclosureFrame);
 		const response = {
 			format: this.getFormat(),
 			credential: jws
