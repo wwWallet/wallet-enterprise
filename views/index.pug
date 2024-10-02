@@ -1,15 +1,18 @@
 extends layout.pug
 block layout-content
 
-	form#Index(method="POST")
+	#Index
 		section.IssuerOrVerifierLayout
-			div.item.IssuerSection
+			div.MainArea.IssuerSection
 				.ItemLayout
 					i(class=`fa ${locale.landingPageFaClass ? locale.landingPageFaClass : "fa-id-card-o"} LargeIcon`)
 					p.title #{locale.index.phrase}
 					p.text-area #{locale.index.subtitle}
-					button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
-					input(type="hidden" id="initiate_pre_authorized" name="initiate_pre_authorized" value="true")
+					.image-container
+						img(src=credentialOfferQR)
+					| - OR -
+					button.Btn.Large.Landing(id="mainBtn" onclick=`window.location.href = "${credentialOfferURL}"`) #{locale.index.proceed}
+
 			//- div.item.VerifierSection
 			//- 	.ItemLayout
 			//- 		i.fa.fa-university.LargeIcon
@@ -18,9 +21,8 @@ block layout-content
 
 		.container
 			h1 #{locale.index.heading}
-			p #{locale.index.paragraph} #[a(href="https://w3c-ccg.github.io/vc-ed/plugfest-3-2023/") #{locale.index.jff}] #{locale.index.paragraph1}
+			p #{locale.index.paragraph}
 			p #{locale.index.paragraph2}
-			p #{locale.index.paragraph3}#[a(href="https://www.ediplomas.gr") #{locale.index.ediplomas}]#{locale.index.paragraph4}
 			.demo-text #{locale.index.demo_text}
 
 	block footer

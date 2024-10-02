@@ -7,21 +7,11 @@ block layout-content
 			p #{locale.personalInfo.subtitle}
 			table.info-table.striped
 				tbody
-					if info.firstName
+					if info.document_number
 						tr
-							td #[strong #{locale.personalInfo.firstName}]
-							td #{info.firstName}
-					if info.lastName
-						tr
-							td #[strong #{locale.personalInfo.lastName}]
-							td #{info.lastName}
-					tr
-						td #[strong #{locale.personalInfo.ssn}]
-						td #{info.ssn}
-					if info.taxis_id
-						tr
-							td #[strong #{locale.personalInfo.taxisId}]
-							td #{info.taxis_id}
+							td #[strong #{locale.personalInfo.document_number}]
+							td #{info.document_number}
+
 			hr
 			p #{locale.personalInfo.acknowledgement}
 			
