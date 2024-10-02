@@ -1,5 +1,5 @@
 
-export = {
+export const config = {
 	url: "SERVICE_URL",
 	port: "SERVICE_PORT",
 	appSecret: "SERVICE_SECRET",
@@ -10,5 +10,16 @@ export = {
 		password: "DB_PASSWORD",
 		dbname: "DB_NAME"
 	},
-	wwwalletURL: "WWWALLET_URL"
+	display: [
+		{
+			name: "Enterprise wallet",
+			locale: "en-US"
+		}
+	],
+	issuanceFlow: {
+		skipConsent: false,
+		defaultCredentialConfigurationIds: [],
+	},
+	wwwalletURL: "WWWALLET_URL",
+	trustedRootCertificates: [],
 }

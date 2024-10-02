@@ -7,7 +7,7 @@ import { appContainer } from "../services/inversify.config";
 import { TYPES } from "../services/types";
 import locale from "../configuration/locale";
 import * as qrcode from 'qrcode';
-import config from "../../config";
+import { config } from "../../config";
 import crypto from 'node:crypto';
 import {
 	HasherAlgorithm,

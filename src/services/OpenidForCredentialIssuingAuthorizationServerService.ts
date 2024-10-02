@@ -10,7 +10,7 @@ import AppDataSource from "../AppDataSource";
 import { Repository } from "typeorm";
 import { CONSENT_ENTRYPOINT } from "../authorization/constants";
 import base64url from "base64url";
-import config from "../../config";
+import { config } from "../../config";
 import { importJWK, JWK, jwtVerify } from "jose";
 import { TYPES } from "./types";
 

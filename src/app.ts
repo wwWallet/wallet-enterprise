@@ -1,5 +1,5 @@
 import express, { Express, Request, Response } from 'express';
-import config from '../config';
+import { config } from '../config';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import path from 'path';

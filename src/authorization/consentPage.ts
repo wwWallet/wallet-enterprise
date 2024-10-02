@@ -3,7 +3,7 @@ import z from 'zod';
 import _ from "lodash";
 import { credentialConfigurationRegistryService, openidForCredentialIssuingAuthorizationServerService } from "../services/instances";
 import locale from "../configuration/locale";
-import config from '../../config';
+import { config } from '../../config';
 import AppDataSource from "../AppDataSource";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 

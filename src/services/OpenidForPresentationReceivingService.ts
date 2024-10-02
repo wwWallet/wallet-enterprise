@@ -11,7 +11,7 @@ import { JSONPath } from "jsonpath-plus";
 import { Repository } from "typeorm";
 import { ClaimRecord, PresentationClaims, VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
 import AppDataSource from "../AppDataSource";
-import config from "../../config";
+import { config } from "../../config";
 import { HasherAlgorithm, HasherAndAlgorithm, SdJwt, SignatureAndEncryptionAlgorithm, Verifier } from "@sd-jwt/core";
 import fs from 'fs';
 import path from "path";

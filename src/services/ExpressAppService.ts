@@ -4,7 +4,7 @@ import 'reflect-metadata';
 import { TYPES } from './types';
 import { CredentialConfigurationRegistry, OpenidForCredentialIssuingAuthorizationServerInterface } from './interfaces';
 import { OpenidForPresentationsReceivingService } from './OpenidForPresentationReceivingService';
-import config from '../../config';
+import { config } from '../../config';
 
 @injectable()
 export class ExpressAppService {
