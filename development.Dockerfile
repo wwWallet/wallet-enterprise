@@ -4,8 +4,7 @@ WORKDIR /dependencies
 
 # Install dependencies first so rebuild of these layers is only needed when dependencies change
 COPY package.json yarn.lock ./
-RUN --mount=type=secret,id=npmrc,required=true,target=./.npmrc,uid=1000 \
-    yarn install
+RUN yarn install
 
 
 FROM node:16-bullseye-slim as development
@@ -14,7 +13,7 @@ ENV NODE_PATH=/node_modules
 COPY --from=dependencies /dependencies/node_modules /node_modules
 
 WORKDIR /app
-ENV NODE_ENV development
+ENV NODE_ENV=development
 EXPOSE 8003
 CMD ["yarn", "dev-docker"]
 

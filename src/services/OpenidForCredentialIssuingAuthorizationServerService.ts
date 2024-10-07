@@ -1,50 +1,39 @@
 import { Request, Response } from "express";
-import { CredentialIssuersConfiguration, OpenidForCredentialIssuingAuthorizationServerInterface } from "./interfaces";
-import { AuthorizationDetailsSchemaType, CredentialSupported, GrantType } from "../types/oid4vci";
+import { CredentialConfigurationRegistry, OpenidForCredentialIssuingAuthorizationServerInterface } from "./interfaces";
+import { GrantType } from "../types/oid4vci";
 import { inject, injectable } from "inversify";
-import { TYPES } from "./types";
-import crypto from 'node:crypto';
+import crypto, { randomUUID } from 'node:crypto';
 import _ from "lodash";
 import 'reflect-metadata';
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import AppDataSource from "../AppDataSource";
 import { Repository } from "typeorm";
 import { CONSENT_ENTRYPOINT } from "../authorization/constants";
-import { generateAccessToken } from "../openid4vci/utils/generateAccessToken";
-import { REQUIRE_PIN } from "../configuration/consent/consent.config";
-
+import base64url from "base64url";
+import { config } from "../../config";
+import { importJWK, JWK, jwtVerify } from "jose";
+import { TYPES } from "./types";
 
 @injectable()
 export class OpenidForCredentialIssuingAuthorizationServerService implements OpenidForCredentialIssuingAuthorizationServerInterface {
-	
+
 	private authorizationServerStateRepository: Repository<AuthorizationServerState> = AppDataSource.getRepository(AuthorizationServerState);
 
-	
 	constructor(
-		@inject(TYPES.CredentialIssuersConfiguration) private credentialIssuersConfiguration: CredentialIssuersConfiguration,
-	) { }
+		@inject(TYPES.CredentialConfigurationRegistryService) private credentialConfigurationRegistryService: CredentialConfigurationRegistry,
+
+	) {	}
 
 	metadataRequestHandler(): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
 
 
-	async generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialSupported: CredentialSupported, grantType: GrantType, issuerState?: string): Promise<{ url: URL, user_pin_required?: boolean, user_pin?: string | undefined }> {
+	async generateCredentialOfferURL(ctx: { req: Request, res: Response }, credentialConfigurationIds: string[], issuerState?: string): Promise<{ url: URL, user_pin_required?: boolean, user_pin?: string | undefined }> {
 
 		// force creation of new state with a separate pre-authorized_code which has specific scope
 		let newAuthorizationServerState: AuthorizationServerState = { ...ctx.req.authorizationServerState, id: 0 } as AuthorizationServerState;
-		if (grantType == GrantType.PRE_AUTHORIZED_CODE) {
-			newAuthorizationServerState.user_pin_required = false;
-			newAuthorizationServerState.pre_authorized_code = crypto.randomBytes(60).toString('base64url');
-			if (REQUIRE_PIN) {
-				newAuthorizationServerState.user_pin_required = true;
-				newAuthorizationServerState.user_pin = Math.floor(1000 + Math.random() * 9000).toString();
-			}
-		}
-
-		newAuthorizationServerState.authorization_details = [
-			{ types: credentialSupported.types as string[], format: credentialSupported.format, type: 'openid_credential' }
-		];
+		newAuthorizationServerState.credential_configuration_ids = credentialConfigurationIds;
 
 
 		if (issuerState) {
@@ -55,44 +44,29 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		console.log("Insertion result = ", insertRes);
 
 		const credentialOffer = {
-			credential_issuer: newAuthorizationServerState.credential_issuer_identifier ??
-				this.credentialIssuersConfiguration.defaultCredentialIssuerIdentifier(),
-			credentials: [
-				{
-					types: credentialSupported.types,
-					format: credentialSupported.format
-				}
-			],
-			grants: { }
+			credential_issuer: config.url,
+			credential_configuration_ids: credentialConfigurationIds,
+			grants: {}
 		};
 
-		if (grantType == GrantType.PRE_AUTHORIZED_CODE) {
+
+		if (issuerState) { // if issuer state was provided
 			credentialOffer.grants = {
-				"urn:ietf:params:oauth:grant-type:pre-authorized_code": {
-					"pre-authorized_code": newAuthorizationServerState.pre_authorized_code,
-					"user_pin_required": newAuthorizationServerState.user_pin_required
+				authorization_code: {
+					issuer_state: issuerState
 				}
-			}
+			};
 		}
-		else { // authorization code grant type
-			if (issuerState) { // if issuer state was provided
-				credentialOffer.grants = {
-					authorization_code: {
-						issuer_state: issuerState
-					}
-				};
-			}
-			else {
-				credentialOffer.grants = {
-					authorization_code: { }
-				};
-			}
+		else {
+			credentialOffer.grants = {
+				authorization_code: {}
+			};
 		}
-		
-		const redirect_uri = ctx.req?.authorizationServerState.redirect_uri ?? "openid-credential-offer://";
+
+		const redirect_uri = ctx.req?.authorizationServerState?.redirect_uri ?? config.wwwalletURL;
 		const credentialOfferURL = new URL(redirect_uri);
 		credentialOfferURL.searchParams.append('credential_offer', JSON.stringify(credentialOffer));
-		
+
 		console.log("Credential offer = ", credentialOfferURL)
 		return {
 			url: credentialOfferURL,
@@ -102,50 +76,50 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	}
 
 
-	private async updateAuthorizationServerState(ctx: {req: Request, res: Response}, newAuthorizationServerState: AuthorizationServerState): Promise<{ newStateRecord: AuthorizationServerState }> {
+	private async updateAuthorizationServerState(ctx: { req: Request, res: Response }, newAuthorizationServerState: AuthorizationServerState): Promise<{ newStateRecord: AuthorizationServerState }> {
 		const insertedState = await this.authorizationServerStateRepository.save(newAuthorizationServerState); // update session on database
 		ctx.req.session.authorizationServerStateIdentifier = insertedState.id; // update state identifier on session
 		return { newStateRecord: insertedState };
 	}
 
 
-	async authorizationRequestIssuerStateHandler(ctx: {req: Request, res: Response}) {
+	async authorizationRequestIssuerStateHandler(ctx: { req: Request, res: Response }) {
 		if (ctx.res.headersSent) {
 			return;
 		}
 		if (!ctx.req.authorizationServerState) {
 			ctx.req.authorizationServerState = new AuthorizationServerState();
 		}
-		if (!ctx.req.query.issuer_state) {
+		if (!ctx.req.body.issuer_state) {
 			return;
 		}
-	
-		ctx.req.authorizationServerState.issuer_state = ctx.req.query.issuer_state as string ?? undefined;
+
+		ctx.req.authorizationServerState.issuer_state = ctx.req.body.issuer_state as string ?? undefined;
 	}
 
-	async authorizationRequestPKCEHandler(ctx: {req: Request, res: Response}) {
+	async authorizationRequestPKCEHandler(ctx: { req: Request, res: Response }) {
 		if (ctx.res.headersSent) {
 			return;
 		}
 		if (!ctx.req.authorizationServerState) {
 			ctx.req.authorizationServerState = new AuthorizationServerState();
 		}
-		ctx.req.authorizationServerState.code_challenge = ctx.req.query.code_challenge as string ?? null;
-		ctx.req.authorizationServerState.code_challenge_method = ctx.req.query.code_challenge_method as string ?? null;
+		ctx.req.authorizationServerState.code_challenge = ctx.req.body.code_challenge as string ?? null;
+		ctx.req.authorizationServerState.code_challenge_method = ctx.req.body.code_challenge_method as string ?? null;
 	}
 
-	async authorizationRequestClientIdAndRedirectUriHandler(ctx: {req: Request, res: Response}) {
+	async authorizationRequestClientIdAndRedirectUriHandler(ctx: { req: Request, res: Response }) {
 		if (ctx.res.headersSent) {
 			return;
 		}
 		if (!ctx.req.authorizationServerState) {
 			ctx.req.authorizationServerState = new AuthorizationServerState();
 		}
-		ctx.req.authorizationServerState.client_id = ctx.req.query.client_id as string ?? null;
-		ctx.req.authorizationServerState.redirect_uri = ctx.req.query.redirect_uri as string ?? null;
+		ctx.req.authorizationServerState.client_id = ctx.req.body.client_id as string ?? null;
+		ctx.req.authorizationServerState.redirect_uri = ctx.req.body.redirect_uri as string ?? null;
 	}
 
-	async authorizationRequestGrantTypeHandler(ctx: {req: Request, res: Response}) {
+	async authorizationRequestGrantTypeHandler(ctx: { req: Request, res: Response }) {
 		if (ctx.res.headersSent) {
 			return;
 		}
@@ -155,17 +129,17 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		ctx.req.authorizationServerState.grant_type = GrantType.AUTHORIZATION_CODE;
 	}
 
-	async authorizationRequestResponseTypeHandler(ctx: {req: Request, res: Response}) {
+	async authorizationRequestResponseTypeHandler(ctx: { req: Request, res: Response }) {
 		if (ctx.res.headersSent) {
 			return;
 		}
 		if (!ctx.req.authorizationServerState) {
 			ctx.req.authorizationServerState = new AuthorizationServerState();
 		}
-		ctx.req.authorizationServerState.response_type = ctx.req.query.response_type as string ?? null;
+		ctx.req.authorizationServerState.response_type = ctx.req.body.response_type as string ?? null;
 	}
 
-	async authorizationRequestAuthorizationDetailsHandler(ctx: {req: Request, res: Response}) {
+	async authorizationRequestScopeHandler(ctx: { req: Request, res: Response }) {
 		if (ctx.res.headersSent) {
 			return;
 		}
@@ -173,53 +147,54 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			ctx.req.authorizationServerState = new AuthorizationServerState();
 		}
 
-		console.log("Authz details = ", ctx.req.query.authorization_details)
-		if (!ctx.req.query.authorization_details || typeof ctx.req.query.authorization_details != 'string') {
-			ctx.res.status(400).send({ error: "'authorization_details' parameter is missing" });
-			return;
-		}
-		try {
-			ctx.req.authorizationServerState.authorization_details = JSON.parse(ctx.req.query.authorization_details) as any;
-		}
-		catch (e) {
-			ctx.res.status(400).send({ error: "'authorization_details' parameter could not be parsed" });
-			return
-		}
-
-		if (!ctx.req.authorizationServerState.authorization_details) {
-			ctx.res.status(400).send({ error: "Authorization details failed to be initialized" });
-			return;
-		}
-
-		if (ctx.req.authorizationServerState.authorization_details[0] && ctx.req.authorizationServerState.authorization_details[0].locations 
-			&& ctx.req.authorizationServerState.authorization_details[0].locations[0]) {
-				ctx.req.authorizationServerState.credential_issuer_identifier = ctx.req.authorizationServerState.authorization_details[0].locations[0];
-		}
-		else {
-			const defaultCredentialIssuerIdentifier = this.credentialIssuersConfiguration.defaultCredentialIssuerIdentifier();
-			if (!defaultCredentialIssuerIdentifier) {
-				throw new Error("Credential issuer could not be resolved because no default issuer exists and issuer is not specified on location of authorization details");
-			}
-			ctx.req.authorizationServerState.credential_issuer_identifier = defaultCredentialIssuerIdentifier;
-		}
+		ctx.req.authorizationServerState.scope = ctx.req.body.scope;
 	}
 
-	async authorizationRequestHandler(ctx: {req: Request, res: Response}): Promise<void> {
+	async authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
 		ctx.req.session.authenticationChain = {}; // clear the session
 
+
+		if (ctx.req.method == 'GET' && ctx.req.query.request_uri) {
+			const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
+				.where("state.request_uri = :request_uri", { request_uri: ctx.req.query.request_uri })
+				.getOne();
+
+			if (!state) {
+				console.error("request_uri provided could not resolve to any stored authorization server state");
+				ctx.res.redirect('/');
+				return;
+			}
+
+			if (state.request_uri_expiration_timestamp && state.request_uri_expiration_timestamp < Math.floor(Date.now() / 1000)) {
+				console.error("request_uri is expired");
+				ctx.res.redirect('/');
+				return;
+			}
+			ctx.req.authorizationServerState = state;
+			await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState);
+			ctx.res.redirect(CONSENT_ENTRYPOINT);
+			return;
+		}
 		// the following functions will alter the ctx.req.authorizationServerState object
 		await this.authorizationRequestIssuerStateHandler(ctx);
 		await this.authorizationRequestClientIdAndRedirectUriHandler(ctx);
 		await this.authorizationRequestPKCEHandler(ctx);
 		await this.authorizationRequestGrantTypeHandler(ctx);
 		await this.authorizationRequestResponseTypeHandler(ctx);
-		await this.authorizationRequestAuthorizationDetailsHandler(ctx);
 
-		await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState)
-		ctx.res.redirect(CONSENT_ENTRYPOINT);
+		await this.authorizationRequestScopeHandler(ctx);
+
+		ctx.req.authorizationServerState.request_uri = `urn:ietf:params:oauth:request_uri:${base64url.encode(randomUUID())}`;
+		ctx.req.authorizationServerState.request_uri_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
+		await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState);
+
+		ctx.res.send({
+			request_uri: ctx.req.authorizationServerState.request_uri,
+			expires_in: 60,
+		});
 	}
 
-	async sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number, authorizationDetails?: AuthorizationDetailsSchemaType): Promise<void> {
+	async sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number): Promise<void> {
 		const stateId = bindedUserSessionId;
 
 		const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
@@ -229,7 +204,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		console.log("State on the authorization response = ", state)
 
 		if (!state) {
-			const msg = { error: "Unable to send authorization response", error_description: "No issuanceState was found for this user session id"};
+			const msg = { error: "Unable to send authorization response", error_description: "No issuanceState was found for this user session id" };
 			console.error(msg);
 			throw new Error(JSON.stringify(msg));
 		}
@@ -238,26 +213,26 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		if (!state.client_id) {
 			throw new Error("Error on sendAuthorizationResponse(): No client id was defined on the authorization request");
 		}
-	
+
 		if (!state.redirect_uri) {
 			throw new Error("Redirect uri not found in params");
 		}
 
-		
+
 		const authorization_code = crypto.randomBytes(60).toString('base64url');
 		state.authorization_code = authorization_code;
-		if (authorizationDetails)
-			state.authorization_details = authorizationDetails;
+
 
 		const authorizationResponseURL = new URL(state.redirect_uri);
 		authorizationResponseURL.searchParams.append("code", authorization_code);
-		
+
 		if (state.state) {
 			authorizationResponseURL.searchParams.append("state", state.state);
 		}
 
 		await this.authorizationServerStateRepository.save(state);
 
+		console.log("State before sending authorization response = ", state)
 		ctx.res.redirect(authorizationResponseURL.toString());
 	}
 
@@ -267,13 +242,13 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 
 		switch (ctx.req.body.grant_type) {
-		case GrantType.AUTHORIZATION_CODE:
-			break;
-		case GrantType.PRE_AUTHORIZED_CODE:
-			break;
-		default:
-			ctx.res.status(400).send({ error: `grant_type '${ctx.req.body.grant_type}' is not supported` })
-			return;
+			case GrantType.AUTHORIZATION_CODE:
+				break;
+			case GrantType.PRE_AUTHORIZED_CODE:
+				break;
+			default:
+				ctx.res.status(400).send({ error: `grant_type '${ctx.req.body.grant_type}' is not supported` })
+				return;
 		}
 	}
 
@@ -285,9 +260,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		if (ctx.req.body.grant_type != GrantType.AUTHORIZATION_CODE) {
 			return; // this is not a job for this handler, let the other ones to decide on the request
 		}
-	
+
 		if (!ctx.req.body.code) {
-			ctx.res.status(400).send({ error: `the 'code' parameter is missing`})
+			ctx.res.status(400).send({ error: `the 'code' parameter is missing` })
 			return;
 		}
 
@@ -354,25 +329,313 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 	}
 
+	async tokenRequestCodeVerifierHandler(ctx: { req: Request, res: Response }) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+
+		if (ctx.req.body.grant_type != GrantType.AUTHORIZATION_CODE) {
+			return; // this is not a job for this handler, let the other ones to decide on the request
+		}
+
+		const { code_verifier } = ctx.req.body;
+		if (!code_verifier || typeof code_verifier != 'string') {
+			console.log("code_verifier is missing");
+			ctx.res.status(400).send({ error: `code_verifier is missing` });
+			return;
+		}
+
+		if (!ctx.req?.authorizationServerState?.code_challenge) {
+			console.log("code_challenge could not be retrieved from current state");
+			ctx.res.status(400).send({ error: `code_challenge could not be retrieved from current state` });
+			return;
+		}
+
+		
+		async function generateChallenge(code_verifier: string) {
+			const buffer = await crypto.webcrypto.subtle.digest(
+				"SHA-256",
+				new TextEncoder().encode(code_verifier)
+			);
+			// Generate base64url string
+			// btoa is deprecated in Node.js but is used here for web browser compatibility
+			// (which has no good replacement yet, see also https://github.com/whatwg/html/issues/6811)
+			return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+				.replace(/\//g, '_')
+				.replace(/\+/g, '-')
+				.replace(/=/g, '');
+		}
+
+		async function verifyChallenge(
+			code_verifier: string,
+			expectedChallenge: string
+		) {
+			const actualChallenge = await generateChallenge(code_verifier);
+			return actualChallenge === expectedChallenge;
+		}
+		const result = verifyChallenge(code_verifier, ctx.req.authorizationServerState.code_challenge);
+
+		if (!result) {
+			console.log("invalid code_verifier");
+			ctx.res.status(400).send({ error: `invalid code_verifier` });
+			return;
+		}
+	}
+
+	private async tokenRequestHandleDpopHeader(ctx: { req: Request, res: Response }) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+
+		if (ctx.req.body.grant_type != GrantType.AUTHORIZATION_CODE) {
+			return; // this is not a job for this handler, let the other ones to decide on the request
+		}
+
+		const dpopJwt = ctx.req.headers['dpop'] as string | undefined;
+		if (!dpopJwt) {
+			console.log("DPoP header not found");
+			ctx.res.status(400).send({ error: "DPoP header not found" });
+			return;
+		}
+		const [header, payload] = dpopJwt.split('.').slice(0, 2).map((part) => JSON.parse(base64url.decode(part))) as Array<any>;
+		const { typ, alg, jwk } = header;
+
+		if (typ !== "dpop+jwt") {
+			console.log("DPoP error: invalid typ value for dpop header");
+			ctx.res.status(400).send({ error: "DPoP error: invalid typ value for dpop header" });
+			return;
+		}
+
+		if (alg !== "ES256") {
+			console.log("DPoP error: unsupported algorithm");
+			ctx.res.status(400).send({ error: "DPoP error: unsupported algorithm" });
+			return;
+		}
+
+
+		ctx.req.authorizationServerState.dpop_jwk = JSON.stringify(jwk);
+
+		const { htu, htm, jti } = payload;
+
+		if (htm !== "POST") {
+			console.log("DPoP error: invalid htm");
+			ctx.res.status(400).send({ error: "DPoP error: invalid htm" });
+			return;
+		}
+
+
+		if (htu !== `${config.url}/openid4vci/token`) {
+			console.log("DPoP error: invalid htu");
+			ctx.res.status(400).send({ error: "DPoP error: invalid htu" });
+			return;
+		}
+		ctx.req.authorizationServerState.dpop_jti = jti;
+
+
+	}
+
+	private async generateTokenResponse(ctx: { req: Request, res: Response }) {
+		ctx.req.authorizationServerState.access_token = crypto.randomBytes(16).toString('hex');
+		ctx.req.authorizationServerState.token_type = "DPoP";
+		ctx.req.authorizationServerState.access_token_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
+
+		ctx.req.authorizationServerState.c_nonce = crypto.randomBytes(16).toString('hex');
+		ctx.req.authorizationServerState.c_nonce_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
+
+
+		return {
+			token_type: ctx.req.authorizationServerState.token_type,
+			access_token: ctx.req.authorizationServerState.access_token,
+			expires_in: 60,
+			c_nonce: ctx.req.authorizationServerState.c_nonce,
+			c_nonce_expires_in: 60,
+		}
+	}
+
 	async tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
 		await this.tokenRequestGrantTypeHandler(ctx);
 		await this.tokenRequestAuthorizationCodeHandler(ctx);
+		await this.tokenRequestCodeVerifierHandler(ctx);
 		await this.tokenRequestPreAuthorizedCodeHandler(ctx);
+		await this.tokenRequestHandleDpopHeader(ctx);
 		// await this.tokenRequestUserPinHandler(ctx); keep this commented to not require userpin
 
+		if (ctx.res.headersSent) {
+			return;
+		}
 		try {
-			const response = await generateAccessToken(ctx);
+			const response = await this.generateTokenResponse(ctx);
+			await this.authorizationServerStateRepository.save(ctx.req.authorizationServerState);
 			if (response) {
 				ctx.res.setHeader("Cache-Control", "no-store");
+				console.log("Token response = ", response)
 				ctx.res.send(response);
 			}
 		}
-		catch(err) {
+		catch (err) {
 			console.error("Couldn't generate access token. Detailed error:");
 			console.error(err);
 			ctx.res.status(400).send({ error: "Couldn't generate access token" });
 			return;
 		}
+	}
+
+	async credentialRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		if (!ctx.req.headers.authorization) {
+			const msg = "No authorization header was given";
+			console.log(msg);
+			ctx.res.status(401).send({ msg });
+			return;
+		}
+		const [tokenType, access_token] = ctx.req.headers.authorization.split(' ');
+		if (tokenType != 'DPoP') {
+			const msg = "Expected DPoP access token";
+			console.log(msg);
+			ctx.res.status(401).send({ msg });
+			return;
+		}
+		let state = await this.authorizationServerStateRepository.createQueryBuilder("state")
+			.where("state.access_token = :access_token", { access_token: access_token })
+			.getOne();
+		if (!state) {
+			const msg = "Invalid access_token";
+			console.log(msg);
+			ctx.res.status(401).send({ msg });
+			return;
+		}
+
+		ctx.req.authorizationServerState = state;
+
+		if (state?.access_token_expiration_timestamp as number < Math.floor(Date.now() / 1000)) {
+			console.log("Expired access_token");
+			ctx.res.status(400).send({ error: "Expired access_token" });
+			return;
+		}
+
+		async function dpopVerification() {
+			if (!state) {
+				const msg = "CredentialRequest: Invalid access_token";
+				console.log(msg);
+				ctx.res.status(401).send({ error: "Invalid access_token" });
+				return;
+			}
+
+			const dpopJwt = ctx.req.headers['dpop'] as string | undefined;
+			if (!dpopJwt) {
+				console.log("CredentialRequest: DPoP header not found");
+				ctx.res.status(400).send({ error: "DPoP header not found" });
+				return;
+			}
+
+			try {
+				await jwtVerify(dpopJwt, await importJWK(JSON.parse(state.dpop_jwk as string) as JWK, 'ES256'));
+			}
+			catch (err) {
+				console.log("CredentialRequest: Invalid access token");
+				ctx.res.status(400).send({ error: "Invalid access token" });
+				return;
+			}
+
+
+
+			const [_header, payload] = dpopJwt.split('.').slice(0, 2).map((part) => JSON.parse(base64url.decode(part))) as Array<any>;
+			const { htu, htm, jti, ath } = payload;
+			if (!jti || jti !== state.dpop_jti) {
+				console.log("CredentialRequest: Invalid dpop jti");
+				ctx.res.status(400).send({ error: "Invalid dpop jti" });
+				return;
+			}
+
+			if (!htu || htu !== `${config.url}/openid4vci/credential`) {
+				console.log("CredentialRequest: Invalid htu");
+				ctx.res.status(400).send({ error: "Invalid htu" });
+				return;
+			}
+
+			async function calculateAth(accessToken: string) {
+				function arrayBufferToBase64Url(buffer: any) {
+					const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+					const base64Url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+					return base64Url;
+				}
+				// Encode the access token as a Uint8Array
+				const encoder = new TextEncoder();
+				const accessTokenBuffer = encoder.encode(accessToken);
+
+				// Compute the SHA-256 hash of the access token
+				const hashBuffer = await crypto.webcrypto.subtle.digest('SHA-256', accessTokenBuffer);
+
+				// Convert ArrayBuffer to Base64URL string
+				const base64Url = arrayBufferToBase64Url(hashBuffer);
+
+				return base64Url;
+			}
+
+
+
+			if (!htm || htm !== `POST`) {
+				console.log("CredentialRequest: Invalid htm");
+				ctx.res.status(400).send({ error: "Invalid htm" });
+				return;
+			}
+
+			if (!ath || ath !== await calculateAth(state.access_token as string)) {
+				console.log("CredentialRequest: Invalid ath");
+				ctx.res.status(400).send({ error: "Invalid ath" });
+				return;
+			}
+		}
+
+		await dpopVerification();
+
+
+
+		async function proofJwtVerification() {
+			const [header, payload] = ctx.req.body.proof.jwt.split('.').slice(0, 2).map((part: string) => JSON.parse(base64url.decode(part))) as Array<any>;
+			const { jwk, alg } = header;
+			const { nonce } = payload;
+			if (!alg || alg !== 'ES256') {
+				return { error: "Proof jwt: Invalid alg" };
+			}
+
+			if (!nonce || nonce !== state?.c_nonce) {
+				return { error: "Proof jwt: Invalid nonce" };
+			}
+
+			if (state?.c_nonce_expiration_timestamp as number < Math.floor(Date.now() / 1000)) {
+				return { error: "Proof jwt: Expired c_nonce" };
+			}
+
+			try {
+				await jwtVerify(ctx.req.body.proof.jwt, await importJWK(jwk));
+			}
+			catch (err) {
+				return { error: "Proof jwt: Invalid signature" }
+			}
+			return { jwk } as { jwk: JWK };
+		}
+
+
+		const result = await proofJwtVerification();
+
+		if ('error' in result) {
+			const { error } = result;
+			console.log(error);
+			ctx.res.status(400).send({ error });
+			return;
+		}
+
+		const { jwk } = result;
+
+		const credentialResponse = await this.credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, jwk);
+
+		if (credentialResponse) {
+			console.log("Credential Response to send = ", credentialResponse);
+			ctx.res.send(credentialResponse);
+			return;
+		}
+		console.log("Failed to generate credential response")
+		ctx.res.status(400).send({ error: "Failed to generate credential response" });
 	}
 
 }

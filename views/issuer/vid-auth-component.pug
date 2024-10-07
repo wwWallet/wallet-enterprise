@@ -9,7 +9,7 @@ block layout-content
           h1 Scan the QR code to send your Verifiable ID
 
           img(src=authorizationRequestQR width=200 height=200)
-          - const modifiedURL = authorizationRequestURL.replace("openid://cb", wwwalletURL)
+          - const modifiedURL = authorizationRequestURL.replace("openid4vp://cb", wwwalletURL)
           button.Btn.Medium.openwithwalletbutton(type="button" onclick=`window.location.href = '${modifiedURL}';`) Open with wwWallet
           button.Btn.Medium.openwithwalletbuttonnative(type="button" onclick=`window.location.href = '${authorizationRequestURL}';`) Open with a Native Wallet
 

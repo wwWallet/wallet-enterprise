@@ -32,8 +32,8 @@
 	flex-direction: column;
 }
 
-#Index .item {
-	height: 600px;
+#Index .MainArea {
+	height: 700px;
 	/* width: 50%; */
 	text-align: center;
 	flex-grow: 1;
@@ -69,4 +69,10 @@
 	font-size: 150px;
 	color: var(--secondary-color);
 	margin-top: 30px;
+}
+
+
+.image-container {
+  position: relative;
+  display: inline-block;
 }

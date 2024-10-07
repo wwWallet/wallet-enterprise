@@ -8,52 +8,22 @@ export enum GrantType {
 }
 
 
-export type CredentialOffer = {
-	credential_issuer: string,
-	credentials: CredentialOfferCredential[],
-	grants: {
-		"authorization_code"?: {
-			"issuer_state"?: string
-		},
-		"urn:ietf:params:oauth:grant-type:pre-authorized_code"?: {
-			"pre-authorized_code": string,
-      "user_pin_required": boolean
-		}
-	}
-}
-
-
-
-export type CredentialOfferCredential = {
-	format: VerifiableCredentialFormat,
-	types: string[] // VerifiableCredential, UniversityDegreeCredential 
-}
-
-export type CredentialIssuerMetadata = {
-	credential_issuer: string,
-	authorization_server: string,
-	credential_endpoint: string,
-	batch_credential_endpoint?: string,
-	deferred_credential_endpoint?: string
-	credentials_supported: CredentialSupported[],
-	display?: Display[]
-}
-
 export type Display = {
 	name: string,
+	description?: string,
 	locale?: string,
 	logo?: {
 		url?: string,
 		alt_text?: string
 	},
-	description?: string,
 	background_color?: string,
 	text_color?: string
-	background_image_url?: string // added by us
+	background_image?: {
+		uri?: string;
+	};
 }
 
 
-export type CredentialSupported = CredentialSupportedJwtVcJson; // | CredentialSupportedJsonLd ...
 
 export type CredentialSupportedBase = {
 	id: string,
@@ -67,11 +37,6 @@ export type CredentialSupportedBase = {
 // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-objects-comprising-credenti
 // extended by:
 // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-vc-signed-as-a-jwt-not-usin
-export type CredentialSupportedJwtVcJson = CredentialSupportedBase & {
-	types?: string[], // required if jwt vc json
-	credentialSubject?: any,
-	order?: string[]
-}
 
 export type JwtProof = {
 	proof_type?: string;
