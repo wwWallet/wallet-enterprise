@@ -4,5 +4,5 @@ export type CredentialView = {
 	credential_id: string,
 	credential_supported_object: any;
 	view: CategorizedRawCredentialView;
-	deferredFlow: boolean;
+	credential_image: string; // base64
 }

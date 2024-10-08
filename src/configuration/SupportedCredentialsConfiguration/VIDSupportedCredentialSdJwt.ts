@@ -74,7 +74,6 @@ export class VIDSupportedCredentialSdJwt implements SupportedCredentialProtocol 
 					credential_id: this.getId(),
 					credential_supported_object: this.exportCredentialSupportedObject(),
 					view: rowsObject,
-					deferredFlow: false,
 				}
 			})
 		return credentialViews[0];

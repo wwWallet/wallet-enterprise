@@ -40,6 +40,8 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 		);
 	}
 
+	console.log("All credential views = ", allCredentialViews);
+
 	if (req.method == "POST") {
 		try {
 			// at the moment the selected_credential_id_list is useless because only one credential per authorization request is supported

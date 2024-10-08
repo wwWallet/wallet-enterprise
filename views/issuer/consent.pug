@@ -37,7 +37,7 @@ block layout-content
 						for credential, index in credentialViewList
 							.credential-card
 								input(type="hidden" name="selected_credential_id_list[]" id=`${credential.credential_id}_${index}` value=`${credential.credential_id}` disabled)
-								a.credential.toggle-card(id=`${credential.credential_id}_${index}` style=`position:relative; background-image: url(${credential.credential_supported_object.display[0].background_image.uri});`)
+								a.credential.toggle-card(id=`${credential.credential_id}_${index}` style=`position:relative; background-image: url(${credential.credentialImage});`)
 									if grant_type == "authorization_code"
 										i.is-selected.fa.fa-check-circle-o(aria-hidden="true" style="display: none;")
 										i.is-not-selected.fa.fa-circle-o(aria-hidden="true")
