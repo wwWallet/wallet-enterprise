@@ -1,11 +1,8 @@
-type CategorizedRawCredentialViewRow = {
-	name: string;
-	value: string | number;
-};
+
 
 export function generateDataUriFromSvg(
 	svgText: string,
-	rows: CategorizedRawCredentialViewRow[]
+	pathsWithValues: { path: string, value: string }[],
 ): string {
 	// Regular expression to match the placeholders in the SVG
 	const regex = /{{\/([^}]+)}}/g;
@@ -16,7 +13,7 @@ export function generateDataUriFromSvg(
 		const cleanedKey = key.startsWith('/') ? key.slice(1) : key;
 
 		// Find the matching row by name
-		const row = rows.find(r => r.name === cleanedKey);
+		const row = pathsWithValues.find(r => r.path === cleanedKey);
 
 		// Replace placeholder with row value or replace with 'null' if not found
 		return row && row.value ? String(row.value) : '';
