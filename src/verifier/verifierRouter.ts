@@ -17,6 +17,7 @@ import {
 
 import axios from 'axios';
 import base64url from "base64url";
+import { generateDataUriFromSvg } from "../lib/generateDataUriFromSvg";
 
 
 export enum CredentialFormat {
@@ -105,7 +106,14 @@ verifierRouter.get('/success', async (req, res) => {
 			return undefined;
 		}).filter((val) => val)[0];
 
-		if(sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri) {
+		if (sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates[0]?.uri) {
+			const response = await axios.get(sdJwtHeader?.vctm?.display[0][defaultLocale].rendering.svg_templates[0].uri);
+			const svgText = response.data;
+			const pathsWithValues: any[] = []; 
+			const dataUri = generateDataUriFromSvg(svgText, pathsWithValues); // replaces all with empty string
+			credentialImages.push(dataUri);
+		}
+		else if(sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri) {
 			credentialImages.push(sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri);
 		}
 		else if (fistImageUri) {
