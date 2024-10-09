@@ -8,21 +8,6 @@ export enum GrantType {
 }
 
 
-export type Display = {
-	name: string,
-	description?: string,
-	locale?: string,
-	logo?: {
-		url?: string,
-		alt_text?: string
-	},
-	background_color?: string,
-	text_color?: string
-	background_image?: {
-		uri?: string;
-	};
-}
-
 
 
 export type CredentialSupportedBase = {
@@ -30,7 +15,6 @@ export type CredentialSupportedBase = {
 	format: VerifiableCredentialFormat,
 	cryptographic_binding_methods_supported?: string[],
 	cryptographic_suites_supported?: string[],
-	display?: Display[]
 } 
 
 // additional attributes for credentials_supported object for the 'jwt_vc_json' format specifically

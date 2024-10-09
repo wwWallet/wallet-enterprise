@@ -16,6 +16,8 @@ import {
 } from '@sd-jwt/core'
 
 import axios from 'axios';
+import base64url from "base64url";
+import { generateDataUriFromSvg } from "../lib/generateDataUriFromSvg";
 
 
 export enum CredentialFormat {
@@ -24,6 +26,8 @@ export enum CredentialFormat {
 }
 
 // const encoder = new TextEncoder();
+
+const defaultLocale = 'en-US';
 
 // Encoding the string into a Uint8Array
 const hasherAndAlgorithm: HasherAndAlgorithm = {
@@ -86,6 +90,7 @@ verifierRouter.get('/success', async (req, res) => {
 		const parsedCredential = await SdJwt.fromCompact<Record<string, unknown>, any>(raw_presentation)
 			.withHasher(hasherAndAlgorithm)
 			.getPrettyClaims();
+		const sdJwtHeader = JSON.parse(base64url.decode(raw_presentation.split('.')[0])) as any;
 		credentialPayloads.push(parsedCredential);
 		console.log("Parsed credential = ", parsedCredential)
 		const credentialIssuerMetadata = await axios.get(parsedCredential.iss + "/.well-known/openid-credential-issuer").catch(() => null);
@@ -100,7 +105,18 @@ verifierRouter.get('/success', async (req, res) => {
 			}
 			return undefined;
 		}).filter((val) => val)[0];
-		if (fistImageUri) {
+
+		if (sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates[0]?.uri) {
+			const response = await axios.get(sdJwtHeader?.vctm?.display[0][defaultLocale].rendering.svg_templates[0].uri);
+			const svgText = response.data;
+			const pathsWithValues: any[] = []; 
+			const dataUri = generateDataUriFromSvg(svgText, pathsWithValues); // replaces all with empty string
+			credentialImages.push(dataUri);
+		}
+		else if(sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri) {
+			credentialImages.push(sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri);
+		}
+		else if (fistImageUri) {
 			credentialImages.push(fistImageUri);
 		}
 		else {
