@@ -21,9 +21,7 @@ export class ExpressAppService {
 	public configure(app: Application) {
 		app.get('/verification/request-object', async (req, res) => { this.presentationsReceivingService.getSignedRequestObject({req, res} )});
 
-		app.post('/verification/direct_post', async (req, res) => { this.presentationsReceivingService.responseHandler({req, res}) });
-		app.get('/verification/definition', async (req, res) => { this.presentationsReceivingService.getPresentationDefinitionHandler({req, res}); });
-		
+		app.post('/verification/direct_post', async (req, res) => { this.presentationsReceivingService.responseHandler({req, res}) });		
 
 		app.get('/openid4vci/authorize', async (req, res) => {
 			this.authorizationServerService.authorizationRequestHandler({req, res});

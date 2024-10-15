@@ -18,6 +18,8 @@ import {
 import axios from 'axios';
 import base64url from "base64url";
 import { generateDataUriFromSvg } from "../lib/generateDataUriFromSvg";
+import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
+import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 
 
 export enum CredentialFormat {
@@ -57,22 +59,31 @@ verifierRouter.get('/public/definitions', async (req, res) => {
 })
 
 
-verifierRouter.get('/success/status', async (req, res) => { // response with the status of the presentation (this endpoint should be protected)
-	const state = req.query.state;
-	const result = await openidForPresentationReceivingService.getPresentationByState(state as string);
+verifierRouter.get('/callback/status', async (req, res) => { // response with the status of the presentation (this endpoint should be protected)
+	const result = await openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
 	if (!result.status) {
 		return res.send({ status: false, error: "Presentation not received" });
 	}
-	return res.send({ status: result.status, presentationClaims: result.vp.claims, presentation: result.vp.raw_presentation });
+	return res.send({ status: result.status, presentationClaims: result.rpState.claims, presentation: result.rpState.vp_token });
 })
 
-verifierRouter.get('/success', async (req, res) => {
-	const state = req.query.state;
-	const result = await openidForPresentationReceivingService.getPresentationByState(state as string);
+
+verifierRouter.get('/callback', async (req, res) => {
+	res.render('verifier/handle-response-code', {
+		lang: req.lang,
+		locale: locale[req.lang],
+	})
+})
+
+verifierRouter.post('/callback', async (req, res) => {
+	// this request includes the response code
+	const result = await openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
+	 
+	console.log("Callback Result = ", result)
 	if (result.status == false || 
-			result.vp.raw_presentation == null ||
-			result.vp.claims == null ||
-			result.vp.date == null) {
+			result.rpState.vp_token == null ||
+			result.rpState.claims == null ||
+			result.rpState.date_created == null) {
 		return res.render('error.pug', {
 			msg: "Failed to get presentation",
 			code: 0,
@@ -81,21 +92,22 @@ verifierRouter.get('/success', async (req, res) => {
 		})
 	}
 	
-	const { status, raw_presentation, claims, date } = result.vp;
-	
+	const { vp_token, claims, date_created } = result.rpState;
+	const status = result.status;
+
 	const credentialImages = [];
 
 	const credentialPayloads = []
-	if (raw_presentation.includes('~')) {
-		const parsedCredential = await SdJwt.fromCompact<Record<string, unknown>, any>(raw_presentation)
+	if (vp_token.includes('~')) {
+		const parsedCredential = await SdJwt.fromCompact<Record<string, unknown>, any>(vp_token)
 			.withHasher(hasherAndAlgorithm)
 			.getPrettyClaims();
-		const sdJwtHeader = JSON.parse(base64url.decode(raw_presentation.split('.')[0])) as any;
+		const sdJwtHeader = JSON.parse(base64url.decode(vp_token.split('.')[0])) as any;
 		credentialPayloads.push(parsedCredential);
 		console.log("Parsed credential = ", parsedCredential)
 		const credentialIssuerMetadata = await axios.get(parsedCredential.iss + "/.well-known/openid-credential-issuer").catch(() => null);
 		if (!credentialIssuerMetadata) {
-			console.error("Couldnt get image for the credential " + raw_presentation);
+			console.error("Couldnt get image for the credential " + vp_token);
 			return res.status(400).send({ error: "Insufficient metadata" })
 		}
 		console.log("Credential issuer metadata = ", credentialIssuerMetadata.data)
@@ -133,7 +145,7 @@ verifierRouter.get('/success', async (req, res) => {
 		lang: req.lang,
 		locale: locale[req.lang],
 		status: status,
-		verificationTimestamp: date.toISOString(),
+		verificationTimestamp: date_created.toISOString(),
 		presentationClaims: claims,
 		credentialPayloads: credentialPayloads,
 		credentialImages: credentialImages,
@@ -177,18 +189,24 @@ verifierRouter.use('/public/definitions/selectable-presentation-request/:present
 })
 
 
-verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
-	const presentation_definition_id = req.params.presentation_definition_id;
+
+verifierRouter.get('/public/definitions/presentation-request/status/:presentation_definition_id', async (req, res) => {
 	console.log("FIELDS = ", req.body.fields)
-	if (req.body.state && req.method == "POST") {
-		const { status } = await openidForPresentationReceivingService.getPresentationByState(req.body.state as string);
-		if (status) {
-			return res.send({ url: `/verifier/success?state=${req.body.state}` });
+	if (req.cookies['session_id'] && req.method == "POST") {
+		const { status } = await openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
+		if (status == true) {
+			return res.send({ url: `/verifier/callback` });
 		}
 		else {
 			return res.send({ });
 		}
 	}
+})
+
+verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
+
+	const presentation_definition_id = req.params.presentation_definition_id;
+
 
 	if (!presentation_definition_id) {
 		return res.render('error', {
@@ -198,6 +216,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			locale: locale[req.lang]
 		});
 	}
+
 
 	const presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as any;
 	if (!presentationDefinition) {
@@ -228,7 +247,10 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		presentationDefinition.input_descriptors[0].constraints.fields = filteredFields;
 	}
 
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition, config.url + "/verifier/success");	
+	const newSessionId = generateRandomIdentifier(12);
+	addSessionIdCookieToResponse(res, newSessionId); // start session here
+	console.log("call")
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition, newSessionId, config.url + "/verifier/callback");	
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(url.toString(), {
 			margin: 1,
@@ -250,6 +272,8 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		lang: req.lang,
 		locale: locale[req.lang],
 	})
+	
+
 })
 
 

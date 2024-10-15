@@ -13,6 +13,8 @@ import base64url from "base64url";
 import { config } from "../../config";
 import { importJWK, JWK, jwtVerify } from "jose";
 import { TYPES } from "./types";
+import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
+import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 
 @injectable()
 export class OpenidForCredentialIssuingAuthorizationServerService implements OpenidForCredentialIssuingAuthorizationServerInterface {
@@ -155,6 +157,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 
 		if (ctx.req.method == 'GET' && ctx.req.query.request_uri) {
+			const session_id = generateRandomIdentifier(12);
+			console.log("Session in on AUTHZ req = ", session_id);
+			addSessionIdCookieToResponse(ctx.res, session_id);
 			const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
 				.where("state.request_uri = :request_uri", { request_uri: ctx.req.query.request_uri })
 				.getOne();
@@ -171,6 +176,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				return;
 			}
 			ctx.req.authorizationServerState = state;
+			ctx.req.authorizationServerState.session_id = session_id;
 			await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState);
 			ctx.res.redirect(CONSENT_ENTRYPOINT);
 			return;
