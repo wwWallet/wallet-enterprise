@@ -24,22 +24,23 @@ block layout-content
 						.login-flex
 							button.Btn.Large
 								| #{locale.login.btnText}
+						
+						if defaultUsers
+							.or-container
+								.line
+								span OR
+								.line
 
-						.or-container
-							.line
-							span OR
-							.line
-
-						// Dropdown list of credentials
-						.login-flex
-							.login-select-flex
-								.select-container(style="flex-grow: 1;")
-									select#credential-list(style="width: 100%")
-										option(value="") Select credentials
-										option(value='{"username": "john", "password": "secret"}') John Doe
-										option(value='{"username": "emily", "password": "secret"}') Emily Jones
-								button.Btn.Small#use-credential(disabled style="flex-shrink: 0;")
-									span Login
+							// Dropdown list of credentials
+							.login-flex
+								.login-select-flex
+									.select-container(style="flex-grow: 1;")
+										select#credential-list(style="width: 100%")
+											option(value="") Select credentials
+											for user of defaultUsers
+												option(value=`{"username": "${user.username}", "password": "${user.password}"}`) #{user.username}
+									button.Btn.Small#use-credential(disabled style="flex-shrink: 0;")
+										span Login
 
 	link(rel="stylesheet" href="/styles/login.css")
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>

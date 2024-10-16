@@ -9,6 +9,9 @@ export class AuthorizationServerState {
 	@PrimaryGeneratedColumn()
 	id: number = 0;
 
+	@Column({ name: "session_id", type: "varchar", nullable: true })
+	session_id?: string;
+
 	@Column({ name: "client_id", type: "varchar", nullable: true })
 	client_id?: string;
 

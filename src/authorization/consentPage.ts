@@ -40,7 +40,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 		);
 	}
 
-	console.log("All credential views = ", allCredentialViews);
+	console.log("Number of credential views = ", allCredentialViews.length);
 
 	if (req.method == "POST") {
 		try {

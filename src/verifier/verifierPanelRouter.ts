@@ -2,18 +2,18 @@ import { Router } from "express";
 import { verifierPanelAuthChain } from "../configuration/authentication/authenticationChain";
 import { Repository } from "typeorm";
 import AppDataSource from "../AppDataSource";
-import { VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
 import { appContainer } from "../services/inversify.config";
 import { TYPES } from "../services/types";
 import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "../services/interfaces";
 import base64url from "base64url";
 import locale from "../configuration/locale";
+import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 
 const openidForPresentationReceivingService = appContainer.get<OpenidForPresentationsReceivingInterface>(TYPES.OpenidForPresentationsReceivingService);
 
 
 const verifierPanelRouter = Router();
-const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
+const rpStateRepository: Repository<RelyingPartyState> = AppDataSource.getRepository(RelyingPartyState);
 const verifierConfiguration = appContainer.get<VerifierConfigurationInterface>(TYPES.VerifierConfigurationServiceInterface);
 
 
@@ -33,20 +33,20 @@ verifierPanelRouter.get('/', async (req, res) => {
 	})
 })
 
-type VerifiablePresentationWithDetails = VerifiablePresentationEntity & { holderInfo?: string, claims?: any };
+type VerifiablePresentationWithDetails = RelyingPartyState & { holderInfo?: string, claims?: any };
 
 verifierPanelRouter.get('/filter/by/definition/:definition_id', async (req, res) => {
 	const definition_id = req.params.definition_id;
 	if (!definition_id) {
 		return res.status(500).send({ error: "No definition id was specified" });
 	}
-	let verifiablePresentations = await verifiablePresentationRepository.createQueryBuilder('vp')
-		.where("vp.presentation_definition_id = :definition_id", { definition_id: definition_id })
+	let verifiablePresentations = await rpStateRepository.createQueryBuilder()
+		.where("presentation_definition_id = :definition_id", { definition_id: definition_id })
 		.getMany();
 
 	const presentationsWithDetails: VerifiablePresentationWithDetails[] = verifiablePresentations.map(vp => {
 		try {
-			const decoded = vp.raw_presentation ? JSON.parse(base64url.decode(vp.raw_presentation.split('.')[1])) : null as any;
+			const decoded = vp.vp_token ? JSON.parse(base64url.decode(vp.vp_token.split('.')[1])) : null as any;
 			const holderInfo = decoded?.vp?.holder || "No Holder Info";
 			const claims = vp.claims;
 			return { ...vp, holderInfo, claims } as VerifiablePresentationWithDetails;

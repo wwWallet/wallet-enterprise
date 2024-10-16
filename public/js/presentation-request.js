@@ -1,5 +1,6 @@
 const form = document.getElementById("PresentationRequestForm");
 
+
 const path = window.location.pathname;
 
 const pathSegments = path.split('/');
@@ -17,14 +18,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 setInterval(() => {
 	
-	const state = form.elements['state'].value;
-
-	fetch('/verifier/public/definitions/presentation-request/' + presentationDefinitionId, {
-			method: 'POST',
-			body: JSON.stringify({ state }),
-			headers: {
-				'Content-Type': 'application/json'
-			}
+	fetch('/verifier/public/definitions/presentation-request/status/' + presentationDefinitionId, {
+			method: 'GET',
 		}).then((response) => {
 			if (!response.ok) {
 				throw new Error(`HTTP error with status ${response.status}`);
@@ -41,3 +36,5 @@ setInterval(() => {
 			console.error(err);
 		});
 }, 3000);
+
+
