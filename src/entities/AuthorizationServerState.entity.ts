@@ -102,8 +102,15 @@ export class AuthorizationServerState {
 	@Column({ name: "c_nonce", type: "varchar", nullable: true })
 	c_nonce?: string;
 
-	@Column({ name: "c_nonce_expiration_timestamp", type: "int", nullable: true })
+	@Column({ name: "c_nonce_expiration_timestamp", type: "int", nullable: true})
 	c_nonce_expiration_timestamp?: number;
+
+	@Column({ name: "refresh_token", type: "varchar", nullable: true, default: () => "NULL" })
+	refresh_token?: string;
+
+	@Column({ name: "refresh_token_expiration_timestamp", type: "int", nullable: true, default: () => "NULL" })
+	refresh_token_expiration_timestamp?: number;
+
 
 	// @Column({ name: "credential_identifiers", type: "varchar", nullable: true })
 	// private _credential_identifiers?: string;
