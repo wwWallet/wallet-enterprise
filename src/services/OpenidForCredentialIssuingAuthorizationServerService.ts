@@ -16,6 +16,18 @@ import { TYPES } from "./types";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 
+
+// @ts-ignore
+const access_token_expires_in = config.issuanceFlow.access_token_expires_in ? config.issuanceFlow.access_token_expires_in : 60; // 1 minute
+
+// @ts-ignore
+const c_nonce_expires_in = config.issuanceFlow.c_nonce_expires_in ? config.issuanceFlow.c_nonce_expires_in : 60; // 1 minute
+
+// @ts-ignore
+const refresh_token_expires_in = config.issuanceFlow.refresh_token_expires_in ? config.issuanceFlow.refresh_token_expires_in : 24*60*60; // 1 day
+
+
+
 @injectable()
 export class OpenidForCredentialIssuingAuthorizationServerService implements OpenidForCredentialIssuingAuthorizationServerInterface {
 
@@ -260,10 +272,13 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 		switch (ctx.req.body.grant_type) {
 			case GrantType.AUTHORIZATION_CODE:
+				console.info("===Grant type: Authorization code");
 				break;
 			case GrantType.PRE_AUTHORIZED_CODE:
+				console.info("===Grant type: Pre-authorized code");
 				break;
 			case GrantType.REFRESH_TOKEN:
+				console.info("===Grant type: Refresh token");
 				break;
 			default:
 				ctx.res.status(400).send({ error: `grant_type '${ctx.req.body.grant_type}' is not supported` })
@@ -464,24 +479,26 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	private async generateTokenResponse(ctx: { req: Request, res: Response }) {
 		ctx.req.authorizationServerState.access_token = crypto.randomBytes(16).toString('hex');
 		ctx.req.authorizationServerState.token_type = "DPoP";
-		ctx.req.authorizationServerState.access_token_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
+		ctx.req.authorizationServerState.access_token_expiration_timestamp = Math.floor(Date.now() / 1000) + access_token_expires_in;
 
 		ctx.req.authorizationServerState.c_nonce = crypto.randomBytes(16).toString('hex');
-		ctx.req.authorizationServerState.c_nonce_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
+		ctx.req.authorizationServerState.c_nonce_expiration_timestamp = Math.floor(Date.now() / 1000) + c_nonce_expires_in;
 
-		ctx.req.authorizationServerState.refresh_token = crypto.randomBytes(16).toString('hex');
-
-		// @ts-ignore
-		const refreshTokenMaxAgeInSeconds = config.issuanceFlow.refreshTokenMaxAgeInSeconds ? config.issuanceFlow.refreshTokenMaxAgeInSeconds : 60;
-
-		ctx.req.authorizationServerState.refresh_token_expiration_timestamp = Math.floor(Date.now() / 1000) + refreshTokenMaxAgeInSeconds;
+		/**
+		 * No rotation in refresh token. A new refresh token will not be issued every time in case of refresh_token grant type
+		 */
+		if (!ctx.req.authorizationServerState.refresh_token) {
+			ctx.req.authorizationServerState.refresh_token = crypto.randomBytes(16).toString('hex');
+			ctx.req.authorizationServerState.refresh_token_expiration_timestamp = Math.floor(Date.now() / 1000) + refresh_token_expires_in;
+		}
 
 		return {
 			token_type: ctx.req.authorizationServerState.token_type,
 			access_token: ctx.req.authorizationServerState.access_token,
-			expires_in: 60,
+			expires_in: access_token_expires_in,
 			c_nonce: ctx.req.authorizationServerState.c_nonce,
-			c_nonce_expires_in: 60,
+			c_nonce_expires_in: c_nonce_expires_in,
+			refresh_token: ctx.req.authorizationServerState.refresh_token,
 		}
 	}
 
@@ -516,11 +533,11 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 	async tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
 		await this.tokenRequestGrantTypeHandler(ctx);
-		await this.tokenRequestAuthorizationCodeHandler(ctx);
-		await this.tokenRequestCodeVerifierHandler(ctx);
-		await this.tokenRequestPreAuthorizedCodeHandler(ctx);
+		await this.tokenRequestAuthorizationCodeHandler(ctx);  // updates ctx.req.authorizationServerState based on received code in case of authorization_code grant type
+		await this.tokenRequestRefreshTokenGrantHandler(ctx); // updates ctx.req.authorizationServerState based on received refresh_token in case of refresh_token grant type
 		await this.tokenRequestHandleDpopHeader(ctx);
-		await this.tokenRequestRefreshTokenGrantHandler(ctx);
+		await this.tokenRequestCodeVerifierHandler(ctx);
+		// await this.tokenRequestPreAuthorizedCodeHandler(ctx);
 		// await this.tokenRequestUserPinHandler(ctx); keep this commented to not require userpin
 
 		if (ctx.res.headersSent) {
@@ -594,6 +611,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				await jwtVerify(dpopJwt, await importJWK(JSON.parse(state.dpop_jwk as string) as JWK, 'ES256'));
 			}
 			catch (err) {
+				console.log(err)
 				console.log("CredentialRequest: Invalid access token");
 				ctx.res.status(400).send({ error: "Invalid access token" });
 				return;
