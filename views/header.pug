@@ -2,16 +2,35 @@
 	.header
 		.ribbon
 			a.ribbonText DEMO
-		.header-content#vid-issuer
+		.header-content
 			a.logo-area(href="/")
-				//- img.img-logo(src="/ediplomasLogo.svg" alt="eDiplomas Logo")
-				span(class="logo-text") National Verifiable ID Issuer
-				//- span.logo-text #{locale.header.title}
-			//- img#img-gunet(src="/gunetLogoTransparent.png" alt='gunet logo')
-				//- span.logo-split
-				//- img.img-uni(src="/uniLogo.png" alt="eDiplomas Logo")
-		//- p.header-subtitle #{locale.header.subtitle}
+				if locale.header.title
+					span.logo-text #{locale.header.title}
+				else
+					img.img-logo(src="/images/logo.png" alt="Verifier Logo")
+			.menu-area
+				.mobile-menu-toggle
+					button#menu-toggle-button
+						span.menu-icon ☰
+				ul.menu
+					li.menu-item
+						a(href="#") Home
+					li.menu-item
+						a(href="#") About
+					li.menu-item
+						a(href="#") Services
+					li.menu-item
+						a(href="#") Contact
 		.header-border
 
+	script.
+		document.addEventListener('DOMContentLoaded', function () {
+			const menuToggle = document.getElementById('menu-toggle-button');
+			const menu = document.querySelector('.menu');
+
+			menuToggle.addEventListener('click', function () {
+				menu.classList.toggle('show-menu');
+			});
+		});
 	link(rel="stylesheet" href="/styles/header.css")
 	script(src="/js/header.js")

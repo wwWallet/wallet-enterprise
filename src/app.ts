@@ -7,7 +7,7 @@ import cors from 'cors';
 import { LanguageMiddleware } from './middlewares/language.middleware';
 import { authorizationRouter } from './authorization/router';
 import AppDataSource, { initDataSource } from './AppDataSource';
-import createHttpError, { HttpError} from 'http-errors';
+import createHttpError, { HttpError } from 'http-errors';
 import { appContainer } from './services/inversify.config';
 import { authorizationServerMetadataConfiguration } from './authorizationServiceConfiguration';
 import { ExpressAppService } from './services/ExpressAppService';
@@ -39,7 +39,7 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.static(path.join(__dirname, '../../public')));
 
 app.use(cookieParser());
-app.use(session({ secret: config.appSecret, cookie: { expires: null, maxAge: 3600*1000 }}))
+app.use(session({ secret: config.appSecret, cookie: { expires: null, maxAge: 3600 * 1000 } }))
 
 
 app.use(bodyParser.urlencoded({ extended: true })); // support url encoded bodies
@@ -84,14 +84,23 @@ app.get('/', async (req: Request, res: Response) => {
 			margin: 1,
 			errorCorrectionLevel: 'L',
 			type: 'image/png'
-		}, 
-		(err, data) => {
-			if (err) return resolve("NO_QR");
-			return resolve(data);
-		});
+		},
+			(err, data) => {
+				if (err) return resolve("NO_QR");
+				return resolve(data);
+			});
 	}) as string;
-	return res.render('index', {
-    title: titles.index,
+
+	// Determine which index to render based on config.appType
+	let viewToRender = 'index'; // Default to 'index'
+	if (config.appType === 'VERIFIER') {
+		viewToRender = 'indexVerifier';
+	} else if (config.appType !== 'ISSUER') {
+		viewToRender = 'index';
+	}
+
+	return res.render(viewToRender, {
+		title: titles.index,
 		credentialOfferURL: result.url,
 		credentialOfferQR,
 		lang: req.lang,
@@ -101,7 +110,7 @@ app.get('/', async (req: Request, res: Response) => {
 
 
 app.post('/', async (req, res) => {
-	await createNewAuthorizationServerState({req, res});
+	await createNewAuthorizationServerState({ req, res });
 	req.authorizationServerState.grant_type = GrantType.AUTHORIZATION_CODE;
 	await AppDataSource.getRepository(AuthorizationServerState)
 		.save(req.authorizationServerState);
@@ -117,7 +126,7 @@ app.post('/', async (req, res) => {
 
 
 app.get('/.well-known/openid-configuration', async (_req: Request, res: Response) => {
-	res.send(authorizationServerMetadataConfiguration); 
+	res.send(authorizationServerMetadataConfiguration);
 })
 
 
@@ -146,7 +155,7 @@ app.get('/.well-known/openid-configuration', async (_req: Request, res: Response
 // 		const supportedCredentialObject = supportedCredential.exportCredentialSupportedObject()
 // 		req.authorizationServerState.credential_configuration_ids = [ supportedCredential.getId() ];
 // 		console.log("Supported credential = ", supportedCredentialObject);
-		
+
 // 		req.authorizationServerState.ssn = ssn;
 // 		req.authorizationServerState.taxis_id = taxis_id;
 // 		req.authorizationServerState.personalIdentifier = personalIdentifier;
@@ -166,7 +175,7 @@ app.get('/.well-known/openid-configuration', async (_req: Request, res: Response
 
 app.post('/demo/presentation-request', async (req: Request, res: Response) => {
 	const { presentation_definition_id, callback_url } = req.body;
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentation_definition_id, callback_url);	
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentation_definition_id, callback_url);
 	res.send({ url });
 });
 
@@ -174,17 +183,17 @@ app.post('/demo/presentation-request', async (req: Request, res: Response) => {
 // catch 404 and forward to error handler
 app.use((req, _res, next) => {
 	console.error("URL path not found: ", req.url)
-  next(createHttpError(404));
+	next(createHttpError(404));
 });
 
 // error handler
 app.use((err: HttpError, req: Request, res: Response) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error', {
+	// set locals, only providing error in development
+	res.locals.message = err.message;
+	res.locals.error = req.app.get('env') === 'development' ? err : {};
+	// render the error page
+	res.status(err.status || 500);
+	res.render('error', {
 		lang: req.lang,
 		locale: locale[req.lang]
 	});

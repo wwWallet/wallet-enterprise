@@ -17,6 +17,7 @@
 }
 
 #Login .item {
+	background-color: white;
   flex: 0 0 auto;
   margin: 10px;
 }

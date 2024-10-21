@@ -20,6 +20,7 @@ export const config = {
 		skipConsent: false,
 		defaultCredentialConfigurationIds: [],
 	},
+	appType: 'ISSUER', //ISSUER,VERIFIER
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
 }
