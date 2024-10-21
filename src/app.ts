@@ -93,10 +93,12 @@ app.get('/', async (req: Request, res: Response) => {
 
 	// Determine which index to render based on config.appType
 	let viewToRender = 'index'; // Default to 'index'
-	if (config.appType === 'VERIFIER') {
-		viewToRender = 'indexVerifier';
-	} else if (config.appType !== 'ISSUER') {
-		viewToRender = 'index';
+	if (config.appType) {
+		if (config.appType === 'VERIFIER') {
+			viewToRender = 'indexVerifier';
+		} else if (config.appType === 'ISSUER') {
+			viewToRender = 'index';
+		}
 	}
 
 	return res.render(viewToRender, {
