@@ -1,0 +1,43 @@
+
+/* CSS for the spinner */
+#spinner-container {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 9999;
+	/* Ensure the spinner is on top of other content */
+}
+
+.spinner {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 80px;
+	height: 80px;
+	border: 10px solid #333;
+	/* Border color of the spinner */
+	border-top: 10px solid var(--primary-color);
+	/* Border color of the spinner top */
+	border-radius: 50%;
+	animation: spin 4s linear infinite;
+	/* Spin animation for 2 seconds */
+}
+
+.spinner-circle {
+	width: 100%;
+	height: 100%;
+}
+
+/* Keyframes for the spin animation */
+@keyframes spin {
+	0% {
+		transform: translate(-50%, -50%) rotate(0deg);
+	}
+
+	100% {
+		transform: translate(-50%, -50%) rotate(360deg);
+	}
+}
