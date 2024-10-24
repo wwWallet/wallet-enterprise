@@ -4,26 +4,16 @@
 	--header-font: 'Open Sans', sans-serif;
 	--main-font: 'Roboto Slab', sans-serif;
 	--main-fonts: Helvetica, sans-serif;
-	--primary-color: #1B263B;
-	--secondary-color: #778DA9;
-	--secondary-light-color: #E0E1DD;
-	--light-gray: #f5f5f5;
-	--dark-gray: #333333;
-	--error-red: rgb(209, 3, 3);
-	--link-light-blue: rgb(0, 162, 255);
-	--btn-yellow: #F9CA1A;
-	--btn-yellow-hov: #caa418;
 }
 
-html {
-  font-family: var(--main-font);
-}
-
-body {
-  margin: auto;
+html, body {
+	font-family: var(--main-font);
+  max-width: 100%;
+  overflow-x: hidden;
+	margin: auto;
 	color: #373a3c;
+	background-color: var(--layout-bg-color);
 }
-
 
 h1, h2, h3, h4, h5 {
 	opacity: 0.6;
@@ -36,20 +26,15 @@ h1, h2, h3, h4, h5 {
 	}
 }
 
-
-
-
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
+a {
+	text-decoration: none;
+	transition: 0.2s;
 }
-
 
 p {
 	font-size: 18px;
 	margin: 0px 0px 16px;
 }
-
 
 .main-container {
 	min-height: 70vh;
@@ -58,16 +43,8 @@ p {
 	margin: 0 auto;
 	margin-top: 60px;
 	margin-bottom: 100px;
-	/* padding: 40px 60px; */
 }
 
-/* @media only screen and (max-width: 600px) {
-	.main-container {
-		margin: 10px;
-		margin-top: 60px;
-		margin-bottom: 100px;
-	}
-} */
 .Btn {
 	display: block;
 	cursor: pointer;
@@ -87,7 +64,6 @@ p {
 .Btn.Large {
 	padding: 14px 50px;
 	min-width: auto;
-	/* max-width: 220px; */
 	font-size: 18px;
 	font-weight: 700;
 	border-radius: 3px;
@@ -159,21 +135,11 @@ p {
 	background: var(--btn-yellow-hov);
 }
 
-
 .Errors {
 	color: rgb(209, 3, 3);
 	opacity: 0.8;
-	/* transition-delay: 2.7s; */
 	transition: 1s;
-	    /* -moz-animation: cssAnimation 0s ease-in 5s forwards;
-    -webkit-animation: cssAnimation 0s ease-in 5s forwards;
-    -o-animation: cssAnimation 0s ease-in 5s forwards;
-    animation: cssAnimation 0s ease-in 5s forwards;
-    -webkit-animation-fill-mode: forwards;
-    animation-fill-mode: forwards ; */
 }
-
-
 
 .Errors.Hidden {
 	display: none;
@@ -249,7 +215,7 @@ section.layout {
 
 .card {
   flex: 0 1 calc(33.33% - 20px);
-  margin: 10px;
+  margin: 1% 0;
   border: 1px solid #ccc;
   border-radius: 5px;
   padding: 10px;
@@ -268,13 +234,14 @@ section.layout {
 }
 
 .card-buttons {
+	
   display: flex;
   justify-content: space-between;
   margin-top: 10px;
 }
 
 .btn {
-  padding: 5px 10px;
+  padding: 10px 40px;
   border-radius: 5px;
   cursor: pointer;
 }
@@ -299,7 +266,7 @@ section.layout {
 
 
 .container {
-	margin: 60px 30px;
+	margin: 2% 5%;
 }
 
 /* public presentation */

@@ -14,10 +14,11 @@ block layout-content
 
 			hr
 			p #{locale.personalInfo.acknowledgement}
-			
+
 			.action-group
 				button.Btn.Medium.gray #{locale.personalInfo.back}
 				button.Btn.Medium.Landing(id="mainBtn" name="proceed" type="submit") #{locale.personalInfo.proceed}
 	block footer
 	include ../footer.pug
+	link(rel="stylesheet" href="/styles/personal-info.css")
 	link(rel="stylesheet" href="/styles/styles.css")
