@@ -4,7 +4,8 @@ import { JWK } from 'jose';
 
 export enum GrantType {
 	AUTHORIZATION_CODE = "authorization_code",
-	PRE_AUTHORIZED_CODE = "urn:ietf:params:oauth:grant-type:pre-authorized_code"
+	PRE_AUTHORIZED_CODE = "urn:ietf:params:oauth:grant-type:pre-authorized_code",
+	REFRESH_TOKEN = "refresh_token",
 }
 
 

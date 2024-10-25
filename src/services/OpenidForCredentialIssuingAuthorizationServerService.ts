@@ -16,6 +16,18 @@ import { TYPES } from "./types";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 
+
+// @ts-ignore
+const access_token_expires_in = config.issuanceFlow.access_token_expires_in ? config.issuanceFlow.access_token_expires_in : 60; // 1 minute
+
+// @ts-ignore
+const c_nonce_expires_in = config.issuanceFlow.c_nonce_expires_in ? config.issuanceFlow.c_nonce_expires_in : 60; // 1 minute
+
+// @ts-ignore
+const refresh_token_expires_in = config.issuanceFlow.refresh_token_expires_in ? config.issuanceFlow.refresh_token_expires_in : 24*60*60; // 1 day
+
+
+
 @injectable()
 export class OpenidForCredentialIssuingAuthorizationServerService implements OpenidForCredentialIssuingAuthorizationServerInterface {
 
@@ -24,7 +36,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	constructor(
 		@inject(TYPES.CredentialConfigurationRegistryService) private credentialConfigurationRegistryService: CredentialConfigurationRegistry,
 
-	) {	}
+	) { }
 
 	metadataRequestHandler(): Promise<void> {
 		throw new Error("Method not implemented.");
@@ -152,6 +164,17 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		ctx.req.authorizationServerState.scope = ctx.req.body.scope;
 	}
 
+	private async authorizationRequestStateHandler(ctx: { req: Request, res: Response }) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+
+		ctx.req.authorizationServerState.state = ctx.req.body.state;
+	}
+
 	async authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
 		ctx.req.session.authenticationChain = {}; // clear the session
 
@@ -187,7 +210,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		await this.authorizationRequestPKCEHandler(ctx);
 		await this.authorizationRequestGrantTypeHandler(ctx);
 		await this.authorizationRequestResponseTypeHandler(ctx);
-
+		await this.authorizationRequestStateHandler(ctx);
 		await this.authorizationRequestScopeHandler(ctx);
 
 		ctx.req.authorizationServerState.request_uri = `urn:ietf:params:oauth:request_uri:${base64url.encode(randomUUID())}`;
@@ -249,8 +272,13 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 		switch (ctx.req.body.grant_type) {
 			case GrantType.AUTHORIZATION_CODE:
+				console.info("===Grant type: Authorization code");
 				break;
 			case GrantType.PRE_AUTHORIZED_CODE:
+				console.info("===Grant type: Pre-authorized code");
+				break;
+			case GrantType.REFRESH_TOKEN:
+				console.info("===Grant type: Refresh token");
 				break;
 			default:
 				ctx.res.status(400).send({ error: `grant_type '${ctx.req.body.grant_type}' is not supported` })
@@ -357,7 +385,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return;
 		}
 
-		
 		async function generateChallenge(code_verifier: string) {
 			const buffer = await crypto.webcrypto.subtle.digest(
 				"SHA-256",
@@ -393,7 +420,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return;
 		}
 
-		if (ctx.req.body.grant_type != GrantType.AUTHORIZATION_CODE) {
+		if (ctx.req.body.grant_type != GrantType.AUTHORIZATION_CODE && ctx.req.body.grant_type != GrantType.REFRESH_TOKEN) {
 			return; // this is not a job for this handler, let the other ones to decide on the request
 		}
 
@@ -418,6 +445,15 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return;
 		}
 
+		try {
+			await jwtVerify(dpopJwt, await importJWK(jwk as JWK, 'ES256'));
+		}
+		catch(err) {
+			console.error(err);
+			console.log("DPoP error: invalid signature");
+			ctx.res.status(400).send({ error: "DPoP error: invalid signature" });
+			return;
+		}
 
 		ctx.req.authorizationServerState.dpop_jwk = JSON.stringify(jwk);
 
@@ -443,27 +479,65 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	private async generateTokenResponse(ctx: { req: Request, res: Response }) {
 		ctx.req.authorizationServerState.access_token = crypto.randomBytes(16).toString('hex');
 		ctx.req.authorizationServerState.token_type = "DPoP";
-		ctx.req.authorizationServerState.access_token_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
+		ctx.req.authorizationServerState.access_token_expiration_timestamp = Math.floor(Date.now() / 1000) + access_token_expires_in;
 
 		ctx.req.authorizationServerState.c_nonce = crypto.randomBytes(16).toString('hex');
-		ctx.req.authorizationServerState.c_nonce_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
+		ctx.req.authorizationServerState.c_nonce_expiration_timestamp = Math.floor(Date.now() / 1000) + c_nonce_expires_in;
 
+		/**
+		 * No rotation in refresh token. A new refresh token will not be issued every time in case of refresh_token grant type
+		 */
+		if (!ctx.req.authorizationServerState.refresh_token) {
+			ctx.req.authorizationServerState.refresh_token = crypto.randomBytes(16).toString('hex');
+			ctx.req.authorizationServerState.refresh_token_expiration_timestamp = Math.floor(Date.now() / 1000) + refresh_token_expires_in;
+		}
 
 		return {
 			token_type: ctx.req.authorizationServerState.token_type,
 			access_token: ctx.req.authorizationServerState.access_token,
-			expires_in: 60,
+			expires_in: access_token_expires_in,
 			c_nonce: ctx.req.authorizationServerState.c_nonce,
-			c_nonce_expires_in: 60,
+			c_nonce_expires_in: c_nonce_expires_in,
+			refresh_token: ctx.req.authorizationServerState.refresh_token,
 		}
+	}
+
+
+	// @ts-ignore
+	private async tokenRequestRefreshTokenGrantHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		if (ctx.res.headersSent) {
+			return;
+		}
+
+		if (ctx.req.body.grant_type != GrantType.REFRESH_TOKEN) {
+			return; // this is not a job for this handler, let the other ones to decide on the request
+		}
+
+		// get state by refresh token
+		const state = await this.authorizationServerStateRepository.createQueryBuilder("state")
+			.where("state.refresh_token = :refresh_token", { refresh_token: ctx.req.body.refresh_token })
+			.getOne();
+
+		if (!state || !state?.refresh_token || !state.refresh_token_expiration_timestamp || state.refresh_token_expiration_timestamp < Math.floor(Date.now() / 1000)) {
+			const response = {
+				"error": "invalid_grant",
+				"error_description": "The refresh token is expired or invalid."
+			};
+			console.log(response);
+			ctx.res.status(400).send(response);
+			return;
+		}
+
+		ctx.req.authorizationServerState = state; // update state
 	}
 
 	async tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
 		await this.tokenRequestGrantTypeHandler(ctx);
-		await this.tokenRequestAuthorizationCodeHandler(ctx);
-		await this.tokenRequestCodeVerifierHandler(ctx);
-		await this.tokenRequestPreAuthorizedCodeHandler(ctx);
+		await this.tokenRequestAuthorizationCodeHandler(ctx);  // updates ctx.req.authorizationServerState based on received code in case of authorization_code grant type
+		await this.tokenRequestRefreshTokenGrantHandler(ctx); // updates ctx.req.authorizationServerState based on received refresh_token in case of refresh_token grant type
 		await this.tokenRequestHandleDpopHeader(ctx);
+		await this.tokenRequestCodeVerifierHandler(ctx);
+		// await this.tokenRequestPreAuthorizedCodeHandler(ctx);
 		// await this.tokenRequestUserPinHandler(ctx); keep this commented to not require userpin
 
 		if (ctx.res.headersSent) {
@@ -537,6 +611,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				await jwtVerify(dpopJwt, await importJWK(JSON.parse(state.dpop_jwk as string) as JWK, 'ES256'));
 			}
 			catch (err) {
+				console.log(err)
 				console.log("CredentialRequest: Invalid access token");
 				ctx.res.status(400).send({ error: "Invalid access token" });
 				return;
@@ -594,7 +669,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 		await dpopVerification();
 
-
+		if (ctx.res.headersSent) {
+			return;
+		}
 
 		async function proofJwtVerification() {
 			const [header, payload] = ctx.req.body.proof.jwt.split('.').slice(0, 2).map((part: string) => JSON.parse(base64url.decode(part))) as Array<any>;
