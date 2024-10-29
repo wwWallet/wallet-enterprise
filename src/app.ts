@@ -9,7 +9,6 @@ import { authorizationRouter } from './authorization/router';
 import AppDataSource, { initDataSource } from './AppDataSource';
 import createHttpError, { HttpError } from 'http-errors';
 import { appContainer } from './services/inversify.config';
-import { authorizationServerMetadataConfiguration } from './authorizationServiceConfiguration';
 import { ExpressAppService } from './services/ExpressAppService';
 import { authorizationServerStateMiddleware, createNewAuthorizationServerState } from './middlewares/authorizationServerState.middleware';
 import { CONSENT_ENTRYPOINT } from './authorization/constants';
@@ -124,11 +123,6 @@ app.post('/', async (req, res) => {
 		return res.redirect('/verifier/public/definitions');
 	}
 
-})
-
-
-app.get('/.well-known/openid-configuration', async (_req: Request, res: Response) => {
-	res.send(authorizationServerMetadataConfiguration);
 })
 
 
