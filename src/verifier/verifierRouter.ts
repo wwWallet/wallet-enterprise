@@ -132,8 +132,7 @@ verifierRouter.post('/callback', async (req, res) => {
 			credentialImages.push(fistImageUri);
 		}
 		else {
-			console.error("Not supported format. Parsing failed")
-			return res.status(400).send({ error: "Not supoorted format" })	
+			credentialImages.push(config.url + "/images/card.png");
 		}
 	}
 	else {
