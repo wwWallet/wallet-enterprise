@@ -17,10 +17,20 @@ import path from "path";
 import crypto from 'node:crypto';
 import { ClaimRecord, PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
+import * as z from 'zod';
 
 const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.server.key"), 'utf-8').toString();
 const x5c = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.server.json")).toString()) as Array<string>;
 
+enum ResponseMode {
+	DIRECT_POST = 'direct_post',
+	DIRECT_POST_JWT = 'direct_post.jwt'
+}
+
+const ResponseModeSchema = z.nativeEnum(ResponseMode);
+
+// @ts-ignore
+const response_mode: ResponseMode = config?.presentationFlow?.response_mode ? ResponseModeSchema.parse(config?.presentationFlow?.response_mode) : ResponseMode.DIRECT_POST_JWT;
 
 const hasherAndAlgorithm: HasherAndAlgorithm = {
 	hasher: (input: string) => createHash('sha256').update(input).digest(),
@@ -107,6 +117,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 		exportedEphPub.kid = generateRandomIdentifier(8);
 		exportedEphPriv.kid = exportedEphPub.kid;
+		exportedEphPub.use = 'enc';
 
 		const signedRequestObject = await new SignJWT({
 			response_uri: responseUri,
@@ -115,7 +126,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			client_id_scheme: "x509_san_dns",
 			client_id: client_id,
 			response_type: "vp_token",
-			response_mode: "direct_post",
+			response_mode: response_mode,
 			state: state,
 			nonce: nonce,
 			presentation_definition: presentationDefinition,
