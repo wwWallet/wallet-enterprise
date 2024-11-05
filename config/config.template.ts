@@ -20,6 +20,9 @@ export const config = {
 		skipConsent: false,
 		defaultCredentialConfigurationIds: [],
 	},
+	presentationFlow: {
+		response_mode: "direct_post.jwt",
+	},
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
 }
