@@ -8,14 +8,6 @@ const pathSegments = path.split('/');
 const nonEmptySegments = pathSegments.filter(segment => segment !== '');
 const presentationDefinitionId = nonEmptySegments[nonEmptySegments.length - 1];
 
-document.addEventListener("DOMContentLoaded", function() {
-	const img = document.getElementById("qr-image");
-
-	img.addEventListener("click", function() {
-		img.classList.toggle("expanded");
-	});
-});
-
 setInterval(() => {
 	
 	fetch('/verifier/public/definitions/presentation-request/status/' + presentationDefinitionId, {
