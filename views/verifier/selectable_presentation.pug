@@ -8,8 +8,14 @@ block layout-content
 					.left-layout
 						for selectableField of selectableFields
 							- const [fieldName, fieldPath, isSelectable] = selectableField;
-							.checkbox
-								input(type='checkbox' id=fieldPath name='fields' value=fieldPath)
-								label(for=fieldPath) #{fieldName}
+							if fieldPath === '$.vct'
+								.checkbox
+									input(type='checkbox' id=fieldPath name='fields' value=fieldPath checked disabled)
+									label(for=fieldPath) #{fieldName}
+									input(type='hidden' name='fields' value=fieldPath)
+							else
+								.checkbox
+									input(type='checkbox' id=fieldPath name='fields' value=fieldPath)
+									label(for=fieldPath) #{fieldName}
 					button.btn.btn-primary(type='submit') Request
 	link(rel="stylesheet" href="/styles/scan-qr-verifier.css")
