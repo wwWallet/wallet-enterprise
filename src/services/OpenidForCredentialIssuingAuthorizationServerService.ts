@@ -674,6 +674,12 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 
 		async function proofJwtVerification() {
+			// @ts-ignore
+			const supportedBatchSize: number | undefined = config.issuanceFlow?.batchCredentialIssuance?.batchSize;
+
+			if (ctx.req.body?.proof?.jwts && ctx.req.body?.proof?.jwts instanceof Array && ctx.req.body?.proof?.jwts.length > supportedBatchSize) {
+				return { error: "Proof jwt: Exceeding supported batch size" };
+			}
 			const [header, payload] = ctx.req.body.proof.jwt.split('.').slice(0, 2).map((part: string) => JSON.parse(base64url.decode(part))) as Array<any>;
 			const { jwk, alg } = header;
 			const { nonce } = payload;
