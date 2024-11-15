@@ -68,7 +68,6 @@ export class VIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 				const rows: CategorizedRawCredentialViewRow[] = [
 					{ name: "Family Name", value: vid.family_name },
 					{ name: "Given Name", value: vid.given_name },
-					{ name: "Document Number", value: vid.document_number },
 					{ name: "Birth Date", value: formatDateDDMMYYYY(vid.birth_date) },
 					{ name: "Expiry Date", value: formatDateDDMMYYYY(vid.expiry_date) },
 				];
@@ -77,7 +76,6 @@ export class VIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 				const pathsWithValues = [
 					{ path: "family_name", value: vid.family_name },
 					{ path: "given_name", value: vid.given_name },
-					{ path: "document_number", value: vid.document_number },
 					{ path: "birth_date", value: formatDateDDMMYYYY(vid.birth_date) },
 					{ path: "expiry_date", value: formatDateDDMMYYYY(vid.expiry_date) }
 				];
@@ -122,7 +120,6 @@ export class VIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 			birth_date: new Date(vidEntry.birth_date).toISOString(),
 			issuing_authority: vidEntry.issuing_authority,
 			issuing_country: vidEntry.issuing_country,
-			document_number: String(vidEntry.document_number),
 			issuance_date: new Date().toISOString(),
 			expiry_date: new Date(vidEntry.expiry_date).toISOString(),
 		};
@@ -142,7 +139,6 @@ export class VIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 			birth_date: true,
 			issuing_authority: true,
 			issuing_country: true,
-			document_number: true,
 		}
 		const { jws } = await this.getCredentialSigner()
 			.sign(payload, { typ: 'JWT', vctm: this.metadata() }, disclosureFrame);
