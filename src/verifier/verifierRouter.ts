@@ -106,26 +106,27 @@ verifierRouter.post('/callback', async (req, res) => {
 		credentialPayloads.push(parsedCredential);
 		console.log("Parsed credential = ", parsedCredential)
 		const credentialIssuerMetadata = await axios.get(parsedCredential.iss + "/.well-known/openid-credential-issuer").catch(() => null);
+		let fistImageUri;
 		if (!credentialIssuerMetadata) {
 			console.error("Couldnt get image for the credential " + vp_token);
-			return res.status(400).send({ error: "Insufficient metadata" })
+		} else {
+			console.log("Credential issuer metadata = ", credentialIssuerMetadata?.data)
+			fistImageUri = Object.values(credentialIssuerMetadata?.data?.credential_configurations_supported).map((conf: any) => {
+				if (conf?.vct == parsedCredential?.vct) {
+					return conf?.display && conf?.display[0] && conf?.display[0]?.background_image?.uri ? conf?.display[0]?.background_image?.uri : undefined;
+				}
+				return undefined;
+			}).filter((val) => val)[0];
 		}
-		console.log("Credential issuer metadata = ", credentialIssuerMetadata.data)
-		const fistImageUri = Object.values(credentialIssuerMetadata.data.credential_configurations_supported).map((conf: any) => {
-			if (conf?.vct == parsedCredential?.vct) {
-				return conf?.display && conf?.display[0] && conf?.display[0]?.background_image?.uri ? conf?.display[0]?.background_image?.uri : undefined;
-			}
-			return undefined;
-		}).filter((val) => val)[0];
 
-		if (sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates[0]?.uri) {
+		if (sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display?.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates[0]?.uri) {
 			const response = await axios.get(sdJwtHeader?.vctm?.display[0][defaultLocale].rendering.svg_templates[0].uri);
 			const svgText = response.data;
 			const pathsWithValues: any[] = []; 
 			const dataUri = generateDataUriFromSvg(svgText, pathsWithValues); // replaces all with empty string
 			credentialImages.push(dataUri);
 		}
-		else if(sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri) {
+		else if(sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display?.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri) {
 			credentialImages.push(sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri);
 		}
 		else if (fistImageUri) {
@@ -137,7 +138,7 @@ verifierRouter.post('/callback', async (req, res) => {
 	}
 	else {
 		console.error("Not supported format. Parsing failed")
-		return res.status(400).send({ error: "Not supoorted format" })
+		return res.status(400).send({ error: "Not supported format" })
 	}
 
 	return res.render('verifier/success.pug', {
