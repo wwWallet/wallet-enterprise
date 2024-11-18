@@ -675,53 +675,86 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 		async function proofJwtVerification() {
 			// @ts-ignore
-			const supportedBatchSize: number | undefined = config.issuanceFlow?.batchCredentialIssuance?.batchSize;
+			const supportedBatchSize: number = config.issuanceFlow?.batchCredentialIssuance?.batchSize ?? 1;
 
-			if (ctx.req.body?.proof?.jwts && ctx.req.body?.proof?.jwts instanceof Array && ctx.req.body?.proof?.jwts.length > supportedBatchSize) {
+			if (ctx.req.body?.proofs?.jwt && ctx.req.body?.proofs?.jwt instanceof Array && ctx.req.body?.proofs?.jwt.length > supportedBatchSize) {
 				return { error: "Proof jwt: Exceeding supported batch size" };
 			}
-			const [header, payload] = ctx.req.body.proof.jwt.split('.').slice(0, 2).map((part: string) => JSON.parse(base64url.decode(part))) as Array<any>;
-			const { jwk, alg } = header;
-			const { nonce } = payload;
-			if (!alg || alg !== 'ES256') {
-				return { error: "Proof jwt: Invalid alg" };
-			}
 
-			if (!nonce || nonce !== state?.c_nonce) {
-				return { error: "Proof jwt: Invalid nonce" };
-			}
+			const proofs: string[] = ctx.req.body.proofs ? ctx.req.body.proofs.jwt : [ctx.req.body.proof.jwt];
+			const results = await Promise.all(proofs.map(async (proofJwt: string) => {
+				const [header, payload] = proofJwt.split('.').slice(0, 2).map((part: string) => JSON.parse(base64url.decode(part))) as Array<any>;
+				const { jwk, alg } = header;
+				const { nonce } = payload;
+				if (!alg || alg !== 'ES256') {
+					return { error: "Proof jwt: Invalid alg" };
+				}
+	
+				if (!nonce || nonce !== state?.c_nonce) {
+					return { error: "Proof jwt: Invalid nonce" };
+				}
+	
+				if (state?.c_nonce_expiration_timestamp as number < Math.floor(Date.now() / 1000)) {
+					return { error: "Proof jwt: Expired c_nonce" };
+				}
+	
+				try {
+					await jwtVerify(proofJwt, await importJWK(jwk));
+				}
+				catch (err) {
+					return { error: "Proof jwt: Invalid signature" }
+				}
+				return { jwk } as { jwk: JWK };
+			}));
 
-			if (state?.c_nonce_expiration_timestamp as number < Math.floor(Date.now() / 1000)) {
-				return { error: "Proof jwt: Expired c_nonce" };
-			}
-
-			try {
-				await jwtVerify(ctx.req.body.proof.jwt, await importJWK(jwk));
-			}
-			catch (err) {
-				return { error: "Proof jwt: Invalid signature" }
-			}
-			return { jwk } as { jwk: JWK };
+			return results;
 		}
 
 
-		const result = await proofJwtVerification();
+		const results = await proofJwtVerification();
 
-		if ('error' in result) {
-			const { error } = result;
+		if ('error' in results) {
+			const { error } = results;
 			console.log(error);
 			ctx.res.status(400).send({ error });
 			return;
 		}
 
-		const { jwk } = result;
+		for (const result of results) {
+			if ('error' in result) {
+				const { error } = result;
+				console.log(error);
+				ctx.res.status(400).send({ error });
+				return;
+			}
+		}
 
-		const credentialResponse = await this.credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, jwk);
+		const responses = await Promise.all(results.map(async (result) => {
+			if ('error' in result) {
+				return null;
+			}
+			return this.credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, result.jwk);
+		}));
+		
+		if (responses && responses.length > 0) {
+			const format = responses[0].format;
 
-		if (credentialResponse) {
-			console.log("Credential Response to send = ", credentialResponse);
-			ctx.res.send(credentialResponse);
-			return;
+			console.log("Credential Responses to send = ", responses);
+			if (ctx.req.body?.proofs) { // if user requested in batches
+				ctx.res.send({
+					credentials: responses.map((response) => response.credential),
+					format: format,
+				});
+				return;
+			}
+			else {
+				ctx.res.send({
+					credential: responses.map((response) => response.credential),
+					format: format,
+				});
+				return;
+			}
+
 		}
 		console.log("Failed to generate credential response")
 		ctx.res.status(400).send({ error: "Failed to generate credential response" });
