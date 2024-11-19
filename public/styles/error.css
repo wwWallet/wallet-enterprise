@@ -6,7 +6,7 @@
 
 
 #Error .Back {
-	background-color: #fff;
+	background-color: inherit;
 	color: rgb(0, 162, 255);
 	transition: 0.4s;
 	border: none;
@@ -24,7 +24,7 @@
 }
 
 #Error .Back:hover {
-	opacity: 0.5;
+	opacity: 0.7;
 	/* text-decoration: underline; */
 }
 
