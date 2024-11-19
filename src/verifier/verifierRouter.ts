@@ -20,6 +20,8 @@ import base64url from "base64url";
 import { generateDataUriFromSvg } from "../lib/generateDataUriFromSvg";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
+import AppDataSource from "../AppDataSource";
+import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 
 
 export enum CredentialFormat {
@@ -77,6 +79,23 @@ verifierRouter.get('/callback', async (req, res) => {
 
 verifierRouter.post('/callback', async (req, res) => {
 	// this request includes the response code
+	let session_id = req.cookies['session_id'];
+	if (!session_id) { // find session id by response_code
+		console.log("Body = ", req.body);
+		const s = await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder()
+			.where("response_code = :response_code", { response_code: req.body.response_code })
+			.getOne();
+		if (s) {
+			session_id = s.session_id;
+		}
+		else {
+			console.error("Problem with the verification flow")
+			return res.status(400).send({ error: "Problem with the verification flow" })
+		}
+	}
+	req.cookies['session_id'] = session_id;
+
+
 	const result = await openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
 	 
 	console.log("Callback Result = ", result)
@@ -91,7 +110,7 @@ verifierRouter.post('/callback', async (req, res) => {
 			locale: locale[req.lang],
 		})
 	}
-	
+
 	const { vp_token, claims, date_created } = result.rpState;
 	const status = result.status;
 
@@ -191,8 +210,8 @@ verifierRouter.use('/public/definitions/selectable-presentation-request/:present
 
 
 verifierRouter.get('/public/definitions/presentation-request/status/:presentation_definition_id', async (req, res) => {
-	console.log("FIELDS = ", req.body.fields)
-	if (req.cookies['session_id'] && req.method == "POST") {
+	console.log("session_id : ", req.cookies['session_id'])
+	if (req.cookies['session_id'] && req.method == "GET") {
 		const { status } = await openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
 		if (status == true) {
 			return res.send({ url: `/verifier/callback` });
@@ -200,6 +219,9 @@ verifierRouter.get('/public/definitions/presentation-request/status/:presentatio
 		else {
 			return res.send({ });
 		}
+	}
+	else {
+		return res.send({})
 	}
 })
 
