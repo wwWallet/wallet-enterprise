@@ -39,18 +39,9 @@ block layout-content
 										th Value
 								tbody
 									each claim in presentationClaims[claimType]
-										if typeof claim.value === 'object' && claim.value !== null
-											each entry in Object.entries(claim.value)
-												tr
-													- const [key, val] = entry
-													td= `${claim.name} - ${key}`
-													td= val
-										else
-											tr
-												td= claim.name
-												td= claim.value
-
-
+										tr
+											td= claim.name
+											td= claim.value
 
 				h3 Credentials
 
