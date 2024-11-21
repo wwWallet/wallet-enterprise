@@ -83,7 +83,10 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 	}
 
 	private async handleCallback(req: Request, res: Response): Promise<any> {
-		const result = await this.openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
+		if (!req.cookies['session_id']) {
+			return false;
+		}
+		const result = await this.openidForPresentationReceivingService.getPresentationBySessionId(req.cookies['session_id']);
 		if (!result.status) {
 			return false;
 		}

@@ -69,9 +69,9 @@ verifierPanelRouter.get('/presentation/:presentation_id', async (req, res) => {
 	if (!presentation_id) {
 		return res.status(500).send({ error: "No presentation_id was specified" });
 	}
-	const { presentationClaims, rawPresentation } = await openidForPresentationReceivingService.getPresentationById(presentation_id as string);
+	const { presentationClaims, presentations } = await openidForPresentationReceivingService.getPresentationById(presentation_id as string);
 
-	if (!presentationClaims || !rawPresentation) {
+	if (!presentationClaims || !presentations) {
 		return res.render('error.pug', {
 			msg: "Failed to get presentation",
 			code: 0,
@@ -80,7 +80,8 @@ verifierPanelRouter.get('/presentation/:presentation_id', async (req, res) => {
 		})
 	}
 
-	const presentationPayload = JSON.parse(base64url.decode(rawPresentation.split('.')[1])) as any;
+	// TODO: Parse multiple presentations
+	const presentationPayload = JSON.parse(base64url.decode((presentations[0] as string).split('.')[1])) as any;
 	const credentials = presentationPayload.vp.verifiableCredential.map((vcString: any) => {
 		return JSON.parse(base64url.decode(vcString.split('.')[1]));
 	}).map((credential: any) => credential.vc);
