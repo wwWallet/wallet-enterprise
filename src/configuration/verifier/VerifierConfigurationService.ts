@@ -4,11 +4,19 @@ import { authorizationServerMetadataConfiguration } from "../../authorizationSer
 import { config } from "../../../config";
 import { VerifierConfigurationInterface } from "../../services/interfaces";
 import "reflect-metadata";
+import { PresentationParserChain } from "../../vp_token/PresentationParserChain";
+import { PublicKeyResolverChain } from "../../vp_token/PublicKeyResolverChain";
 
 
 
 @injectable()
 export class VerifierConfigurationService implements VerifierConfigurationInterface {
+	getPresentationParserChain(): PresentationParserChain {
+		return new PresentationParserChain();
+	}
+	getPublicKeyResolverChain(): PublicKeyResolverChain {
+		return new PublicKeyResolverChain();
+	}
 
 	getPresentationDefinitions(): any[] {
 		return []
