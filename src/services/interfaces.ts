@@ -6,6 +6,8 @@ import { SupportedCredentialProtocol } from "../lib/CredentialIssuerConfig/Suppo
 import { CredentialView } from "../authorization/types";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
+import { PresentationParserChain } from "../vp_token/PresentationParserChain";
+import { PublicKeyResolverChain } from "../vp_token/PublicKeyResolverChain";
 
 export interface CredentialSigner {
 	sign(payload: any, headers?: any, disclosureFrame?: any): Promise<{ jws: string }>;
@@ -32,8 +34,8 @@ export interface OpenidForPresentationsReceivingInterface {
 
 	getSignedRequestObject(ctx: { req: Request, res: Response }): Promise<any>;
 	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationDefinition: object, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }>;
-	getPresentationBySessionId(ctx: { req: Request, res: Response }): Promise<{ status: true, rpState: RelyingPartyState } | { status: false }>;
-	getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, rawPresentation?: string }>;
+	getPresentationBySessionId(sessionId: string): Promise<{ status: true, rpState: RelyingPartyState, presentations: unknown[] } | { status: false }>;
+	getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, presentations?: unknown[] }>;
 	responseHandler(ctx: { req: Request, res: Response }): Promise<void>;
 }
 
@@ -41,6 +43,8 @@ export interface OpenidForPresentationsReceivingInterface {
 export interface VerifierConfigurationInterface {
 	getConfiguration(): OpenidForPresentationsConfiguration;
 	getPresentationDefinitions(): any[];
+	getPresentationParserChain(): PresentationParserChain;
+	getPublicKeyResolverChain(): PublicKeyResolverChain;
 }
 
 

@@ -8,16 +8,7 @@ import { TYPES } from "../services/types";
 import locale from "../configuration/locale";
 import * as qrcode from 'qrcode';
 import { config } from "../../config";
-import crypto from 'node:crypto';
-import {
-	HasherAlgorithm,
-	HasherAndAlgorithm,
-	SdJwt,
-} from '@sd-jwt/core'
 
-import axios from 'axios';
-import base64url from "base64url";
-import { generateDataUriFromSvg } from "../lib/generateDataUriFromSvg";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 import AppDataSource from "../AppDataSource";
@@ -29,22 +20,6 @@ export enum CredentialFormat {
 	JWT_VC_JSON = "jwt_vc_json"
 }
 
-// const encoder = new TextEncoder();
-
-const defaultLocale = 'en-US';
-
-// Encoding the string into a Uint8Array
-const hasherAndAlgorithm: HasherAndAlgorithm = {
-	hasher: (input: string) => {
-		// return crypto.subtle.digest('SHA-256', encoder.encode(input)).then((v) => new Uint8Array(v));
-		return new Promise((resolve, _reject) => {
-			const hash = crypto.createHash('sha256');
-			hash.update(input);
-			resolve(new Uint8Array(hash.digest()));
-	});
-	},
-	algorithm: HasherAlgorithm.Sha256
-}
 
 const verifierRouter = Router();
 // const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
@@ -52,7 +27,7 @@ const verifierConfiguration = appContainer.get<VerifierConfigurationInterface>(T
 const openidForPresentationReceivingService = appContainer.get<OpenidForPresentationsReceivingInterface>(TYPES.OpenidForPresentationsReceivingService);
 
 verifierRouter.get('/public/definitions', async (req, res) => {
-	
+
 	return res.render('verifier/public_definitions.pug', {
 		lang: req.lang,
 		presentationDefinitions: verifierConfiguration.getPresentationDefinitions(),
@@ -62,7 +37,10 @@ verifierRouter.get('/public/definitions', async (req, res) => {
 
 
 verifierRouter.get('/callback/status', async (req, res) => { // response with the status of the presentation (this endpoint should be protected)
-	const result = await openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
+	if (!req.cookies['session_id']) {
+		return res.send({ status: false, error: "Missing session_id from cookies" });
+	}
+	const result = await openidForPresentationReceivingService.getPresentationBySessionId(req.cookies['session_id']);
 	if (!result.status) {
 		return res.send({ status: false, error: "Presentation not received" });
 	}
@@ -80,29 +58,26 @@ verifierRouter.get('/callback', async (req, res) => {
 verifierRouter.post('/callback', async (req, res) => {
 	// this request includes the response code
 	let session_id = req.cookies['session_id'];
-	if (!session_id) { // find session id by response_code
-		console.log("Body = ", req.body);
+	if (req.body.response_code) { // response_code is considered more stable than session_id
 		const s = await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder()
 			.where("response_code = :response_code", { response_code: req.body.response_code })
 			.getOne();
 		if (s) {
 			session_id = s.session_id;
 		}
-		else {
-			console.error("Problem with the verification flow")
-			return res.status(400).send({ error: "Problem with the verification flow" })
-		}
 	}
-	req.cookies['session_id'] = session_id;
 
+	if (!session_id) {
+		console.error("Problem with the verification flow")
+		return res.status(400).send({ error: "Problem with the verification flow" })
+	}
 
-	const result = await openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
-	 
-	console.log("Callback Result = ", result)
-	if (result.status == false || 
-			result.rpState.vp_token == null ||
-			result.rpState.claims == null ||
-			result.rpState.date_created == null) {
+	const result = await openidForPresentationReceivingService.getPresentationBySessionId(session_id);
+
+	if (result.status == false ||
+		result.rpState.vp_token == null ||
+		result.rpState.claims == null ||
+		result.rpState.date_created == null) {
 		return res.render('error.pug', {
 			msg: "Failed to get presentation",
 			code: 0,
@@ -111,53 +86,18 @@ verifierRouter.post('/callback', async (req, res) => {
 		})
 	}
 
-	const { vp_token, claims, date_created } = result.rpState;
+	const { claims, date_created } = result.rpState;
+	const presentations = result.presentations;
 	const status = result.status;
 
 	const credentialImages = [];
-
-	const credentialPayloads = []
-	if (vp_token.includes('~')) {
-		const parsedCredential = await SdJwt.fromCompact<Record<string, unknown>, any>(vp_token)
-			.withHasher(hasherAndAlgorithm)
-			.getPrettyClaims();
-		const sdJwtHeader = JSON.parse(base64url.decode(vp_token.split('.')[0])) as any;
-		credentialPayloads.push(parsedCredential);
-		console.log("Parsed credential = ", parsedCredential)
-		const credentialIssuerMetadata = await axios.get(parsedCredential.iss + "/.well-known/openid-credential-issuer").catch(() => null);
-		let fistImageUri;
-		if (!credentialIssuerMetadata) {
-			console.error("Couldnt get image for the credential " + vp_token);
-		} else {
-			console.log("Credential issuer metadata = ", credentialIssuerMetadata?.data)
-			fistImageUri = Object.values(credentialIssuerMetadata?.data?.credential_configurations_supported).map((conf: any) => {
-				if (conf?.vct == parsedCredential?.vct) {
-					return conf?.display && conf?.display[0] && conf?.display[0]?.background_image?.uri ? conf?.display[0]?.background_image?.uri : undefined;
-				}
-				return undefined;
-			}).filter((val) => val)[0];
+	const credentialPayloads = [];
+	for (const p of presentations) {
+		const result = await verifierConfiguration.getPresentationParserChain().parse(p);
+		if (!('error' in result)) {
+			credentialImages.push(result.credentialImage);
+			credentialPayloads.push(result.credentialPayload);
 		}
-
-		if (sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display?.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates[0]?.uri) {
-			const response = await axios.get(sdJwtHeader?.vctm?.display[0][defaultLocale].rendering.svg_templates[0].uri);
-			const svgText = response.data;
-			const pathsWithValues: any[] = []; 
-			const dataUri = generateDataUriFromSvg(svgText, pathsWithValues); // replaces all with empty string
-			credentialImages.push(dataUri);
-		}
-		else if(sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display?.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri) {
-			credentialImages.push(sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri);
-		}
-		else if (fistImageUri) {
-			credentialImages.push(fistImageUri);
-		}
-		else {
-			credentialImages.push(config.url + "/images/card.png");
-		}
-	}
-	else {
-		console.error("Not supported format. Parsing failed")
-		return res.status(400).send({ error: "Not supported format" })
 	}
 
 	return res.render('verifier/success.pug', {
@@ -212,12 +152,12 @@ verifierRouter.use('/public/definitions/selectable-presentation-request/:present
 verifierRouter.get('/public/definitions/presentation-request/status/:presentation_definition_id', async (req, res) => {
 	console.log("session_id : ", req.cookies['session_id'])
 	if (req.cookies['session_id'] && req.method == "GET") {
-		const { status } = await openidForPresentationReceivingService.getPresentationBySessionId({ req, res });
+		const { status } = await openidForPresentationReceivingService.getPresentationBySessionId(req.cookies['session_id']);
 		if (status == true) {
 			return res.send({ url: `/verifier/callback` });
 		}
 		else {
-			return res.send({ });
+			return res.send({});
 		}
 	}
 	else {
@@ -272,17 +212,17 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId); // start session here
 	console.log("call")
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition, newSessionId, config.url + "/verifier/callback");	
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationDefinition, newSessionId, config.url + "/verifier/callback");
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(url.toString(), {
 			margin: 1,
 			errorCorrectionLevel: 'L',
 			type: 'image/png'
-		}, 
-		(err, data) => {
-			if (err) return resolve("NO_QR");
-			return resolve(data);
-		});
+		},
+			(err, data) => {
+				if (err) return resolve("NO_QR");
+				return resolve(data);
+			});
 	}) as string;
 
 	console.log("URL = ", url)
@@ -294,7 +234,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		lang: req.lang,
 		locale: locale[req.lang],
 	})
-	
+
 
 })
 
