@@ -14,7 +14,7 @@ export class PublicKeyResolverChain {
 	}
 
 	async resolve(rawPresentation: any, format: string): Promise<{ publicKey: KeyLike, isTrusted: boolean } | { error: "UNABLE_TO_RESOLVE_PUBKEY" }> {
-		for (const p of this.resolverList) {
+		for (const p of [...this.resolverList].reverse()) {
 			const result = await p.resolve(rawPresentation, format);
 			if ('error' in result) {
 				continue;
