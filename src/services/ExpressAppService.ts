@@ -5,6 +5,18 @@ import { TYPES } from './types';
 import { CredentialConfigurationRegistry, OpenidForCredentialIssuingAuthorizationServerInterface } from './interfaces';
 import { OpenidForPresentationsReceivingService } from './OpenidForPresentationReceivingService';
 import { config } from '../../config';
+import { importX509, SignJWT } from 'jose';
+import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
+import fs from 'fs';
+import path from 'path';
+
+const issuerX5C: string[] = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.json"), 'utf-8').toString()) as string[];
+const issuerPrivateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
+const issuerCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString() as string;;
+
+importPrivateKeyPem(issuerPrivateKeyPem, 'ES256') // attempt to import the key
+importX509(issuerCertPem, 'ES256'); // attempt to import the public key
+
 
 @injectable()
 export class ExpressAppService {
@@ -81,8 +93,18 @@ export class ExpressAppService {
 					batch_size: batchSize
 				};
 			}
+			const key = await importPrivateKeyPem(issuerPrivateKeyPem, 'ES256');
+			if (!key) {
+				throw new Error("Could not import private key");
+			}
+			const signedMetadata = await new SignJWT(metadata)
+				.setIssuedAt()
+				.setIssuer(config.url)
+				.setSubject(config.url)
+				.setProtectedHeader({ typ:"JWT", alg: "ES256", x5c: issuerX5C })
+				.sign(key);
 			// @ts-ignore
-			return res.send(metadata);
+			return res.send({ ...metadata, signed_metadata: signedMetadata });
 		});
 	}
 }
