@@ -10,6 +10,7 @@ import base64url from "base64url";
 import crypto from 'node:crypto';
 import axios from "axios";
 import { IPresentationParser } from "./IPresentationParser";
+import { JSONPath } from "jsonpath-plus";
 
 
 // Encoding the string into a Uint8Array
@@ -58,15 +59,24 @@ export const sdJwtDefaultParser: IPresentationParser = {
 					}).filter((val) => val)[0];
 				}
 
-				if (sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display?.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.svg_templates[0]?.uri) {
-					const response = await axios.get(sdJwtHeader?.vctm?.display[0][defaultLocale].rendering.svg_templates[0].uri);
+				// @ts-ignore
+				const metadata = sdJwtHeader?.vctm ? sdJwtHeader?.vctm.map((metadataB64U: any) => JSON.parse(base64url.decode(metadataB64U))).filter((metadata) => metadata.vct = parsedCredential.vct)[0] : null;
+				console.log("Metadata = ", metadata)
+				if (metadata && metadata?.display?.length > 0 && metadata?.display.filter((d: any) => d.lang == defaultLocale)[0]?.rendering?.svg_templates.length > 0 && metadata?.display.filter((d: any) => d.lang == defaultLocale)[0]?.rendering?.svg_templates[0]?.uri) {
+					const response =  await axios.get(metadata?.display.filter((d: any) => d.lang == defaultLocale)[0]?.rendering?.svg_templates[0]?.uri);
 					const svgText = response.data;
-					const pathsWithValues: any[] = [];
+					const pathsWithValues: any[] = metadata.claims ? metadata.claims.filter((claimMetadata: any) => claimMetadata.svg_id != undefined)
+						.map((claimMetadata: any) => {
+							return {
+								path: claimMetadata.svg_id,
+								value: JSONPath({ json: parsedCredential, path: `$.${claimMetadata.path.join('.')}` })
+							}
+					}) : [];
 					const dataUri = generateDataUriFromSvg(svgText, pathsWithValues); // replaces all with empty string
 					credentialImage = dataUri;
 				}
-				else if (sdJwtHeader?.vctm && sdJwtHeader?.vctm?.display?.length > 0 && sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri) {
-					credentialImage = sdJwtHeader?.vctm?.display[0][defaultLocale]?.rendering?.simple?.logo?.uri;
+				else if (metadata && metadata?.display?.length > 0 && metadata?.display.filter((d: any) => d.lang == defaultLocale)[0]?.rendering?.simple?.logo?.uri) {
+					credentialImage = metadata?.display.filter((d: any) => d.lang == defaultLocale)[0]?.rendering?.simple?.logo?.uri;
 				}
 				else if (fistImageUri) {
 					credentialImage = fistImageUri;
