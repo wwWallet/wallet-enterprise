@@ -182,6 +182,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 
+	private async handlePresentationDuringIssuance(ctx: { req: Request, res: Response }, rpState: RelyingPartyState) {
+		rpState.presentation_during_issuance_session = base64url.encode(randomUUID());
+		await this.rpStateRepository.save(rpState);
+		ctx.res.send({ presentation_during_issuance_session: rpState.presentation_during_issuance_session });
+	}
+
 	async responseHandler(ctx: { req: Request, res: Response }): Promise<void> {
 		// let presentationSubmissionObject: PresentationSubmission | null = qs.parse(decodeURI(presentation_submission)) as any;
 
@@ -232,7 +238,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			rpState.vp_token = base64url.encode(JSON.stringify(payload.vp_token));
 			rpState.date_created = new Date();
 			console.log("Stored rp state = ", rpState)
+			if (rpState.session_id.startsWith("auth_session:")) { // is presentation during issuance
+				await this.handlePresentationDuringIssuance(ctx, rpState);
+				return;
+			}
 			await this.rpStateRepository.save(rpState);
+
 			ctx.res.send({ redirect_uri: rpState.callback_endpoint + '#response_code=' + rpState.response_code })
 			return;
 		}
@@ -261,6 +272,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		rpState.presentation_submission = presentation_submission;
 		rpState.vp_token = base64url.encode(JSON.stringify(vp_token));
 		rpState.date_created = new Date();
+
+		console.log("Session id = ", rpState.session_id)
+		if (rpState.session_id.startsWith("auth_session:")) { // is presentation during issuance
+			await this.handlePresentationDuringIssuance(ctx, rpState);
+			return;
+		}
 		await this.rpStateRepository.save(rpState);
 		ctx.res.send({ redirect_uri: rpState.callback_endpoint + '#response_code=' + rpState.response_code })
 		return;
@@ -335,7 +352,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 					const splittedPath = fieldPath.split('.');
 					const claimName = fieldName ? fieldName : splittedPath[splittedPath.length - 1];
-					presentationClaims[desc.id].push({ name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
+					presentationClaims[desc.id].push({ key: fieldPath.split('.')[fieldPath.split('.').length - 1], name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
 				});
 
 				if (!verificationResult.isSignatureValid) {
@@ -348,11 +365,18 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 
-	public async getPresentationBySessionId(sessionId: string): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false }> {
+	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false }> {
 
-		const rpState = await this.rpStateRepository.createQueryBuilder()
+		if (!sessionId && !presentationDuringIssuanceSession) {
+			console.error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given");
+			return { status: false };
+		}
+		const rpState = sessionId ? await this.rpStateRepository.createQueryBuilder()
 			.where("session_id = :session_id", { session_id: sessionId })
-			.getOne();
+			.getOne() :
+			await this.rpStateRepository.createQueryBuilder()
+				.where("presentation_during_issuance_session = :presentation_during_issuance_session", { presentation_during_issuance_session: presentationDuringIssuanceSession })
+				.getOne();
 
 		if (!rpState) {
 			console.error("Couldn't get rpState with the session_id " + sessionId);
