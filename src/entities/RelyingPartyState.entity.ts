@@ -2,6 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { JWK } from "jose";
 
 export type ClaimRecord = {
+	key: string;
 	name: string;
 	value: string;
 };
@@ -132,6 +133,9 @@ export class RelyingPartyState {
 		}
 		return null;
 	}
+
+	@Column({ name: "presentation_during_issuance_session", type: "varchar", nullable: true, default: () => "NULL" })
+	presentation_during_issuance_session: string | null = null;
 
 	@Column({ name: "date_created", type: "datetime", nullable: false })
 	date_created: Date = new Date();
