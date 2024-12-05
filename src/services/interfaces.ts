@@ -20,7 +20,7 @@ export interface OpenidForCredentialIssuingAuthorizationServerInterface {
 
 	authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 	metadataRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
-	authorizationRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
+	authorizeChallengeRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 
 	sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number): Promise<void>;
 
@@ -34,7 +34,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 	getSignedRequestObject(ctx: { req: Request, res: Response }): Promise<any>;
 	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationDefinition: object, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }>;
-	getPresentationBySessionId(sessionId: string): Promise<{ status: true, rpState: RelyingPartyState, presentations: unknown[] } | { status: false }>;
+	getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string): Promise<{ status: true, rpState: RelyingPartyState, presentations: unknown[] } | { status: false }>;
 	getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, presentations?: unknown[] }>;
 	responseHandler(ctx: { req: Request, res: Response }): Promise<void>;
 }
