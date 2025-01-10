@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CredentialConfigurationRegistry, OpenidForCredentialIssuingAuthorizationServerInterface } from "./interfaces";
+import { CredentialConfigurationRegistry, OpenidForCredentialIssuingAuthorizationServerInterface, OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
 import { GrantType } from "../types/oid4vci";
 import { inject, injectable } from "inversify";
 import crypto, { randomUUID } from 'node:crypto';
@@ -24,7 +24,7 @@ const access_token_expires_in = config.issuanceFlow.access_token_expires_in ? co
 const c_nonce_expires_in = config.issuanceFlow.c_nonce_expires_in ? config.issuanceFlow.c_nonce_expires_in : 60; // 1 minute
 
 // @ts-ignore
-const refresh_token_expires_in = config.issuanceFlow.refresh_token_expires_in ? config.issuanceFlow.refresh_token_expires_in : 24*60*60; // 1 day
+const refresh_token_expires_in = config.issuanceFlow.refresh_token_expires_in ? config.issuanceFlow.refresh_token_expires_in : 24 * 60 * 60; // 1 day
 
 
 
@@ -35,6 +35,8 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 	constructor(
 		@inject(TYPES.CredentialConfigurationRegistryService) private credentialConfigurationRegistryService: CredentialConfigurationRegistry,
+		@inject(TYPES.OpenidForPresentationsReceivingService) private presentationReceivingService: OpenidForPresentationsReceivingInterface,
+		@inject(TYPES.VerifierConfigurationServiceInterface) private verifierConfigurationService: VerifierConfigurationInterface,
 
 	) { }
 
@@ -221,6 +223,77 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			request_uri: ctx.req.authorizationServerState.request_uri,
 			expires_in: 60,
 		});
+	}
+
+	private async authorizeChallengeAuthorizationErrorResponse(ctx: { req: Request; res: Response; }): Promise<void> {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.body.presentation_during_issuance_session) {
+			const session_id = "auth_session:" + base64url.encode(randomUUID());
+			addSessionIdCookieToResponse(ctx.res, session_id);
+			ctx.req.authorizationServerState.session_id = session_id;
+			ctx.req.authorizationServerState.auth_session = session_id;
+
+			await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState);
+
+			// @ts-ignore
+			const preSelectedPresentationDefinitionId = config.issuanceFlow.firstPartyAppDynamicCredentialRequest.presentationDefinitionId;
+
+			const presentationRequest = await this.presentationReceivingService.generateAuthorizationRequestURL(ctx,
+				this.verifierConfigurationService.getPresentationDefinitions().filter((pd) => pd.id === preSelectedPresentationDefinitionId)[0],
+				session_id);
+
+			ctx.res.status(400).send({
+				error: "insufficient_authorization",
+				auth_session: ctx.req.authorizationServerState.auth_session,
+				presentation: presentationRequest.url,
+			})
+		}
+	}
+
+	private async authorizeChallengeWithPresentationDuringIssuanceSessionResponse(ctx: { req: Request; res: Response; }): Promise<void> {
+		if (ctx.res.headersSent) {
+			return;
+		}
+
+		if (ctx.req.body.auth_session && ctx.req.body.presentation_during_issuance_session) {
+			const result = await this.presentationReceivingService.getPresentationBySessionIdOrPresentationDuringIssuanceSession(undefined, ctx.req.body.presentation_during_issuance_session);
+			if (result.status == true) {
+				const authorization_code = crypto.randomBytes(60).toString('base64url');
+				ctx.req.authorizationServerState.authorization_code = authorization_code;
+				const presentationDefinition = this.verifierConfigurationService.getPresentationDefinitions().filter((pd) => pd.id == result.rpState.presentation_definition_id)[0];
+				
+				// @ts-ignore
+				const claims = result.rpState.claims[presentationDefinition.input_descriptors[0].id];
+				for (const {key, value} of claims) {
+					// @ts-ignore
+					ctx.req.authorizationServerState[key] = value;
+				}
+				console.log("Dynamic credential request Extracted Claims = ", claims)
+				await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState);
+
+				ctx.res.status(200).send({
+					authorization_code: authorization_code
+				});
+				return;
+			}
+
+			await this.authorizeChallengeAuthorizationErrorResponse(ctx); // back to step-1
+		}
+	}
+
+	async authorizeChallengeRequestHandler(ctx: { req: Request; res: Response; }): Promise<void> {
+		ctx.req.session.authenticationChain = {}; // clear the session
+
+		await this.authorizationRequestStateHandler(ctx);
+		await this.authorizationRequestScopeHandler(ctx);
+		await this.authorizationRequestClientIdAndRedirectUriHandler(ctx);
+		await this.authorizationRequestPKCEHandler(ctx);
+
+		await this.authorizeChallengeAuthorizationErrorResponse(ctx); // step-1
+
+		await this.authorizeChallengeWithPresentationDuringIssuanceSessionResponse(ctx); // step-2
 	}
 
 	async sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number): Promise<void> {
@@ -448,7 +521,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		try {
 			await jwtVerify(dpopJwt, await importJWK(jwk as JWK, 'ES256'));
 		}
-		catch(err) {
+		catch (err) {
 			console.error(err);
 			console.log("DPoP error: invalid signature");
 			ctx.res.status(400).send({ error: "DPoP error: invalid signature" });
@@ -499,6 +572,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			c_nonce: ctx.req.authorizationServerState.c_nonce,
 			c_nonce_expires_in: c_nonce_expires_in,
 			refresh_token: ctx.req.authorizationServerState.refresh_token,
+			auth_session: ctx.req.authorizationServerState.auth_session
 		}
 	}
 
@@ -689,15 +763,15 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				if (!alg || alg !== 'ES256') {
 					return { error: "Proof jwt: Invalid alg" };
 				}
-	
+
 				if (!nonce || nonce !== state?.c_nonce) {
 					return { error: "Proof jwt: Invalid nonce" };
 				}
-	
+
 				if (state?.c_nonce_expiration_timestamp as number < Math.floor(Date.now() / 1000)) {
 					return { error: "Proof jwt: Expired c_nonce" };
 				}
-	
+
 				try {
 					await jwtVerify(proofJwt, await importJWK(jwk));
 				}
@@ -735,7 +809,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			}
 			return this.credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, result.jwk);
 		}));
-		
+
 		if (responses && responses.length > 0) {
 			const format = responses[0].format;
 

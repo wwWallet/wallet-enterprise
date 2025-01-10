@@ -86,7 +86,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 		if (!req.cookies['session_id']) {
 			return false;
 		}
-		const result = await this.openidForPresentationReceivingService.getPresentationBySessionId(req.cookies['session_id']);
+		const result = await this.openidForPresentationReceivingService.getPresentationBySessionIdOrPresentationDuringIssuanceSession(req.cookies['session_id']);
 		if (!result.status) {
 			return false;
 		}

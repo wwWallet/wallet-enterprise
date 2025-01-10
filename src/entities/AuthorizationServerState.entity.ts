@@ -51,6 +51,8 @@ export class AuthorizationServerState {
 		return null;
 	}
 
+	@Column({ name: "auth_session", type: "varchar", nullable: true })
+	auth_session?: string | null;
 
 	@Column({ name: "authorization_code", type: "varchar", nullable: true })
 	authorization_code?: string | null;

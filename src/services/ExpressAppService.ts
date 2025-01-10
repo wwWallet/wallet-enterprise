@@ -46,7 +46,14 @@ export class ExpressAppService {
 			app.post('/openid4vci/as/par', async (req, res) => {
 				this.authorizationServerService.authorizationRequestHandler({ req, res });
 			});
-	
+
+			// @ts-ignore
+			if (config.issuanceFlow?.firstPartyAppDynamicCredentialRequest?.presentationDefinitionId) {
+				app.post('/openid4vci/authorize-challenge', async (req, res) => {
+					this.authorizationServerService.authorizeChallengeRequestHandler({ req, res });
+				});
+			}
+
 			app.get('/openid4vci/authorize', async (req, res) => {
 				this.authorizationServerService.authorizationRequestHandler({ req, res });
 			});
@@ -63,6 +70,8 @@ export class ExpressAppService {
 				return res.send({
 					issuer: config.url,
 					authorization_endpoint: config.url + '/openid4vci/authorize',
+					// @ts-ignore
+					authorization_challenge_endpoint: config.issuanceFlow?.firstPartyAppDynamicCredentialRequest?.presentationDefinitionId ? config.url + '/openid4vci/authorize-challenge' : undefined,
 					token_endpoint: config.url + '/openid4vci/token',
 					pushed_authorization_request_endpoint: config.url + '/openid4vci/as/par',
 					require_pushed_authorization_requests: true,
