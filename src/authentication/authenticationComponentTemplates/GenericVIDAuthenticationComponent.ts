@@ -47,7 +47,15 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 			}
 
 			if (req.method == 'POST' && req.originalUrl.endsWith('/callback')) {
-				await this.handleCallback(req, res);
+				const result = await this.handleCallback(req, res);
+				if (result === false) {
+					return res.render('error', {
+						title: "Verification Error",
+						msg: "Verification failed",
+						lang: req.lang,
+						locale: locale[req.lang],
+					})
+				}
 				return;
 			}
 			return this.askForPresentation(req, res);
@@ -130,7 +138,12 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 			req.authorizationServerState.vid_auth_state = stateId;
 			await AppDataSource.getRepository(AuthorizationServerState).save(req.authorizationServerState);
 			console.log("Authz state = ", req.authorizationServerState)
-			return res.redirect(url.toString());
+			return res.render('issuer/vid-auth-component', {
+				authorizationRequestURL: url.toString(),
+				lang: req.lang,
+				locale: locale[req.lang],
+			})
+			// return res.redirect(url.toString());
 
 		}
 		catch(err) {
