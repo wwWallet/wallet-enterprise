@@ -1,21 +1,52 @@
 extends ../layout.pug
 block layout-content
 
-  .container
-    .centered-layout
-      form(id="PresentationRequestForm" name="PresentationRequestForm" method="POST")
-        .CenteredLayout
+	.container
+		.centered-layout
+			form(id="PresentationRequestForm" name="PresentationRequestForm" method="POST")
+				.CenteredLayout
 
-          h1 Scan the QR code to send your Verifiable ID
+					h1 #{locale.VIDAuthenticationComponent.title}
+					.downtime
+						p.message
+							span.inline-message You are going to proceed to your wallet automatically
+							span#countdown-timer 10
+						.loader
+						// Buttons: Cancel and Proceed Now
+						.buttons
+							button.Btn.Medium(type="button" id="cancelButton") Cancel
+							button.Btn.Medium(type="button" id="proceedNowButton") Proceed Now
+					// Hidden inputs
+					input(type='hidden' name='state' id='state' value=state)
+					input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
 
-          img(src=authorizationRequestQR width=200 height=200)
-          - const modifiedURL = authorizationRequestURL.replace("openid4vp://cb", wwwalletURL)
-          button.Btn.Medium.openwithwalletbutton(type="button" onclick=`window.location.href = '${modifiedURL}';`) Open with wwWallet
-          button.Btn.Medium.openwithwalletbuttonnative(type="button" onclick=`window.location.href = '${authorizationRequestURL}';`) Open with a Native Wallet
+	script(src="/js/presentation-request.js")
+	script.
+		var countdownElement = document.getElementById('countdown-timer');
+		var countdown = 10;
+		var countdownInterval;
+		function startCountdown() {
+			countdownInterval = setInterval(function() {
+			countdown--;
+			countdownElement.textContent = countdown;
+			if (countdown === 0) {
+				const url = document.getElementById("authorizationRequestURL").value;
+				clearInterval(countdownInterval);
+				window.location.href = url;
+			}
+			}, 1000); // 1000 ms = 1 second
+		}
 
-          input(type='hidden' name='state' id='state' value=state)
-          input(type='hidden' name='authorizationRequestQR' id='authorizationRequestQR' value=authorizationRequestQR)
-          input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
+		startCountdown();
 
-  script(src="/js/presentation-request.js")
-  link(rel="stylesheet" href="/styles/scan-qr-verifier.css")
+		document.getElementById('cancelButton').addEventListener('click', function() {
+			clearInterval(countdownInterval);
+			const url = document.getElementById("wwwalletURL").value;
+			window.location.href = url;
+		});
+		document.getElementById('proceedNowButton').addEventListener('click', function() {
+			clearInterval(countdownInterval);
+			const url = document.getElementById("authorizationRequestURL").value;
+			window.location.href = url;
+		});
+	link(rel="stylesheet" href="/styles/scan-qr-verifier.css")

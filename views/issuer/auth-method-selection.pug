@@ -3,16 +3,14 @@ block layout-content
 
 	form#IssuerSelection(name="AuthenticationMethod" method="POST")
 		.main-container
-			p(class="dropdownLabel") Authentication Method
+			p(class="dropdownLabel") #{locale.AuthenticationMethodComponent.title}
 			div(class='dropdownContainer')
-				p.label Choose between authenticating via presenting a Verifiable ID or via a conventional 3rd-party authentication service (e.g., National Authentication Service, Google):
-				select(name="auth_method" class='issuerDropdown')
+				p.label #{locale.AuthenticationMethodComponent.label} 
+				select#authMethodDropdown(name="auth_method" class='issuerDropdown')
 					option(value="" disabled selected) Select an authentication method
-					option(value="VID_AUTH") Authentication with Verifiable ID
-					option(value="SSO") National Authentication Service
+					for method of methods
+						option(value=method.code) #{method.description}
 
-				p.invalid-feedback#invalid-issuer You have not been awarded by this Institution
-				p.invalid-feedback#no-issuer You have to select an Institution
 				button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
 	block footer
 	include ../footer.pug
@@ -21,3 +19,4 @@ block layout-content
 	link(rel="stylesheet" href="/styles/selection.css")
 	script(src="/js/alert.js")
 	script(src="/js/select-client.js")
+	script(src="/js/auth-method-selection.js")

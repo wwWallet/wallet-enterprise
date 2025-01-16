@@ -1,27 +1,73 @@
-.centered-layout {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-	justify-content: center;
-	align-items: center;
-	margin-bottom: 5%;
-}
-
 .CenteredLayout {
-	width: auto;
-	display: flex;
-	flex-direction: column;
-	flex-wrap: wrap;
-	justify-content: center;
-	align-items: center;
-	background-color: white;
-	padding: 20px 30px;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  justify-content: center;
+  align-items: center;
 }
 
 .image-container {
 	cursor: pointer;
 	transition: transform 0.3s;
-	width: 50vw;
-	height: auto;
-	max-width: 400px;
+	width: 50vw; /* Initial width is 50% of the viewport width */
+	height: auto; /* Maintain aspect ratio */
+	max-width: 400px; /* Maximum initial width */
+}
+
+.inline-message {
+  display: inline;
+}
+
+#countdown-timer {
+	margin-left: 2px;
+  display: inline;
+  font-weight: bold;
+}
+
+.loader {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid var(--primary-color); 
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 5s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.downtime {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.buttons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button#cancelButton {
+  background-color: gray;
+  color: white;
 }
