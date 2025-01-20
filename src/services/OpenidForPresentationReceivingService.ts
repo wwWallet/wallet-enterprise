@@ -283,7 +283,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return;
 	}
 
-	private async validateVpToken(vp_token_list: string[] | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, error?: Error, error_description?: Error }> {
+	private async validateVpToken(vp_token_list: string[] | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, error?: Error }> {
 		let presentationClaims: PresentationClaims = {};
 
 		for (const desc of presentation_submission.descriptor_map) {
@@ -311,9 +311,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				// kbjwt validation
 				const kbJwtValidationResult = await verifyKbJwt(vp_token, { aud: rpState.audience, nonce: rpState.nonce });
 				if (!kbJwtValidationResult) {
-					return { error: new Error("PRESENTATION_RESPONSE:INVALID_KB_JWT"), error_description: new Error("KB JWT validation failed") };
+					const error = new Error("KB JWT validation failed");
+					error.name = "PRESENTATION_RESPONSE:INVALID_KB_JWT";
+					return { error };
 				}
 				console.info("Passed KBJWT verification...");
+
+				// let error = "";
+				// const errorCallback = (errorName: string) => {
+				// 	error = errorName;
+				// }
 
 				const verifyCb: Verifier = async ({ header, message, signature }) => {
 					if (header.alg !== SignatureAndEncryptionAlgorithm.ES256) {
@@ -331,32 +338,45 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const verificationResult = await jwtVerify(message + '.' + uint8ArrayToBase64Url(signature), publicKeyResolutionResult.publicKey).then(() => true).catch((err: any) => {
 						console.log("Error verifying")
 						console.error(err);
-						return false;
+						// errorCallback(err.name);
+						throw new Error(err);
 					});
 					return verificationResult;
 				}
 
-				const verificationResult = await parsedSdJwt.verify(verifyCb);
-				const prettyClaims = await parsedSdJwt.getPrettyClaims();
-
-				input_descriptor.constraints.fields.map((field: any) => {
-					if (!presentationClaims[desc.id]) {
-						presentationClaims[desc.id] = []; // initialize
+				try {
+					const verificationResult = await parsedSdJwt.verify(verifyCb);
+					const prettyClaims = await parsedSdJwt.getPrettyClaims();
+	
+					input_descriptor.constraints.fields.map((field: any) => {
+						if (!presentationClaims[desc.id]) {
+							presentationClaims[desc.id] = []; // initialize
+						}
+						const fieldPath = field.path[0]; // get first path
+						const fieldName = (field as any).name;
+						const value = String(JSONPath({ path: fieldPath, json: prettyClaims.vc as any ?? prettyClaims })[0]);
+						if (!value) {
+							const error = new Error(`Verification result: Not all values are present as requested from the presentation_definition`);
+							error.name = "VALUE_NOT_FOUND";
+							return { error: new Error("VALUE_NOT_FOUND") };
+						}
+	
+						const splittedPath = fieldPath.split('.');
+						const claimName = fieldName ? fieldName : splittedPath[splittedPath.length - 1];
+						presentationClaims[desc.id].push({ key: fieldPath.split('.')[fieldPath.split('.').length - 1], name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
+					});
+	
+					if (!verificationResult.isSignatureValid) {
+						const error = new Error(`Verification result ${JSON.stringify(verificationResult)}`);
+						error.name = "SD_JWT_VERIFICATION_FAILURE";
+						return { error: error };
 					}
-					const fieldPath = field.path[0]; // get first path
-					const fieldName = (field as any).name;
-					const value = String(JSONPath({ path: fieldPath, json: prettyClaims.vc as any ?? prettyClaims })[0]);
-					if (!value) {
-						return { error: new Error("VALUE_NOT_FOUND"), error_description: new Error(`Verification result: Not all values are present as requested from the presentation_definition`) };
+				}
+				catch(err) {
+					console.error("Verification error: ", err);
+					if (err instanceof Error) {
+						return { error: err };
 					}
-
-					const splittedPath = fieldPath.split('.');
-					const claimName = fieldName ? fieldName : splittedPath[splittedPath.length - 1];
-					presentationClaims[desc.id].push({ key: fieldPath.split('.')[fieldPath.split('.').length - 1], name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
-				});
-
-				if (!verificationResult.isSignatureValid) {
-					return { error: new Error("SD_JWT_VERIFICATION_FAILURE"), error_description: new Error(`Verification result ${JSON.stringify(verificationResult)}`) };
 				}
 			}
 		}
@@ -365,11 +385,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 	}
 
 
-	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false }> {
-
+	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false, error: Error }> {
 		if (!sessionId && !presentationDuringIssuanceSession) {
 			console.error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given");
-			return { status: false };
+			const error = new Error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given")
+			return { status: false, error };
 		}
 		const rpState = sessionId ? await this.rpStateRepository.createQueryBuilder()
 			.where("session_id = :session_id", { session_id: sessionId })
@@ -380,22 +400,23 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 		if (!rpState) {
 			console.error("Couldn't get rpState with the session_id " + sessionId);
-			return { status: false };
+			const error = new Error("Couldn't get rpState with the session_id " + sessionId);
+			return { status: false, error };
 		}
 
 		if (!rpState.presentation_submission || !rpState.vp_token) {
 			console.error("Presentation has not been sent. session_id " + sessionId);
-			return { status: false };
+			const error = new Error("Presentation has not been sent. session_id " + sessionId);
+			return { status: false, error };
 		}
 
 		const vp_token = JSON.parse(base64url.decode(rpState.vp_token)) as string[] | string;
 
-		const { presentationClaims, error, error_description } = await this.validateVpToken(vp_token, rpState.presentation_submission as any, rpState);
+		const { presentationClaims, error } = await this.validateVpToken(vp_token, rpState.presentation_submission as any, rpState);
 
 		if (error) {
 			console.error(error)
-			console.error(error_description)
-			return { status: false };
+			return { status: false, error };
 		}
 		if (!rpState.claims && presentationClaims) {
 			rpState.claims = presentationClaims;
@@ -404,7 +425,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		if (rpState) {
 			return { status: true, rpState, presentations: vp_token instanceof Array ? vp_token : [vp_token] };
 		}
-		return { status: false };
+		const unkownErr = new Error("Uknown error");
+		return { status: false, error: unkownErr };
+	
 	}
 
 	public async getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, presentations?: unknown[] }> {
