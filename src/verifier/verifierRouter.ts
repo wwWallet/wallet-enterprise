@@ -79,7 +79,7 @@ verifierRouter.post('/callback', async (req, res) => {
 		result.rpState.claims == null ||
 		result.rpState.date_created == null) {
 		return res.render('error.pug', {
-			msg: "Failed to get presentation",
+			msg: result.status == false ? result.error.message : "Unknown error",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang],

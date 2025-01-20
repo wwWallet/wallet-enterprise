@@ -48,10 +48,10 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 
 			if (req.method == 'POST' && req.originalUrl.endsWith('/callback')) {
 				const result = await this.handleCallback(req, res);
-				if (result === false) {
+				if (result.error) {
 					return res.render('error', {
 						title: "Verification Error",
-						msg: "Verification failed",
+						msg: result.error,
 						lang: req.lang,
 						locale: locale[req.lang],
 					})
@@ -90,13 +90,13 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 		return false;
 	}
 
-	private async handleCallback(req: Request, res: Response): Promise<any> {
+	private async handleCallback(req: Request, res: Response): Promise<{ error?: Error }> {
 		if (!req.cookies['session_id']) {
-			return false;
+			return { error: new Error("Misssing Session id") };
 		}
 		const result = await this.openidForPresentationReceivingService.getPresentationBySessionIdOrPresentationDuringIssuanceSession(req.cookies['session_id']);
 		if (!result.status) {
-			return false;
+			return { error: result.error };
 		}
 		const vp_token = result.rpState.vp_token;
 
@@ -109,7 +109,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 		console.log("Authorization server state = ", authorizationServerState)
 
 		if (!authorizationServerState || !vp_token || !result.rpState.claims || !result.rpState.claims["VID"]) {
-			return false;
+			return { error: new Error("Requested attributes are missing") };
 		}
 
 
@@ -125,7 +125,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 
 		await AppDataSource.getRepository(AuthorizationServerState).save(authorizationServerState);
 		res.redirect(this.protectedEndpoint);
-		return true;
+		return { };
 	}
 
 	private async askForPresentation(req: Request, res: Response): Promise<any> {
