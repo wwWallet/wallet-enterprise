@@ -244,7 +244,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			}
 			await this.rpStateRepository.save(rpState);
 
-			ctx.res.send({ redirect_uri: rpState.callback_endpoint + '#response_code=' + rpState.response_code })
+			if (!rpState.is_cross_device) {
+				ctx.res.send({ redirect_uri: rpState.callback_endpoint + '#response_code=' + rpState.response_code })
+				return;
+			}
+			// in cross-device scenario just return an empty response
+			ctx.res.send();
 			return;
 		}
 

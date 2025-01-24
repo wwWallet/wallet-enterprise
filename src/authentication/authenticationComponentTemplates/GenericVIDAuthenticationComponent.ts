@@ -11,6 +11,7 @@ import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.e
 import { appContainer } from "../../services/inversify.config";
 import { OpenidForPresentationsReceivingService } from "../../services/OpenidForPresentationReceivingService";
 import locale from "../../configuration/locale";
+import { RelyingPartyState } from "../../entities/RelyingPartyState.entity";
 
 export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 	private openidForPresentationReceivingService = appContainer.resolve(OpenidForPresentationsReceivingService);
@@ -138,6 +139,11 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 			req.authorizationServerState.vid_auth_state = stateId;
 			await AppDataSource.getRepository(AuthorizationServerState).save(req.authorizationServerState);
 			console.log("Authz state = ", req.authorizationServerState)
+					// update is_cross_device --> false since the button was pressed
+			await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder("rp_state")
+				.update({ is_cross_device: false })
+				.where("session_id = :session_id", { session_id: req.cookies.session_id })
+				.execute();
 			return res.render('issuer/vid-auth-component', {
 				authorizationRequestURL: url.toString(),
 				lang: req.lang,

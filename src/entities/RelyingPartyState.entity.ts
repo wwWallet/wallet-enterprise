@@ -20,6 +20,9 @@ export class RelyingPartyState {
 	@Column({ name: "session_id", type: "varchar", nullable: false })
 	session_id: string = "";
 
+	@Column({ name: "is_cross_device", type: "boolean", nullable: false, default: true })
+	is_cross_device: boolean = true;
+
 	@Column({ name: "signed_request", type: "text", nullable: false })
 	signed_request: string = "";
 

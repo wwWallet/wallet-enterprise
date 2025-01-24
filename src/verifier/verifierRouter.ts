@@ -208,6 +208,16 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		console.log("filtered fields = ", filteredFields)
 		presentationDefinition.input_descriptors[0].constraints.fields = filteredFields;
 	}
+	else if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
+		console.log("Cookie = ", req.cookies)
+
+		// update is_cross_device --> false since the button was pressed
+		await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder("rp_state")
+			.update({ is_cross_device: false })
+			.where("session_id = :session_id", { session_id: req.cookies.session_id })
+			.execute();
+		return res.redirect(req.body.action);
+	}
 
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId); // start session here
