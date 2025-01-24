@@ -810,7 +810,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return this.credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, result.jwk);
 		}));
 
-		if (responses && responses.length > 0) {
+		if (responses && responses.length > 0 && responses[0] !== null) {
 			const format = responses[0].format;
 
 			console.log("Credential Responses to send = ", responses);
