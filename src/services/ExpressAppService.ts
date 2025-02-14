@@ -21,7 +21,7 @@ if (config.appType == "ISSUER") {
 
 	importPrivateKeyPem(issuerPrivateKeyPem, 'ES256') // attempt to import the key
 	importX509(issuerCertPem, 'ES256'); // attempt to import the public key
-	
+
 }
 
 
@@ -61,7 +61,7 @@ export class ExpressAppService {
 			app.post('/openid4vci/token', async (req, res) => {
 				this.authorizationServerService.tokenRequestHandler({ req, res });
 			});
-	
+
 			app.post('/openid4vci/credential', async (req, res) => {
 				this.authorizationServerService.credentialRequestHandler({ req, res });
 			})
@@ -94,7 +94,7 @@ export class ExpressAppService {
 				x.map((credentialConfiguration) => {
 					credential_configurations_supported[credentialConfiguration.getId()] = credentialConfiguration.exportCredentialSupportedObject();
 				})
-	
+
 				const metadata = {
 					credential_issuer: config.url,
 					credential_endpoint: config.url + "/openid4vci/credential",
@@ -102,10 +102,10 @@ export class ExpressAppService {
 					display: config.display,
 					credential_configurations_supported: credential_configurations_supported,
 				};
-	
+
 				// @ts-ignore
 				const batchSize = config.issuanceFlow?.batchCredentialIssuance?.batchSize;
-	
+
 				if (batchSize) {
 					// @ts-ignore
 					metadata.batch_credential_issuance = {
@@ -120,11 +120,19 @@ export class ExpressAppService {
 					.setIssuedAt()
 					.setIssuer(config.url)
 					.setSubject(config.url)
-					.setProtectedHeader({ typ:"JWT", alg: "ES256", x5c: issuerX5C })
+					.setProtectedHeader({ typ: "JWT", alg: "ES256", x5c: issuerX5C })
 					.sign(key);
 				// @ts-ignore
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
 			});
+
+			if (config.supportsdjwtvc === true) {
+				app.get('/.well-known/jwt-vc-issuer', async (_req, res) => {
+					return res.send({
+						issuer: config.url,
+					})
+				});
+			}
 		}
 
 	}

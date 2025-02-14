@@ -21,6 +21,7 @@ export const config = {
 		defaultCredentialConfigurationIds: [],
 	},
 	appType: 'ISSUER', //ISSUER,VERIFIER
+	supportsdjwtvc: null,
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
 }
