@@ -109,7 +109,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 		
 		console.log("Authorization server state = ", authorizationServerState)
 
-		if (!authorizationServerState || !vp_token || !result.rpState.claims || !result.rpState.claims["VID"]) {
+		if (!authorizationServerState || !vp_token || !result.rpState.claims || !result.rpState.claims[this.inputDescriptorId]) {
 			return { error: new Error("Requested attributes are missing") };
 		}
 
