@@ -14,7 +14,7 @@ COPY package.json yarn.lock ./
 RUN yarn install
 
 
-FROM node:16-bullseye-slim as development
+FROM node:22-bullseye-slim as development
 
 ENV NODE_PATH=/node_modules
 COPY --from=dependencies /dependencies/node_modules /node_modules
