@@ -8,6 +8,7 @@ import { AuthorizationServerState } from "../entities/AuthorizationServerState.e
 import { PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { PresentationParserChain } from "../vp_token/PresentationParserChain";
 import { PublicKeyResolverChain } from "../vp_token/PublicKeyResolverChain";
+import { VerifiableCredentialFormat } from "../types/oid4vci";
 
 export interface CredentialSigner {
 	sign(payload: any, headers?: any, disclosureFrame?: any): Promise<{ jws: string }>;
@@ -75,7 +76,11 @@ export interface CredentialConfigurationRegistry {
  * get the raw credential response. If the authorizationServerState data is not sufficient the return value will be null
  * @param authorizationServerState 
  */
-	getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: Request, holderPublicKeyToBind: JWK): Promise<any | null>;
+	getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: Request, holderPublicKeyToBind: JWK): Promise<{
+		format?: VerifiableCredentialFormat;
+		credential?: unknown;
+		acceptance_token?: string;
+	} | null>;
 }
 
 export interface CredentialDataModel {

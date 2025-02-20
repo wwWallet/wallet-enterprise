@@ -25,4 +25,5 @@ export const config = {
 	},
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
+	clockTolerance: 60,
 }

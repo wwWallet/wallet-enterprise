@@ -34,7 +34,7 @@ export class CredentialConfigurationRegistryService implements CredentialConfigu
 		return null;
 	}
 
-	async getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: any, holderPublicKeyToBind: JWK): Promise<any | null> {
+	async getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: any, holderPublicKeyToBind: JWK) {
 		for (const conf of this.credentialConfigurations) {
 			const result = await conf.generateCredentialResponse(authorizationServerState, credentialRequest, holderPublicKeyToBind).catch((err) => {
 				console.log(err)

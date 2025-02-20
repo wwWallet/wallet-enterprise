@@ -809,21 +809,22 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			}
 			return this.credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, result.jwk);
 		}));
+		const filteredResponses = responses.filter((r) => r !== null);
 
 		if (responses && responses.length > 0 && responses[0] !== null) {
 			const format = responses[0].format;
 
-			console.log("Credential Responses to send = ", responses);
+			console.log("Credential Responses to send = ", filteredResponses );
 			if (ctx.req.body?.proofs) { // if user requested in batches
 				ctx.res.send({
-					credentials: responses.map((response) => response.credential),
+					credentials: filteredResponses.map((response: any) => response.credential),
 					format: format,
 				});
 				return;
 			}
 			else {
 				ctx.res.send({
-					credential: responses.map((response) => response.credential),
+					credential: filteredResponses.map((response: any) => response.credential)[0],
 					format: format,
 				});
 				return;

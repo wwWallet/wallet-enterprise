@@ -23,4 +23,5 @@ export const config = {
 	appType: 'ISSUER', //ISSUER,VERIFIER
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
+	clockTolerance: 60,
 }

@@ -3,21 +3,20 @@ import { Request, Response } from 'express'
 import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
 import { VerifiableCredentialFormat } from "../types/oid4vci";
 import { TYPES } from "./types";
-import { compactDecrypt, exportJWK, generateKeyPair, importJWK, importPKCS8, jwtVerify, SignJWT } from "jose";
-import { createHash, randomUUID } from "crypto";
+import { compactDecrypt, exportJWK, generateKeyPair, importJWK, importPKCS8, SignJWT } from "jose";
+import { randomUUID } from "crypto";
 import base64url from "base64url";
 import 'reflect-metadata';
 import { JSONPath } from "jsonpath-plus";
 import { Repository } from "typeorm";
 import AppDataSource from "../AppDataSource";
 import { config } from "../../config";
-import { HasherAlgorithm, HasherAndAlgorithm, SdJwt, SignatureAndEncryptionAlgorithm, Verifier } from "@sd-jwt/core";
 import fs from 'fs';
 import path from "path";
 import { ClaimRecord, PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import * as z from 'zod';
-import { verifyKbJwt } from "../util/verifyKbJwt";
+import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 
 const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.server.key"), 'utf-8').toString();
 const x5c = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.server.json")).toString()) as Array<string>;
@@ -27,34 +26,35 @@ enum ResponseMode {
 	DIRECT_POST_JWT = 'direct_post.jwt'
 }
 
+
 const ResponseModeSchema = z.nativeEnum(ResponseMode);
 
 // @ts-ignore
 const response_mode: ResponseMode = config?.presentationFlow?.response_mode ? ResponseModeSchema.parse(config?.presentationFlow?.response_mode) : ResponseMode.DIRECT_POST_JWT;
 
-const hasherAndAlgorithm: HasherAndAlgorithm = {
-	hasher: (input: string) => createHash('sha256').update(input).digest(),
-	algorithm: HasherAlgorithm.Sha256
-}
+// const hasherAndAlgorithm: HasherAndAlgorithm = {
+// 	hasher: (input: string) => createHash('sha256').update(input).digest(),
+// 	algorithm: HasherAlgorithm.Sha256
+// }
 
-function uint8ArrayToBase64Url(array: any) {
-	// Convert the Uint8Array to a binary string
-	let binaryString = '';
-	array.forEach((byte: any) => {
-		binaryString += String.fromCharCode(byte);
-	});
+// function uint8ArrayToBase64Url(array: any) {
+// 	// Convert the Uint8Array to a binary string
+// 	let binaryString = '';
+// 	array.forEach((byte: any) => {
+// 		binaryString += String.fromCharCode(byte);
+// 	});
 
-	// Convert the binary string to a Base64 string
-	let base64String = btoa(binaryString);
+// 	// Convert the binary string to a Base64 string
+// 	let base64String = btoa(binaryString);
 
-	// Convert the Base64 string to Base64URL format
-	let base64UrlString = base64String
-		.replace(/\+/g, '-') // Replace + with -
-		.replace(/\//g, '_') // Replace / with _
-		.replace(/=+$/, ''); // Remove trailing '='
+// 	// Convert the Base64 string to Base64URL format
+// 	let base64UrlString = base64String
+// 		.replace(/\+/g, '-') // Replace + with -
+// 		.replace(/\//g, '_') // Replace / with _
+// 		.replace(/=+$/, ''); // Remove trailing '='
 
-	return base64UrlString;
-}
+// 	return base64UrlString;
+// }
 
 @injectable()
 export class OpenidForPresentationsReceivingService implements OpenidForPresentationsReceivingInterface {
@@ -304,55 +304,65 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			}
 			const vp_token = jsonPathResult[0];
 			if (desc.format == VerifiableCredentialFormat.VC_SD_JWT) {
-				const sdJwt = vp_token.split('~').slice(0, -1).join('~') + '~';
+				// const sdJwt = vp_token.split('~').slice(0, -1).join('~') + '~';
 				const input_descriptor = rpState!.presentation_definition!.input_descriptors.filter((input_desc: any) => input_desc.id == desc.id)[0];
 				if (!input_descriptor) {
 					return { error: new Error("Input descriptor not found") };
 				}
 
-				const parsedSdJwt = SdJwt.fromCompact(sdJwt).withHasher(hasherAndAlgorithm);
+				// const parsedSdJwt = SdJwt.fromCompact(sdJwt).withHasher(hasherAndAlgorithm);
 
 
 				// kbjwt validation
-				const kbJwtValidationResult = await verifyKbJwt(vp_token, { aud: rpState.audience, nonce: rpState.nonce });
-				if (!kbJwtValidationResult) {
-					const error = new Error("KB JWT validation failed");
-					error.name = "PRESENTATION_RESPONSE:INVALID_KB_JWT";
-					return { error };
-				}
-				console.info("Passed KBJWT verification...");
+				// const kbJwtValidationResult = await verifyKbJwt(vp_token, { aud: rpState.audience, nonce: rpState.nonce });
+				// if (!kbJwtValidationResult) {
+				// 	const error = new Error("KB JWT validation failed");
+				// 	error.name = "PRESENTATION_RESPONSE:INVALID_KB_JWT";
+				// 	return { error };
+				// }
+				// console.info("Passed KBJWT verification...");
 
 				// let error = "";
 				// const errorCallback = (errorName: string) => {
 				// 	error = errorName;
 				// }
 
-				const verifyCb: Verifier = async ({ header, message, signature }) => {
-					if (header.alg !== SignatureAndEncryptionAlgorithm.ES256) {
-						throw new Error('only ES256 is supported')
-					}
+				// const verifyCb: Verifier = async ({ header, message, signature }) => {
+				// 	if (header.alg !== SignatureAndEncryptionAlgorithm.ES256) {
+				// 		throw new Error('only ES256 is supported')
+				// 	}
 
-					const publicKeyResolutionResult = await this.configurationService.getPublicKeyResolverChain().resolve(vp_token, VerifiableCredentialFormat.VC_SD_JWT);
-					if ('error' in publicKeyResolutionResult) {
-						return false;
-					}
+				// 	const publicKeyResolutionResult = await this.configurationService.getPublicKeyResolverChain().resolve(vp_token, VerifiableCredentialFormat.VC_SD_JWT);
+				// 	if ('error' in publicKeyResolutionResult) {
+				// 		return false;
+				// 	}
 
-					if (!publicKeyResolutionResult.isTrusted) {
-						return false;
-					}
-					const verificationResult = await jwtVerify(message + '.' + uint8ArrayToBase64Url(signature), publicKeyResolutionResult.publicKey).then(() => true).catch((err: any) => {
-						console.log("Error verifying")
-						console.error(err);
-						// errorCallback(err.name);
-						throw new Error(err);
-					});
-					return verificationResult;
-				}
+				// 	if (!publicKeyResolutionResult.isTrusted) {
+				// 		return false;
+				// 	}
+				// 	const verificationResult = await jwtVerify(message + '.' + uint8ArrayToBase64Url(signature), publicKeyResolutionResult.publicKey).then(() => true).catch((err: any) => {
+				// 		console.log("Error verifying")
+				// 		console.error(err);
+				// 		// errorCallback(err.name);
+				// 		throw new Error(err);
+				// 	});
+				// 	return verificationResult;
+				// }
 
 				try {
-					const verificationResult = await parsedSdJwt.verify(verifyCb);
-					const prettyClaims = await parsedSdJwt.getPrettyClaims();
-	
+					const { credentialParsingEngine, verifyingEngine } = initializeCredentialEngine();
+					const verificationResultR = await verifyingEngine.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
+					const parseResult = await credentialParsingEngine.parse({ rawCredential: vp_token })
+					const prettyClaims = parseResult.success === true ? parseResult.value.signedClaims : null;
+					
+					if (verificationResultR.success === false) {
+						const error = new Error(`Verification result ${JSON.stringify(verificationResultR.error)}`);
+						error.name = JSON.stringify(verificationResultR.error);
+						return { error: error };
+					}
+					if (!prettyClaims) {
+						return { error: new Error(JSON.stringify(parseResult.success === false && parseResult.error)) };
+					}
 					input_descriptor.constraints.fields.map((field: any) => {
 						if (!presentationClaims[desc.id]) {
 							presentationClaims[desc.id] = []; // initialize
@@ -371,11 +381,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						presentationClaims[desc.id].push({ key: fieldPath.split('.')[fieldPath.split('.').length - 1], name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
 					});
 	
-					if (!verificationResult.isSignatureValid) {
-						const error = new Error(`Verification result ${JSON.stringify(verificationResult)}`);
-						error.name = "SD_JWT_VERIFICATION_FAILURE";
-						return { error: error };
-					}
+
 				}
 				catch(err) {
 					console.error("Verification error: ", err);
