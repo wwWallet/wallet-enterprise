@@ -4,9 +4,12 @@ import { AuthorizationServerState } from "../../entities/AuthorizationServerStat
 import { VerifiableCredentialFormat } from "../../types/oid4vci";
 import { CredentialSigner } from "../../services/interfaces";
 import { Request } from "express";
+import { AuthenticationChain } from "../../authentication/AuthenticationComponent";
 
 
 export interface SupportedCredentialProtocol {
+
+	getAuthenticationChain(): AuthenticationChain;
 
 	getScope(): string;
 	getCredentialSigner(): CredentialSigner;
@@ -23,9 +26,5 @@ export interface SupportedCredentialProtocol {
 
 
 export interface VCDMSupportedCredentialProtocol extends SupportedCredentialProtocol {
-	/**
-	 * VCDM draft spec https://github.com/danielfett/sd-jwt-vc-dm?tab=readme-ov-file#sd-jwt-vc-dm-credential-format
-	 * @returns  an object according to https://vcstuff.github.io/sd-jwt-vc-types/draft-fett-oauth-sd-jwt-vc-types.html
-	 */
 	metadata(): any;
 }
