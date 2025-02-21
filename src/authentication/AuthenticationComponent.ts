@@ -4,8 +4,14 @@ import { NextFunction, Request, Response } from "express";
 export class AuthenticationComponent {
 	constructor(public identifier: string, public protectedEndpoint: string) { }
 
-	async authenticate(_req: Request, _res: Response, next: NextFunction): Promise<any> {
-		return next();
+	async authenticate(req: Request, _res: Response, next: NextFunction): Promise<any> {
+		const confId = req.authorizationServerState?.credential_configuration_ids ? req.authorizationServerState?.credential_configuration_ids[0] : null;
+		console.log("Authentication Component Identifier = ", this.identifier);
+		console.log("Comparison = ", this.identifier.startsWith(confId + "-"));
+		if (confId && this.identifier.startsWith(confId + "-")) {
+			return next();
+		}
+		throw new Error("Not for this configuration id");
 	}
 
 }
