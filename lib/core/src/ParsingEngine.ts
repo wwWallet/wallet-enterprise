@@ -2,7 +2,6 @@ import { CredentialParsingError } from "./error";
 import { CredentialParser, ParsingEngineI } from "./interfaces";
 import { VerifiableCredentialFormat } from "./types";
 
-
 export function ParsingEngine(): ParsingEngineI {
 	const parsers: CredentialParser[] = [];
 
@@ -11,7 +10,7 @@ export function ParsingEngine(): ParsingEngineI {
 			parsers.push(parser);
 		},
 
-		async parse({ rawCredential, format }: { rawCredential: unknown, format: VerifiableCredentialFormat }) {
+		async parse({ rawCredential }: { rawCredential: unknown }) {
 
 			for (const p of parsers) {
 				const result = await p.parse({ rawCredential });
