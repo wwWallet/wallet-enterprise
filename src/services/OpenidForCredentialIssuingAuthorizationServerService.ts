@@ -166,6 +166,23 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		ctx.req.authorizationServerState.scope = ctx.req.body.scope;
 	}
 
+	async authorizationRequestAuthorizationDetailsHandler(ctx: { req: Request, res: Response }) {
+		if (ctx.res.headersSent) {
+			return;
+		}
+		if (!ctx.req.authorizationServerState) {
+			ctx.req.authorizationServerState = new AuthorizationServerState();
+		}
+
+		if (ctx.req.body.authorization_details) {
+			const authorizationDetails = JSON.parse(ctx.req.body.authorization_details) as { type: string; credential_configuration_id: string }[];
+			if (authorizationDetails && authorizationDetails instanceof Array && authorizationDetails.length > 0) {
+				ctx.req.authorizationServerState.credential_configuration_ids = [ authorizationDetails[0].credential_configuration_id ];
+			}
+		}
+
+	}
+
 	private async authorizationRequestStateHandler(ctx: { req: Request, res: Response }) {
 		if (ctx.res.headersSent) {
 			return;
@@ -206,6 +223,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			ctx.res.redirect(CONSENT_ENTRYPOINT);
 			return;
 		}
+
 		// the following functions will alter the ctx.req.authorizationServerState object
 		await this.authorizationRequestIssuerStateHandler(ctx);
 		await this.authorizationRequestClientIdAndRedirectUriHandler(ctx);
@@ -214,6 +232,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		await this.authorizationRequestResponseTypeHandler(ctx);
 		await this.authorizationRequestStateHandler(ctx);
 		await this.authorizationRequestScopeHandler(ctx);
+		await this.authorizationRequestAuthorizationDetailsHandler(ctx);
 
 		ctx.req.authorizationServerState.request_uri = `urn:ietf:params:oauth:request_uri:${base64url.encode(randomUUID())}`;
 		ctx.req.authorizationServerState.request_uri_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
@@ -263,10 +282,10 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				const authorization_code = crypto.randomBytes(60).toString('base64url');
 				ctx.req.authorizationServerState.authorization_code = authorization_code;
 				const presentationDefinition = this.verifierConfigurationService.getPresentationDefinitions().filter((pd) => pd.id == result.rpState.presentation_definition_id)[0];
-				
+
 				// @ts-ignore
 				const claims = result.rpState.claims[presentationDefinition.input_descriptors[0].id];
-				for (const {key, value} of claims) {
+				for (const { key, value } of claims) {
 					// @ts-ignore
 					ctx.req.authorizationServerState[key] = value;
 				}
@@ -814,7 +833,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		if (responses && responses.length > 0 && responses[0] !== null) {
 			const format = responses[0].format;
 
-			console.log("Credential Responses to send = ", filteredResponses );
+			console.log("Credential Responses to send = ", filteredResponses);
 			if (ctx.req.body?.proofs) { // if user requested in batches
 				ctx.res.send({
 					credentials: filteredResponses.map((response: any) => response.credential),
