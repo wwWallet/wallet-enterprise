@@ -5,10 +5,11 @@ export class AuthenticationComponent {
 	constructor(public identifier: string, public protectedEndpoint: string) { }
 
 	async authenticate(req: Request, _res: Response, next: NextFunction): Promise<any> {
-		const confId = req.authorizationServerState?.credential_configuration_ids ? req.authorizationServerState?.credential_configuration_ids[0] : null;
+		const scopeName = req.authorizationServerState?.scope ? req.authorizationServerState?.scope : null;
+		console.log("Scope = ", scopeName)
 		console.log("Authentication Component Identifier = ", this.identifier);
-		console.log("Comparison = ", this.identifier.startsWith(confId + "-"));
-		if (confId && this.identifier.startsWith(confId + "-")) {
+		console.log("Comparison = ", this.identifier.startsWith(scopeName + "-"));
+		if (scopeName && this.identifier.startsWith(scopeName + "-")) {
 			return next();
 		}
 		throw new Error("Not for this configuration id");

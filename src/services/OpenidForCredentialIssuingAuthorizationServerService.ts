@@ -166,22 +166,22 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		ctx.req.authorizationServerState.scope = ctx.req.body.scope;
 	}
 
-	async authorizationRequestAuthorizationDetailsHandler(ctx: { req: Request, res: Response }) {
-		if (ctx.res.headersSent) {
-			return;
-		}
-		if (!ctx.req.authorizationServerState) {
-			ctx.req.authorizationServerState = new AuthorizationServerState();
-		}
+	// async authorizationRequestAuthorizationDetailsHandler(ctx: { req: Request, res: Response }) {
+	// 	if (ctx.res.headersSent) {
+	// 		return;
+	// 	}
+	// 	if (!ctx.req.authorizationServerState) {
+	// 		ctx.req.authorizationServerState = new AuthorizationServerState();
+	// 	}
 
-		if (ctx.req.body.authorization_details) {
-			const authorizationDetails = JSON.parse(ctx.req.body.authorization_details) as { type: string; credential_configuration_id: string }[];
-			if (authorizationDetails && authorizationDetails instanceof Array && authorizationDetails.length > 0) {
-				ctx.req.authorizationServerState.credential_configuration_ids = [ authorizationDetails[0].credential_configuration_id ];
-			}
-		}
+	// 	if (ctx.req.body.authorization_details) {
+	// 		const authorizationDetails = JSON.parse(ctx.req.body.authorization_details) as { type: string; credential_configuration_id: string }[];
+	// 		if (authorizationDetails && authorizationDetails instanceof Array && authorizationDetails.length > 0) {
+	// 			ctx.req.authorizationServerState.credential_configuration_ids = [ authorizationDetails[0].credential_configuration_id ];
+	// 		}
+	// 	}
 
-	}
+	// }
 
 	private async authorizationRequestStateHandler(ctx: { req: Request, res: Response }) {
 		if (ctx.res.headersSent) {
@@ -232,7 +232,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		await this.authorizationRequestResponseTypeHandler(ctx);
 		await this.authorizationRequestStateHandler(ctx);
 		await this.authorizationRequestScopeHandler(ctx);
-		await this.authorizationRequestAuthorizationDetailsHandler(ctx);
 
 		ctx.req.authorizationServerState.request_uri = `urn:ietf:params:oauth:request_uri:${base64url.encode(randomUUID())}`;
 		ctx.req.authorizationServerState.request_uri_expiration_timestamp = Math.floor(Date.now() / 1000) + 60;
