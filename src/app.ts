@@ -21,7 +21,7 @@ import titles from './configuration/titles';
 import { verifierRouter } from './verifier/verifierRouter';
 import { GrantType } from './types/oid4vci';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
-import { openidForCredentialIssuingAuthorizationServerService, openidForPresentationReceivingService } from './services/instances';
+import { credentialConfigurationRegistryService, openidForCredentialIssuingAuthorizationServerService, openidForPresentationReceivingService } from './services/instances';
 import _ from 'lodash';
 import * as qrcode from 'qrcode';
 import { configurationExecution } from './configuration/main';
@@ -72,41 +72,52 @@ app.use('/verifier', verifierRouter);
 
 app.use('/authorization', authorizationRouter);
 
-
-
 app.get('/', async (req: Request, res: Response) => {
-	req.session.authenticationChain = {};
-	const result = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, config.issuanceFlow.defaultCredentialConfigurationIds ?? []);
 
-	let credentialOfferQR = await new Promise((resolve) => {
-		qrcode.toDataURL(result.url.toString().replace(config.wwwalletURL, "openid-credential-offer://"), {
-			margin: 1,
-			errorCorrectionLevel: 'L',
-			type: 'image/png'
-		},
-			(err, data) => {
-				if (err) return resolve("NO_QR");
-				return resolve(data);
-			});
-	}) as string;
+	if (config?.appType === 'VERIFIER') {
 
-	// Determine which index to render based on config.appType
-	let viewToRender = 'index'; // Default to 'index'
-	if (config.appType) {
-		if (config.appType === 'VERIFIER') {
-			viewToRender = 'indexVerifier';
-		} else if (config.appType === 'ISSUER') {
-			viewToRender = 'index';
-		}
+		return res.render("§indexVerifier", {
+			title: titles.index,
+			lang: req.lang,
+			locale: locale[req.lang],
+		})
 	}
-
-	return res.render(viewToRender, {
+	return res.render("landing", {
 		title: titles.index,
-		credentialOfferURL: result.url,
-		credentialOfferQR,
 		lang: req.lang,
-		locale: locale[req.lang]
+		locale: locale[req.lang],
+		supportedCredentials: credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((sc) => sc.exportCredentialSupportedObject()),
 	})
+})
+
+app.get('/offer/:scope', async (req: Request, res: Response) => {
+	const scope = req.params.scope;
+	const supportedCredentialConfig = credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().filter((sc) => sc.getScope() == scope)[0];
+	if (supportedCredentialConfig) {
+		req.session.authenticationChain = {};
+		const result = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, [supportedCredentialConfig.getId()]);
+
+		let credentialOfferQR = await new Promise((resolve) => {
+			qrcode.toDataURL(result.url.toString().replace(config.wwwalletURL, "openid-credential-offer://"), {
+				margin: 1,
+				errorCorrectionLevel: 'L',
+				type: 'image/png'
+			},
+				(err, data) => {
+					if (err) return resolve("NO_QR");
+					return resolve(data);
+				});
+		}) as string;
+
+
+		return res.render("index", {
+			title: titles.index,
+			credentialOfferURL: result.url,
+			credentialOfferQR,
+			lang: req.lang,
+			locale: locale[req.lang]
+		})
+	}
 });
 
 

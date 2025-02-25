@@ -5,7 +5,12 @@ import { CredentialView } from "../authorization/types";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { SupportedCredentialProtocol } from "../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
 import { JWK } from "jose";
+import EventEmitter from "node:events";
 
+
+class CredentialConfigurationRegistryServiceEmitter extends EventEmitter { }
+
+export const credentialConfigurationRegistryServiceEmitter = new CredentialConfigurationRegistryServiceEmitter();
 
 @injectable()
 export class CredentialConfigurationRegistryService implements CredentialConfigurationRegistry {
