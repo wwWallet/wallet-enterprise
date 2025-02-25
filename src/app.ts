@@ -76,7 +76,7 @@ app.get('/', async (req: Request, res: Response) => {
 
 	if (config?.appType === 'VERIFIER') {
 
-		return res.render("§indexVerifier", {
+		return res.render("indexVerifier", {
 			title: titles.index,
 			lang: req.lang,
 			locale: locale[req.lang],
@@ -94,6 +94,9 @@ app.get('/offer/:scope', async (req: Request, res: Response) => {
 	const scope = req.params.scope;
 	const supportedCredentialConfig = credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().filter((sc) => sc.getScope() == scope)[0];
 	if (supportedCredentialConfig) {
+
+		const supportedCredentialType = supportedCredentialConfig.exportCredentialSupportedObject();
+
 		req.session.authenticationChain = {};
 		const result = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, [supportedCredentialConfig.getId()]);
 
@@ -114,6 +117,7 @@ app.get('/offer/:scope', async (req: Request, res: Response) => {
 			title: titles.index,
 			credentialOfferURL: result.url,
 			credentialOfferQR,
+			supportedCredentialType,
 			lang: req.lang,
 			locale: locale[req.lang]
 		})
