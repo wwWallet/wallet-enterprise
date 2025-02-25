@@ -5,6 +5,24 @@ import { credentialConfigurationRegistryServiceEmitter } from "../services/Crede
 
 const authorizationRouter = Router();
 
+authorizationRouter.use((req, res, next) => {
+	const originalRender = res.render;
+
+	// @ts-ignore
+	res.render = function (view, options = {}, callback: any) {
+		const supportedCredentialType = credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().filter((sc) => sc.getScope() === req.authorizationServerState.scope)[0];
+
+		const extraData = { supportedCredentialType: supportedCredentialType ? supportedCredentialType.exportCredentialSupportedObject(): undefined };
+
+		const finalOptions = { ...options, ...extraData };
+
+		// @ts-ignore
+		originalRender.call(res, view, finalOptions, callback);
+	};
+
+	next();
+});
+
 function registerAuthChains() {
 	credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((conf) => {
 		const authChain = conf.getAuthenticationChain();
