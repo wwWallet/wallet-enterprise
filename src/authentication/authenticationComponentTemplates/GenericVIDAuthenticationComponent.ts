@@ -21,7 +21,8 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 		override protectedEndpoint: string,
 		private mapping: { [authorizationServerStateColumnName: string] : { input_descriptor_constraint_field_name: string, parser?: (v: any) => string }},
 		private presentationDefinitionId: string = "vid",
-		private inputDescriptorId: string = "VID"
+		private inputDescriptorId: string = "VID",
+		private scopeName: string
 	) { super(identifier, protectedEndpoint) }
 
 	public override async authenticate(
@@ -130,8 +131,8 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 	}
 
 	private async askForPresentation(req: Request, res: Response): Promise<any> {
-		const presentationDefinition = JSON.parse(JSON.stringify(verifierConfigurationService.getPresentationDefinitions().filter(pd => pd.id == this.presentationDefinitionId)[0])) as any;
-
+		let presentationDefinition = JSON.parse(JSON.stringify(verifierConfigurationService.getPresentationDefinitions().filter(pd => pd.id == this.presentationDefinitionId)[0])) as any;
+		presentationDefinition.input_descriptors[0].purpose = `Present your credential(s) to get your ${this.scopeName}`
 		try {
 			const { url, stateId } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition, req.cookies['session_id'], config.url + CONSENT_ENTRYPOINT + '/callback');
 			console.log("Authorization request url = ", url)
