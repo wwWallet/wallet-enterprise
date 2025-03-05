@@ -5,6 +5,7 @@ import { ParsedQs } from "qs";
 import { AuthenticationComponent } from "../../authentication/AuthenticationComponent";
 import { config } from "../../../config";
 import locale from "../locale";
+import titles from "../titles";
 
 
 
@@ -58,7 +59,7 @@ export class VerifierAuthenticationComponent extends AuthenticationComponent {
 
 	private async renderLogin(req: Request, res: Response): Promise<any> {
 		res.render('issuer/login', {
-			title: "Verifier Login",
+			title: titles.index,
 			lang: req.lang,
 			locale: locale[req.lang]
 		})
