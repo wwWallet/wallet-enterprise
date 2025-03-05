@@ -8,10 +8,11 @@ import { AuthorizationServerState } from "../entities/AuthorizationServerState.e
 import { PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { PresentationParserChain } from "../vp_token/PresentationParserChain";
 import { PublicKeyResolverChain } from "../vp_token/PublicKeyResolverChain";
-import { VerifiableCredentialFormat } from "../types/oid4vci";
+import { VerifiableCredentialFormat } from "core/dist/types";
 
 export interface CredentialSigner {
-	sign(payload: any, headers?: any, disclosureFrame?: any): Promise<{ jws: string }>;
+	signSdJwtVc(payload: any, headers?: any, disclosureFrame?: any): Promise<{ credential: string }>;
+	signMsoMdoc(doctype: string, namespaces: Map<string, Record<string, unknown>>, holderPublicKeyJwk: JWK): Promise<{ credential: string }>;
 	getPublicKeyJwk(): Promise<{ jwk: JWK }>;
 }
 

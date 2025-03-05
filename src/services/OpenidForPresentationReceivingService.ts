@@ -1,7 +1,7 @@
 import { inject, injectable } from "inversify";
 import { Request, Response } from 'express'
 import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
-import { VerifiableCredentialFormat } from "../types/oid4vci";
+import { VerifiableCredentialFormat } from "core/dist/types";
 import { TYPES } from "./types";
 import { compactDecrypt, exportJWK, generateKeyPair, importJWK, importPKCS8, SignJWT } from "jose";
 import { randomUUID } from "crypto";
@@ -209,7 +209,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				throw new Error();
 			}
 			const rp_eph_priv = await importJWK(rpState.rp_eph_priv, 'ECDH-ES');
-			const { plaintext } = await compactDecrypt(ctx.req.body.response, rp_eph_priv);
+			const { protectedHeader, plaintext } = await compactDecrypt(ctx.req.body.response, rp_eph_priv);
+			console.log("Protected header = ", protectedHeader)
 			const payload = JSON.parse(new TextDecoder().decode(plaintext)) as { state: string | undefined, vp_token: string | undefined, presentation_submission: any };
 			if (!payload?.state) {
 				throw new Error("Missing state");
@@ -237,6 +238,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			console.log("Encoding....")
 			rpState.vp_token = base64url.encode(JSON.stringify(payload.vp_token));
 			rpState.date_created = new Date();
+			rpState.apv_jarm_encrypted_response_header = protectedHeader.apv && typeof protectedHeader.apv == 'string' ? protectedHeader.apv as string : null;
+			rpState.apu_jarm_encrypted_response_header = protectedHeader.apu && typeof protectedHeader.apu == 'string' ? protectedHeader.apu as string : null;
+
 			console.log("Stored rp state = ", rpState)
 			if (rpState.session_id.startsWith("auth_session:")) { // is presentation during issuance
 				await this.handlePresentationDuringIssuance(ctx, rpState);
@@ -303,7 +307,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				throw new Error(`Couldn't find vp_token for path ${path}`);
 			}
 			const vp_token = jsonPathResult[0];
-			if (desc.format == VerifiableCredentialFormat.VC_SD_JWT) {
+			if (desc.format == VerifiableCredentialFormat.VC_SDJWT) {
 				// const sdJwt = vp_token.split('~').slice(0, -1).join('~') + '~';
 				const input_descriptor = rpState!.presentation_definition!.input_descriptors.filter((input_desc: any) => input_desc.id == desc.id)[0];
 				if (!input_descriptor) {
@@ -350,8 +354,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				// }
 
 				try {
-					const { credentialParsingEngine, verifyingEngine } = initializeCredentialEngine();
-					const verificationResultR = await verifyingEngine.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
+					const { credentialParsingEngine, sdJwtVerifier } = initializeCredentialEngine();
+					const verificationResultR = await sdJwtVerifier.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
 					const parseResult = await credentialParsingEngine.parse({ rawCredential: vp_token })
 					const prettyClaims = parseResult.success === true ? parseResult.value.signedClaims : null;
 					
@@ -387,6 +391,69 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					console.error("Verification error: ", err);
 					if (err instanceof Error) {
 						return { error: err };
+					}
+				}
+			}
+			else if (desc.format == VerifiableCredentialFormat.MSO_MDOC && rpState.apu_jarm_encrypted_response_header) {
+				const receivedMdocNonce = base64url.decode(rpState.apu_jarm_encrypted_response_header);
+				console.log("Received mdoc nonce = ", receivedMdocNonce);
+				console.log("Verifcation Opts = ", {
+					expectedAudience: rpState.audience,
+					expectedNonce: rpState.nonce,
+					holderNonce: receivedMdocNonce,
+					responseUri: this.configurationService.getConfiguration().redirect_uri,
+				});
+
+				const ce = initializeCredentialEngine();
+				const verificationResult = await ce.msoMdocVerifier.verify({
+					rawCredential: vp_token,
+					opts: {
+						expectedAudience: rpState.audience,
+						expectedNonce: rpState.nonce,
+						holderNonce: receivedMdocNonce,
+						responseUri: this.configurationService.getConfiguration().redirect_uri,
+					}
+				});
+				if (!verificationResult.success) {
+					return {
+						error: new Error(verificationResult.error)
+					}
+				}
+				// const { holderPublicKey } = verificationResult.value;
+
+
+				const parsingResult = await ce.credentialParsingEngine.parse({
+					rawCredential: vp_token
+				});
+
+				if (!parsingResult.success) {
+					return {
+						error: new Error(parsingResult.error)
+					}
+				}
+				const parsedCredential = parsingResult.value;
+				console.log("Parsed credential = ", parsedCredential);
+				const definition = this.configurationService.getPresentationDefinitions().filter((pd) => pd.id == presentation_submission.definition_id)[0]
+				
+				const fieldNamesWithValues = definition.input_descriptors[0].constraints.fields.map((field: any) => {
+					const key = field.path.map((possiblePath: string) => possiblePath.split('.')[possiblePath.split('.').length-1]);
+					const signedClaimsWithDoctype = {};
+					// @ts-ignore
+					signedClaimsWithDoctype[definition.input_descriptors[0].id] = { ...parsedCredential.signedClaims };
+					console.log("Signed claims with doctype = ", signedClaimsWithDoctype)
+					const values = field.path.map((possiblePath: string) => JSONPath({ path: possiblePath, json: signedClaimsWithDoctype })[0]);
+					const val = values.filter((v: any) => v != undefined || v != null)[0]; // get first value that is not undefined
+					return val ? { key, name: (field as any).name as string, value: typeof val == 'object' ? JSON.stringify(val) : val as string } : undefined;
+				});
+				console.log("Fieldnames with values = ", fieldNamesWithValues)
+				// if (fieldNamesWithValues.includes(undefined)) {
+				// 	return { error: new Error("INSUFFICIENT_CREDENTIALS"), error_description: new Error("Insufficient credentials") };
+				// }
+
+				for (const item of fieldNamesWithValues as Array<{ key: string, name: string; value: string } | undefined>) {
+					if (item) { // Check if item is not undefined
+						const { key, name, value } = item;
+						presentationClaims[desc.id].push({ key, name, value });
 					}
 				}
 			}
