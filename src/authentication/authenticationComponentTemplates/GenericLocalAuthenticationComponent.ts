@@ -6,6 +6,7 @@ import AppDataSource from "../../AppDataSource";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.enum";
 import locale from "../../configuration/locale";
+import titles from "../../configuration/titles";
 
 export class GenericLocalAuthenticationComponent extends AuthenticationComponent {
 
@@ -72,7 +73,7 @@ export class GenericLocalAuthenticationComponent extends AuthenticationComponent
 
 	private async renderLogin(req: Request, res: Response): Promise<any> {
 		res.render('issuer/login', {
-			title: "Login",
+			title: titles.index,
 			defaultUsers: this.defaultUsers,
 			lang: req.lang,
 			locale: locale[req.lang]
@@ -81,7 +82,7 @@ export class GenericLocalAuthenticationComponent extends AuthenticationComponent
 
 	private async renderFailedLogin(req: Request, res: Response): Promise<any> {
 		res.render('issuer/login', {
-			title: "Login",
+			title: titles.index,
 			lang: req.lang,
 			locale: locale[req.lang],
 			failed: true

@@ -1,4 +1,8 @@
-title#the-title #{title}
+if supportedCredentialType
+	title#the-title #{supportedCredentialType.display[0].name}
+else
+	title#the-title #{title}
+
 meta(charset="utf-8")
 
 link(rel="shortcut icon" href="/images/favicon.ico?v=lk9mNwXlE0")
