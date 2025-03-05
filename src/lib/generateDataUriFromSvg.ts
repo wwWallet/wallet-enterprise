@@ -2,6 +2,21 @@ export function generateDataUriFromSvg(
 	svgText: string,
 	pathsWithValues: { path: string, value: string }[],
 ): string {
+
+	function escapeSVG(str: string) {
+		if (typeof str !== "string") return str;
+
+		return str.replace(/[<>&"']/g, function (match) {
+			switch (match) {
+				case '<': return '&lt;';
+				case '>': return '&gt;';
+				case '&': return '&amp;';
+				case '"': return '&quot;';
+				case "'": return '&apos;';
+				default: return match;
+			}
+		});
+	}
 	// Regular expression to match the placeholders in the SVG
 	const regex = /{{([^}]+)}}/g;
 
@@ -13,7 +28,7 @@ export function generateDataUriFromSvg(
 		const row = pathsWithValues.find(r => r.path === key);
 
 		// Replace placeholder with row value or replace with an empty string if not found
-		return row && row.value ? String(row.value) : '';
+		return row && row.value ? escapeSVG(String(row.value)) : '';
 	});
 
 	// Encode the replaced SVG content into a data URI
