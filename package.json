@@ -16,7 +16,7 @@
   "author": "",
   "description": "",
   "dependencies": {
-    "core": "./lib/core",
+    "@auth0/mdl": "^2.0.1",
     "@digitalbazaar/did-io": "^2.0.0",
     "@digitalbazaar/did-method-key": "^5.1.0",
     "@sd-jwt/core": "^0.2.1",
@@ -28,6 +28,7 @@
     "client-oauth2": "^4.3.3",
     "connect-redis": "^7.0.1",
     "cookie-parser": "^1.4.6",
+    "core": "./lib/core",
     "cors": "^2.8.5",
     "did-resolver": "^4.1.0",
     "express": "^4.18.1",
