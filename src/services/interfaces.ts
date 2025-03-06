@@ -6,8 +6,6 @@ import { SupportedCredentialProtocol } from "../lib/CredentialIssuerConfig/Suppo
 import { CredentialView } from "../authorization/types";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
-import { PresentationParserChain } from "../vp_token/PresentationParserChain";
-import { PublicKeyResolverChain } from "../vp_token/PublicKeyResolverChain";
 import { VerifiableCredentialFormat } from "core/dist/types";
 
 export interface CredentialSigner {
@@ -45,8 +43,6 @@ export interface OpenidForPresentationsReceivingInterface {
 export interface VerifierConfigurationInterface {
 	getConfiguration(): OpenidForPresentationsConfiguration;
 	getPresentationDefinitions(): any[];
-	getPresentationParserChain(): PresentationParserChain;
-	getPublicKeyResolverChain(): PublicKeyResolverChain;
 }
 
 
