@@ -2,6 +2,8 @@ import { HttpClient, MsoMdocParser, MsoMdocVerifier, ParsingEngine, PublicKeyRes
 import { config } from '../../config';
 import axios, { AxiosRequestHeaders } from 'axios';
 import { webcrypto } from "node:crypto";
+import { OpenID4VCICredentialRendering } from 'core/dist/functions/openID4VCICredentialRendering';
+import { CredentialRenderingService } from 'core/dist/rendering';
 
 export function initializeCredentialEngine() {
 	console.log("Initializing credential engine...")
@@ -28,13 +30,13 @@ export function initializeCredentialEngine() {
 	console.log("Registered MsoMdocParser...");
 
 	const pkResolverEngine = PublicKeyResolverEngine();
-	console.log("Registered SDJWTVCVerifier...");
-
-	console.log("Registered MsoMdocVerifier...");
-
+	const openid4vcRendering = OpenID4VCICredentialRendering({ httpClient });
+	const credentialRendering = CredentialRenderingService();
 	return {
 		credentialParsingEngine,
 		msoMdocVerifier: MsoMdocVerifier({ context: ctx, pkResolverEngine: pkResolverEngine }),
-		sdJwtVerifier: SDJWTVCVerifier({ context: ctx, pkResolverEngine: pkResolverEngine })
+		sdJwtVerifier: SDJWTVCVerifier({ context: ctx, pkResolverEngine: pkResolverEngine }),
+		openid4vcRendering,
+		credentialRendering,
 	};
 }
