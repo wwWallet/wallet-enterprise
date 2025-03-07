@@ -4,22 +4,92 @@ import { authorizationServerMetadataConfiguration } from "../../authorizationSer
 import { config } from "../../../config";
 import { VerifierConfigurationInterface } from "../../services/interfaces";
 import "reflect-metadata";
-import { PresentationParserChain } from "../../vp_token/PresentationParserChain";
-import { PublicKeyResolverChain } from "../../vp_token/PublicKeyResolverChain";
-
 
 
 @injectable()
 export class VerifierConfigurationService implements VerifierConfigurationInterface {
-	getPresentationParserChain(): PresentationParserChain {
-		return new PresentationParserChain();
-	}
-	getPublicKeyResolverChain(): PublicKeyResolverChain {
-		return new PublicKeyResolverChain();
-	}
+
 
 	getPresentationDefinitions(): any[] {
-		return []
+		return [
+			{
+				"id": "PidWithDocumentNumber",
+				"format": { "vc+sd-jwt": { alg: [ 'ES256' ] } },
+				"input_descriptors": [
+					{
+						"id": "PID",
+						"format": { "vc+sd-jwt": { alg: [ 'ES256' ] } },
+						"constraints": {
+							"fields": [
+								{
+									"name": "Document Number",
+									"path": [
+										"$.document_number"
+									],
+									"filter": {}
+								},
+								{
+									"name": "Credential Type",
+									"path": [
+										"$.vct"
+									],
+									"filter": {
+										"type": "string",
+										"const": "urn:eu.europa.ec.eudi:pid:1"
+									}
+								}
+							]
+						}
+					}
+				]
+			},
+
+			{
+				"id": "PidMinimal",
+				"format": { "vc+sd-jwt": { alg: [ 'ES256' ] } },
+				"input_descriptors": [
+					{
+						"id": "PID",
+						"format": { "vc+sd-jwt": { alg: [ 'ES256' ] } },
+						"constraints": {
+							"fields": [
+								{
+									"name": "Family Name",
+									"path": [
+										"$.family_name"
+									],
+									"filter": {}
+								},
+								{
+									"name": "Given Name",
+									"path": [
+										"$.given_name"
+									],
+									"filter": {}
+								},
+								{
+									"name": "Birth Date",
+									"path": [
+										"$.birth_date"
+									],
+									"filter": {}
+								},
+								{
+									"name": "Credential Type",
+									"path": [
+										"$.vct"
+									],
+									"filter": {
+										"type": "string",
+										"const": "urn:eu.europa.ec.eudi:pid:1"
+									}
+								}
+							]
+						}
+					}
+				]
+			}
+		]
 	}
 
 	getConfiguration(): OpenidForPresentationsConfiguration {
