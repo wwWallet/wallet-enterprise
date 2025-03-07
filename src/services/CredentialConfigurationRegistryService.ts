@@ -31,6 +31,9 @@ export class CredentialConfigurationRegistryService implements CredentialConfigu
 
 	async getCredentialView(authorizationServerState: AuthorizationServerState): Promise<CredentialView | null> {
 		for (const conf of this.credentialConfigurations) {
+			if (!authorizationServerState.scope?.split(' ').includes(conf.getScope())) {
+				continue;
+			}
 			const result = await conf.getProfile(authorizationServerState).catch((_err) => null);
 			if (result != null) {
 				return result;
@@ -41,6 +44,9 @@ export class CredentialConfigurationRegistryService implements CredentialConfigu
 
 	async getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: any, holderPublicKeyToBind: JWK) {
 		for (const conf of this.credentialConfigurations) {
+			if (!authorizationServerState.scope?.split(' ').includes(conf.getScope())) {
+				continue;
+			}
 			const result = await conf.generateCredentialResponse(authorizationServerState, credentialRequest, holderPublicKeyToBind).catch((err) => {
 				console.log(err)
 				return null;

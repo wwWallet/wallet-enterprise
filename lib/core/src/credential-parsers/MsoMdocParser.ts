@@ -4,8 +4,15 @@ import { DataItem, DeviceSignedDocument, parse } from "@auth0/mdl";
 import { fromBase64Url } from "../utils/util";
 import { ParsedCredential, VerifiableCredentialFormat } from "../types";
 import { cborDecode, cborEncode } from "@auth0/mdl/lib/cbor";
+import { IssuerSigned } from "@auth0/mdl/lib/mdoc/model/types";
+import { OpenID4VCICredentialRendering } from "../functions/openID4VCICredentialRendering";
 
 export function MsoMdocParser(args: { context: Context, httpClient: HttpClient }): CredentialParser {
+
+
+	function extractValidityInfo(issuerSigned: IssuerSigned): { validUntil?: Date, validFrom?: Date, signed?: Date } {
+		return issuerSigned.issuerAuth.decodedPayload.validityInfo;
+	}
 
 	async function deviceResponseParser(rawCredential: string): Promise<ParsedCredential | null> {
 		try {
@@ -14,12 +21,27 @@ export function MsoMdocParser(args: { context: Context, httpClient: HttpClient }
 			const [parsedDocument] = parsedMDOC.documents as DeviceSignedDocument[];
 
 			const namespace = parsedDocument.issuerSignedNameSpaces[0];
+
 			const attrValues = parsedDocument.getIssuerNameSpace(namespace);
+			const renderer = OpenID4VCICredentialRendering({ httpClient: args.httpClient });
+			let dataUri: string | null = null;
+
+			const mdocDisplayConfig = {
+				name: "mdoc Veriable Credential"
+			}
+
+			const svgContent = await renderer.renderCustomSvgTemplate({ signedClaims: attrValues, displayConfig: mdocDisplayConfig })
+				.then((res) => res)
+				.catch((err) => { console.error(err); return null; });
+
+			dataUri = svgContent ? svgContent : "";
 			return {
 				metadata: {
 					credential: {
 						format: VerifiableCredentialFormat.MSO_MDOC,
-						image: { dataUri: "" },
+						image: {
+							dataUri: dataUri ?? "",
+						},
 						name: parsedDocument.issuerSignedNameSpaces[0]
 					},
 					issuer: {
@@ -30,6 +52,9 @@ export function MsoMdocParser(args: { context: Context, httpClient: HttpClient }
 				signedClaims: {
 					...attrValues
 				},
+				validityInfo: {
+					...extractValidityInfo(parsedDocument.issuerSigned),
+				}
 			}
 		}
 		catch (err) {
@@ -59,11 +84,24 @@ export function MsoMdocParser(args: { context: Context, httpClient: HttpClient }
 			const namespace = parsedDocument.issuerSignedNameSpaces[0];
 			const attrValues = parsedDocument.getIssuerNameSpace(namespace);
 
+			const renderer = OpenID4VCICredentialRendering({ httpClient: args.httpClient });
+			let dataUri: string | null = null;
+
+			const mdocDisplayConfig = {
+				name: "mdoc Veriable Credential"
+			}
+
+			const svgContent = await renderer.renderCustomSvgTemplate({ signedClaims: attrValues, displayConfig: mdocDisplayConfig })
+				.then((res) => res)
+				.catch((err) => { console.error(err); return null; })
+			dataUri = svgContent ? svgContent : "";
 			return {
 				metadata: {
 					credential: {
 						format: VerifiableCredentialFormat.MSO_MDOC,
-						image: { dataUri: "" },
+						image: {
+							dataUri: dataUri ?? "",
+						},
 						name: parsedDocument.issuerSignedNameSpaces[0],
 					},
 					issuer: {
@@ -74,6 +112,9 @@ export function MsoMdocParser(args: { context: Context, httpClient: HttpClient }
 				signedClaims: {
 					...attrValues
 				},
+				validityInfo: {
+					...extractValidityInfo(parsedDocument.issuerSigned),
+				}
 			}
 
 		}
