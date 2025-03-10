@@ -1,10 +1,16 @@
 .container-box{
-    min-height: 88%;
-		background-color: rgb(241, 241, 241);
-		text-align: center;
-    display: flex;
-    flex-direction: column;
-	}
+	min-height: 65%;
+	background-color: rgb(241, 241, 241);
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	padding-bottom: 4em;
+}
+
+#Index .container {
+	margin: 4% 5%;
+}
+
 
 	p.title{
 		padding: 5% 0;
