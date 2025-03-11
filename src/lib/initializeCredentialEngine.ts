@@ -1,21 +1,13 @@
-import { HttpClient, MsoMdocParser, MsoMdocVerifier, ParsingEngine, PublicKeyResolverEngine, SDJWTVCParser, SDJWTVCVerifier } from 'core';
+import { MsoMdocParser, MsoMdocVerifier, ParsingEngine, PublicKeyResolverEngine, SDJWTVCParser, SDJWTVCVerifier } from 'core';
 import { config } from '../../config';
-import axios from 'axios';
 import { webcrypto } from "node:crypto";
 import { OpenID4VCICredentialRendering } from 'core/dist/functions/openID4VCICredentialRendering';
 import { CredentialRenderingService } from 'core/dist/rendering';
+import { defaultHttpClient } from 'core/dist/defaultHttpClient';
 
 export function initializeCredentialEngine() {
 	console.log("Initializing credential engine...")
-	const httpClient: HttpClient = {
-		async get(url, headers, opts) {
-			return axios.get(url, { ...opts, headers: headers as any }).then((res) => (res?.data ? { status: res.status, data: res.data, headers: res.headers } : {})).catch((err) => (err?.response?.data ? { ...err.response.data } : {}));
-		},
-		async post(url, data, headers, opts) {
-			return axios.post(url, data, { ...opts, headers: headers as any }).then((res) => (res?.data ? { status: res.status, data: res.data, headers: res.headers } : {})).catch((err) => (err?.response?.data ? { ...err.response.data } : {}));
-		},
-	}
-	
+
 	const ctx = {
 		// @ts-ignore
 		clockTolerance: config.clockTolerance ?? 60,
@@ -24,13 +16,13 @@ export function initializeCredentialEngine() {
 		trustedCertificates: config.trustedRootCertificates,
 	};
 	const credentialParsingEngine = ParsingEngine();
-	credentialParsingEngine.register(SDJWTVCParser({ context: ctx, httpClient: httpClient }));
+	credentialParsingEngine.register(SDJWTVCParser({ context: ctx, httpClient: defaultHttpClient }));
 	console.log("Registered SDJWTVCParser...");
-	credentialParsingEngine.register(MsoMdocParser({ context: ctx, httpClient: httpClient }));
+	credentialParsingEngine.register(MsoMdocParser({ context: ctx, httpClient: defaultHttpClient }));
 	console.log("Registered MsoMdocParser...");
 
 	const pkResolverEngine = PublicKeyResolverEngine();
-	const openid4vcRendering = OpenID4VCICredentialRendering({ httpClient });
+	const openid4vcRendering = OpenID4VCICredentialRendering({ httpClient: defaultHttpClient });
 	const credentialRendering = CredentialRenderingService();
 	return {
 		credentialParsingEngine,
