@@ -2,7 +2,7 @@ const locale = {
 	en: {
 		header: {
 			title: "wwWallet Issuer",
-			subtitle: "Receive your verifiable ID",
+			subtitle: "Receive your PID",
 		},
 		plainHeader: {
 			title: "National Authentication Service",
@@ -24,8 +24,8 @@ const locale = {
 			phrase: "I want to receive a",
 			proceed: "Proceed",
 			heading: "wwWallet Issuer",
-			paragraph: "This is a portal where citizens can receive their digital Verifiable ID in their wallet. To proceed you must first have an EBSI conformant digital wallet. This Verifiable ID will contain a the Social Security Number as a personal identifier.",
-			demo_text: "This is a National VID implementation for demonstration puproses. It has been developed in the framework of EBSI Early Adopters Program and the Multi University Pilot, with the endorsement of the Greek Ministry of Education. The purpose of this application is to issue a Verifiable ID for authentication puproses."
+			paragraph: "This is a portal where citizens can receive their digital PID in their wallet. To proceed you must first have an EBSI conformant digital wallet. This PID will contain a the Social Security Number as a personal identifier.",
+			demo_text: "This is a National VID implementation for demonstration puproses. It has been developed in the framework of EBSI Early Adopters Program and the Multi University Pilot, with the endorsement of the Greek Ministry of Education. The purpose of this application is to issue a PID for authentication puproses."
 		},
 		VIDAuthenticationComponent: {
 			title: "Authenticate using Digital Credentials"
@@ -43,7 +43,7 @@ const locale = {
 		},
 		AuthenticationMethodComponent: {
 			title: "Authentication Method",
-			label: "Choose between authenticating via presenting a Verifiable ID or via a conventional 3rd-party authentication service (e.g., National Authentication Service, Google):",
+			label: "Choose between authenticating via presenting a PID or via a conventional 3rd-party authentication service (e.g., National Authentication Service, Google):",
 		},
 		personalInfo: {
 			title: "Personal Identifiable Information",
