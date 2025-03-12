@@ -13,6 +13,7 @@ import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 import AppDataSource from "../AppDataSource";
 import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
+import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 
 
 export enum CredentialFormat {
@@ -93,10 +94,11 @@ verifierRouter.post('/callback', async (req, res) => {
 	const credentialImages = [];
 	const credentialPayloads = [];
 	for (const p of presentations) {
-		const result = await verifierConfiguration.getPresentationParserChain().parse(p);
-		if (!('error' in result)) {
-			credentialImages.push(result.credentialImage);
-			credentialPayloads.push(result.credentialPayload);
+		const { credentialParsingEngine } = initializeCredentialEngine();
+		const result = await credentialParsingEngine.parse({ rawCredential: p });
+		if (result.success) {
+			credentialImages.push(result.value.metadata.credential.image.dataUri);
+			credentialPayloads.push(result.value.signedClaims);
 		}
 	}
 

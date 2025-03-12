@@ -5,7 +5,12 @@ import { CredentialView } from "../authorization/types";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { SupportedCredentialProtocol } from "../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
 import { JWK } from "jose";
+import EventEmitter from "node:events";
 
+
+class CredentialConfigurationRegistryServiceEmitter extends EventEmitter { }
+
+export const credentialConfigurationRegistryServiceEmitter = new CredentialConfigurationRegistryServiceEmitter();
 
 @injectable()
 export class CredentialConfigurationRegistryService implements CredentialConfigurationRegistry {
@@ -26,6 +31,9 @@ export class CredentialConfigurationRegistryService implements CredentialConfigu
 
 	async getCredentialView(authorizationServerState: AuthorizationServerState): Promise<CredentialView | null> {
 		for (const conf of this.credentialConfigurations) {
+			if (!authorizationServerState.scope?.split(' ').includes(conf.getScope())) {
+				continue;
+			}
 			const result = await conf.getProfile(authorizationServerState).catch((_err) => null);
 			if (result != null) {
 				return result;
@@ -36,6 +44,9 @@ export class CredentialConfigurationRegistryService implements CredentialConfigu
 
 	async getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: any, holderPublicKeyToBind: JWK) {
 		for (const conf of this.credentialConfigurations) {
+			if (!authorizationServerState.scope?.split(' ').includes(conf.getScope())) {
+				continue;
+			}
 			const result = await conf.generateCredentialResponse(authorizationServerState, credentialRequest, holderPublicKeyToBind).catch((err) => {
 				console.log(err)
 				return null;

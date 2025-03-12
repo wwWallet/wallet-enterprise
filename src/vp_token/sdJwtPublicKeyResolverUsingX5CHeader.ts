@@ -1,5 +1,5 @@
 import base64url from "base64url";
-import { VerifiableCredentialFormat } from "../types/oid4vci";
+import { VerifiableCredentialFormat } from "core/dist/types";
 import { IPublicKeyResolver } from "./IPublicKeyResolver";
 import { importX509, JWTHeaderParameters, KeyLike } from "jose";
 import { verifyCertificateChain } from "../util/verifyCertificateChain";
@@ -7,7 +7,7 @@ import { config } from "../../config";
 
 export const sdJwtPublicKeyResolverUsingX5CHeader: IPublicKeyResolver = {
 	async resolve(rawPresentation: string | object, format: string): Promise<{ publicKey: KeyLike, isTrusted: boolean } | { error: "UNABLE_TO_RESOLVE_PUBKEY" }> {
-		if (format != VerifiableCredentialFormat.VC_SD_JWT || typeof rawPresentation != 'string') {
+		if (format != VerifiableCredentialFormat.VC_SDJWT || typeof rawPresentation != 'string') {
 			return { error: "UNABLE_TO_RESOLVE_PUBKEY" };
 		}
 
