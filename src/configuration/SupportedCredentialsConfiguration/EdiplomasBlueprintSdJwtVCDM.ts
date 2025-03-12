@@ -40,7 +40,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 			.addAuthenticationComponent(new GenericAuthenticationMethodSelectionComponent(this.getScope() + "-auth-method", CONSENT_ENTRYPOINT, [{ code: UserAuthenticationMethod.VID_AUTH, description: "Authentication with PID" }, { code: UserAuthenticationMethod.SSO, description: "Authentication with National Services" }]))
 			.addAuthenticationComponent(new GenericVIDAuthenticationComponent(this.getScope() + "-vid-auth", CONSENT_ENTRYPOINT, {
 				"document_number": { input_descriptor_constraint_field_name: "Document Number", parser: (val: any) => String(val) },
-			}, "PidWithDocumentNumber", "PID"))
+			}, "PidWithDocumentNumber", "PID", this.getDisplay().name))
 			.addAuthenticationComponent(new GenericLocalAuthenticationComponent(this.getScope() + "-1-local", CONSENT_ENTRYPOINT, {
 				"document_number": { datasetColumnName: "vid_document_number", parser: (val: any) => String(val) },
 			},
@@ -72,7 +72,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 	getDisplay() {
 		return {
 			name: "Bachelor Diploma",
-			description: "This is a Bachelor Diploma verifiable credential",
+			description: "Bachelor Diploma VC in sd_jwt format",
 			background_image: { uri: config.url + "/images/background-image.png" },
 			background_color: "#003476",
 			text_color: "#FFFFFF",

@@ -35,7 +35,7 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 				"family_name": { input_descriptor_constraint_field_name: "Family Name" },
 				"given_name": { input_descriptor_constraint_field_name: "Given Name" },
 				"birth_date": { input_descriptor_constraint_field_name: "Birth Date", parser: (value: string) => new Date(value).toISOString() },
-			}, "PidMinimal", "PID"))
+			}, "PidMinimal", "PID", this.getScope()))
 			.build();
 	}
 
@@ -59,8 +59,8 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 
 	getDisplay() {
 		return {
-			name: "PoR",
-			description: "This is a PID verifiable credential issued by the well-known VID Issuer",
+			name: "Power of Representation",
+			description: "Power of Representation (POR) VC in sd-jwt format",
 			background_image: { uri: config.url + "/images/background-image.png" },
 			background_color: "#1b263b",
 			text_color: "#FFFFFF",
@@ -191,7 +191,7 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 		return {
 			"vct": this.getId(),
 			"name": "Power of Representation",
-			"description": "This is a PID document issued by the well known VID Issuer",
+			"description": "Power of Representation VC in sd_jwt format",
 			"display": [
 				{
 					"lang": "en-US",

@@ -60,7 +60,7 @@ export class PIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 	getDisplay() {
 		return {
 			name: "PID - SDJWTVC",
-			description: "This is a PID verifiable credential issued by the well-known PID Issuer",
+			description: "Person Identification Data - PID VC in SDJWT format",
 			background_image: { uri: config.url + "/images/background-image.png" },
 			background_color: "#1b263b",
 			text_color: "#FFFFFF",

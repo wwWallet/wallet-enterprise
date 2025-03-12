@@ -37,7 +37,7 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 				"family_name": { input_descriptor_constraint_field_name: "Family Name" },
 				"given_name": { input_descriptor_constraint_field_name: "Given Name" },
 				"birth_date": { input_descriptor_constraint_field_name: "Birth Date", parser: (value: string) => new Date(value).toISOString() },
-			}, "PidMinimal", "PID"))
+			}, "PidMinimal", "PID", this.getDisplay().name))
 			.addAuthenticationComponent(new GenericLocalAuthenticationComponent(this.getScope() + "-1-local", CONSENT_ENTRYPOINT, {
 				"family_name": { datasetColumnName: "family_name" },
 				"given_name": { datasetColumnName: "given_name" },
@@ -69,7 +69,7 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 	getDisplay() {
 		return {
 			name: "EHIC",
-			description: "This is a European Health Insurance Card verifiable credential",
+			description: "European Health Insurance Card VC in sd_jwt format",
 			background_image: { uri: config.url + "/images/background-image.png" },
 			background_color: "#1b263b",
 			text_color: "#FFFFFF",

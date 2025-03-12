@@ -18,6 +18,7 @@ export class VerifierConfigurationService implements VerifierConfigurationInterf
 				"input_descriptors": [
 					{
 						"id": "PID",
+						"purpose": "You need to present your PID to prove your identity",
 						"format": { "vc+sd-jwt": { alg: [ 'ES256' ] } },
 						"constraints": {
 							"fields": [
@@ -50,6 +51,7 @@ export class VerifierConfigurationService implements VerifierConfigurationInterf
 				"input_descriptors": [
 					{
 						"id": "PID",
+						"purpose": "You need to present your PID to prove your identity",
 						"format": { "vc+sd-jwt": { alg: [ 'ES256' ] } },
 						"constraints": {
 							"fields": [
