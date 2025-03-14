@@ -9,6 +9,7 @@ import { importX509, SignJWT } from 'jose';
 import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
 import fs from 'fs';
 import path from 'path';
+import { issuerSigner } from '../configuration/issuerSigner';
 
 
 var issuerX5C: string[] = [];
@@ -64,6 +65,16 @@ export class ExpressAppService {
 	
 			app.post('/openid4vci/credential', async (req, res) => {
 				this.authorizationServerService.credentialRequestHandler({ req, res });
+			})
+
+			app.get('/.well-known/jwt-vc-issuer', async (_req, res) => {
+				const { jwk } = await issuerSigner.getPublicKeyJwk()
+				return res.send({
+					issuer: config.url,
+					jwks: [
+						jwk
+					]
+				})
 			})
 
 			app.get('/.well-known/oauth-authorization-server', async (_req, res) => {
