@@ -10,6 +10,7 @@ import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
 import fs from 'fs';
 import path from 'path';
 import * as IssuerSigner from '../configuration/issuerSigner';
+import { credentialConfigurationRegistryServiceEmitter } from './CredentialConfigurationRegistryService';
 
 var issuerX5C: string[] = [];
 var issuerPrivateKeyPem = "";
@@ -21,7 +22,7 @@ if (config.appType == "ISSUER") {
 
 	importPrivateKeyPem(issuerPrivateKeyPem, 'ES256') // attempt to import the key
 	importX509(issuerCertPem, 'ES256'); // attempt to import the public key
-	
+
 }
 
 
@@ -37,7 +38,7 @@ export class ExpressAppService {
 	) { }
 
 
-	public configure(app: Application) {
+	public async configure(app: Application): Promise<void> {
 		app.get('/verification/request-object', async (req, res) => { this.presentationsReceivingService.getSignedRequestObject({ req, res }) });
 
 		app.post('/verification/direct_post', async (req, res) => { this.presentationsReceivingService.responseHandler({ req, res }) });
@@ -61,7 +62,7 @@ export class ExpressAppService {
 			app.post('/openid4vci/token', async (req, res) => {
 				this.authorizationServerService.tokenRequestHandler({ req, res });
 			});
-	
+
 			app.post('/openid4vci/credential', async (req, res) => {
 				this.authorizationServerService.credentialRequestHandler({ req, res });
 			})
@@ -74,13 +75,11 @@ export class ExpressAppService {
 					return res.send({
 						issuer: config.url,
 						jwks: {
-							keys: [ jwk ]
+							keys: [jwk]
 						}
 					})
 				})
 			}
-
-
 			app.get('/.well-known/oauth-authorization-server', async (_req, res) => {
 				return res.send({
 					issuer: config.url,
@@ -109,7 +108,7 @@ export class ExpressAppService {
 				x.map((credentialConfiguration) => {
 					credential_configurations_supported[credentialConfiguration.getId()] = credentialConfiguration.exportCredentialSupportedObject();
 				})
-	
+
 				const metadata = {
 					credential_issuer: config.url,
 					credential_endpoint: config.url + "/openid4vci/credential",
@@ -117,10 +116,10 @@ export class ExpressAppService {
 					display: config.display,
 					credential_configurations_supported: credential_configurations_supported,
 				};
-	
+
 				// @ts-ignore
 				const batchSize = config.issuanceFlow?.batchCredentialIssuance?.batchSize;
-	
+
 				if (batchSize) {
 					// @ts-ignore
 					metadata.batch_credential_issuance = {
@@ -135,12 +134,46 @@ export class ExpressAppService {
 					.setIssuedAt()
 					.setIssuer(config.url)
 					.setSubject(config.url)
-					.setProtectedHeader({ typ:"JWT", alg: "ES256", x5c: issuerX5C })
+					.setProtectedHeader({ typ: "JWT", alg: "ES256", x5c: issuerX5C })
 					.sign(key);
 				// @ts-ignore
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
 			});
-		}
 
+
+			await new Promise((resolve) => {
+				credentialConfigurationRegistryServiceEmitter.on('initialized', () => {
+					this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((configuration) => {
+						console.log('!configuration', configuration)
+						// @ts-ignore
+						if (!configuration?.metadata) return;
+						// @ts-ignore
+						const metadata = configuration?.metadata();
+						const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
+
+						metadataArray.forEach((item: any) => {
+							try {
+								const newUrl = new URL(item.vct);
+								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+
+								const path = newUrl.pathname;
+								console.log(`✅ Registering route: ${path}`);
+
+								app.get(path, async (_req, res) => {
+									return res.send({
+										...item.vct
+									})
+								});
+							} catch (error) {
+								console.error(`❌ Error processing item.vct (${item.vct}):`, error);
+							}
+						});
+						resolve(null)
+					})
+				})
+
+			})
+
+		}
 	}
 }
