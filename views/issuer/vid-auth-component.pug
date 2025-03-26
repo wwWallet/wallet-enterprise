@@ -9,7 +9,7 @@ block layout-content
 					h1 #{locale.VIDAuthenticationComponent.title}
 					.downtime
 						p.message
-							span.inline-message You are going to proceed to your wallet automatically
+							span.inline-message You will be redirected to your wallet automatically in 
 							span#countdown-timer 10
 						.loader
 						// Buttons: Cancel and Proceed Now
@@ -19,6 +19,7 @@ block layout-content
 					// Hidden inputs
 					input(type='hidden' name='state' id='state' value=state)
 					input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
+					input(type='hidden' name='wwwalletURL' id='wwwalletURL' value=wwwalletURL)
 
 	script(src="/js/presentation-request.js")
 	script.
