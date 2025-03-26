@@ -161,7 +161,7 @@ export class ExpressAppService {
 
 								app.get(path, async (_req, res) => {
 									return res.send({
-										...item.vct
+										...item
 									})
 								});
 							} catch (error) {
