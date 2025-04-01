@@ -151,6 +151,12 @@ export class ExpressAppService {
 						const metadata = configuration?.metadata();
 						const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
 
+						// @ts-ignore
+						if (!configuration?.schema) return;
+						// @ts-ignore
+						const schema = configuration?.schema();
+						const schemaArray = Array.isArray(schema) ? schema : [schema];
+
 						metadataArray.forEach((item: any) => {
 							try {
 								const newUrl = new URL(item.vct);
@@ -166,6 +172,26 @@ export class ExpressAppService {
 								});
 							} catch (error) {
 								console.error(`❌ Error processing item.vct (${item.vct}):`, error);
+							}
+						});
+
+						schemaArray.forEach((item: any) => {
+							try {
+								if (!('id' in item)) return;
+								const newUrl = new URL(item.id);
+								if (!newUrl) return;
+								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+
+								const path = newUrl.pathname;
+								console.log(`✅ Registering route: ${path}`);
+
+								app.get(path, async (_req, res) => {
+									return res.send({
+										...item
+									})
+								});
+							} catch (error) {
+								console.error(`❌ Error processing item.id (${item?.id}):`, error);
 							}
 						});
 						resolve(null)

@@ -27,4 +27,5 @@ export interface SupportedCredentialProtocol {
 
 export interface VCDMSupportedCredentialProtocol extends SupportedCredentialProtocol {
 	metadata(): any | any[] ;
+	schema?(): any | any[] ;
 }
