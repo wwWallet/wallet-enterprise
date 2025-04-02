@@ -147,6 +147,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 				.execute();
 			return res.render('issuer/vid-auth-component', {
 				authorizationRequestURL: url.toString(),
+				wwwalletURL: new URL(config.wwwalletURL).origin,
 				lang: req.lang,
 				locale: locale[req.lang],
 			})
