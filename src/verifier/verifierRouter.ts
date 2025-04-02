@@ -94,7 +94,7 @@ verifierRouter.post('/callback', async (req, res) => {
 	const credentialImages = [];
 	const credentialPayloads = [];
 	for (const p of presentations) {
-		const { credentialParsingEngine } = initializeCredentialEngine();
+		const { credentialParsingEngine } = await initializeCredentialEngine();
 		const result = await credentialParsingEngine.parse({ rawCredential: p });
 		if (result.success) {
 			credentialImages.push(result.value.metadata.credential.image.dataUri);

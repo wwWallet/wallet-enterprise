@@ -4,8 +4,12 @@ import { webcrypto } from "node:crypto";
 import { OpenID4VCICredentialRendering } from 'core/dist/functions/openID4VCICredentialRendering';
 import { CredentialRenderingService } from 'core/dist/rendering';
 import { defaultHttpClient } from 'core/dist/defaultHttpClient';
+import axios from 'axios';
 
-export function initializeCredentialEngine() {
+// @ts-ignore
+const trustedCredentialIssuerIdentifiers = config.trustedIssuers as string[] | undefined;
+
+export async function initializeCredentialEngine() {
 	console.log("Initializing credential engine...")
 
 	const ctx = {
@@ -13,8 +17,35 @@ export function initializeCredentialEngine() {
 		clockTolerance: config.clockTolerance ?? 60,
 		subtle: webcrypto.subtle as SubtleCrypto,
 		lang: 'en-US',
-		trustedCertificates: config.trustedRootCertificates,
+		trustedCertificates: [...config.trustedRootCertificates] as string[],
 	};
+
+	if (trustedCredentialIssuerIdentifiers) {
+		const result = await Promise.all(trustedCredentialIssuerIdentifiers.map(async (credentialIssuerIdentifier) =>
+			axios.get(`${credentialIssuerIdentifier}/.well-known/openid-credential-issuer`)
+				.then((res) => res.data)
+				.catch((e) => { console.error(e); return null; })
+		));
+
+		const iacasResponses = await Promise.all(result.map(async (metadata) => {
+			if (metadata && metadata.mdoc_iacas_uri) {
+				return axios.get(metadata.mdoc_iacas_uri).then((res) => res.data).catch((e) => { console.error(e); return null; })
+			}
+			return null;
+		}));
+
+		for (const iacaResponse of iacasResponses) {
+			const pemCertificates = iacaResponse.iacas.map((cert: { certificate?: string }) =>
+				cert.certificate ? `-----BEGIN CERTIFICATE-----\n${cert.certificate}\n-----END CERTIFICATE-----\n` : null
+			)
+			for (const pem of pemCertificates) {
+				if (pem) {
+					ctx.trustedCertificates.push(pem);
+				}
+			}
+		}
+	}
+
 	const credentialParsingEngine = ParsingEngine();
 	credentialParsingEngine.register(SDJWTVCParser({ context: ctx, httpClient: defaultHttpClient }));
 	console.log("Registered SDJWTVCParser...");
