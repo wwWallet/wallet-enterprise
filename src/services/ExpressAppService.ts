@@ -14,14 +14,20 @@ import * as IssuerSigner from '../configuration/issuerSigner';
 var issuerX5C: string[] = [];
 var issuerPrivateKeyPem = "";
 var issuerCertPem = "";
+var rootCaBase64DER = "";
 if (config.appType == "ISSUER") {
 	issuerX5C = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.json"), 'utf-8').toString()) as string[];
 	issuerPrivateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
 	issuerCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString() as string;
 
+	rootCaBase64DER = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString() as string;
+	rootCaBase64DER = rootCaBase64DER.replace(/-----BEGIN CERTIFICATE-----/g, '')
+		.replace(/-----END CERTIFICATE-----/g, '')
+		.replace(/\s+/g, '');
+
 	importPrivateKeyPem(issuerPrivateKeyPem, 'ES256') // attempt to import the key
 	importX509(issuerCertPem, 'ES256'); // attempt to import the public key
-	
+
 }
 
 
@@ -61,7 +67,7 @@ export class ExpressAppService {
 			app.post('/openid4vci/token', async (req, res) => {
 				this.authorizationServerService.tokenRequestHandler({ req, res });
 			});
-	
+
 			app.post('/openid4vci/credential', async (req, res) => {
 				this.authorizationServerService.credentialRequestHandler({ req, res });
 			})
@@ -74,7 +80,7 @@ export class ExpressAppService {
 					return res.send({
 						issuer: config.url,
 						jwks: {
-							keys: [ jwk ]
+							keys: [jwk]
 						}
 					})
 				})
@@ -103,24 +109,36 @@ export class ExpressAppService {
 				})
 			});
 
+			app.get('/mdoc-iacas', async (_req, res) => {
+				res.set('Cache-Control', 'public, max-age=86400');
+				return res.json({
+					iacas: [
+						{
+							certificate: rootCaBase64DER
+						}
+					]
+				})
+			});
+
 			app.get('/.well-known/openid-credential-issuer', async (_req, res) => {
 				const x = await Promise.all(this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations());
 				const credential_configurations_supported: { [x: string]: any } = {};
 				x.map((credentialConfiguration) => {
 					credential_configurations_supported[credentialConfiguration.getId()] = credentialConfiguration.exportCredentialSupportedObject();
 				})
-	
+
 				const metadata = {
 					credential_issuer: config.url,
 					credential_endpoint: config.url + "/openid4vci/credential",
 					batch_credential_issuance: undefined,
 					display: config.display,
 					credential_configurations_supported: credential_configurations_supported,
+					mdoc_iacas_uri: config.url + '/mdoc-iacas',
 				};
-	
+
 				// @ts-ignore
 				const batchSize = config.issuanceFlow?.batchCredentialIssuance?.batchSize;
-	
+
 				if (batchSize) {
 					// @ts-ignore
 					metadata.batch_credential_issuance = {
@@ -135,7 +153,7 @@ export class ExpressAppService {
 					.setIssuedAt()
 					.setIssuer(config.url)
 					.setSubject(config.url)
-					.setProtectedHeader({ typ:"JWT", alg: "ES256", x5c: issuerX5C })
+					.setProtectedHeader({ typ: "JWT", alg: "ES256", x5c: issuerX5C })
 					.sign(key);
 				// @ts-ignore
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
