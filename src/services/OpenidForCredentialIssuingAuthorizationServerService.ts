@@ -15,7 +15,7 @@ import { importJWK, JWK, jwtVerify } from "jose";
 import { TYPES } from "./types";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
-
+import { arrayBufferToBase64Url } from "../util/arrayBufferToBase64Url";
 
 // @ts-ignore
 const access_token_expires_in = config.issuanceFlow.access_token_expires_in ? config.issuanceFlow.access_token_expires_in : 60; // 1 minute
@@ -726,11 +726,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			}
 
 			async function calculateAth(accessToken: string) {
-				function arrayBufferToBase64Url(buffer: any) {
-					const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-					const base64Url = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-					return base64Url;
-				}
 				// Encode the access token as a Uint8Array
 				const encoder = new TextEncoder();
 				const accessTokenBuffer = encoder.encode(accessToken);

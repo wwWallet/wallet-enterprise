@@ -22,6 +22,7 @@ export const config = {
 	},
 	presentationFlow: {
 		response_mode: "direct_post.jwt",
+		transaction_data_required: false,
 	},
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
