@@ -126,12 +126,12 @@ export const issuerSigner: CredentialSigner = {
 
 	},
 	getPublicKeyJwk: async function () {
-		const key = await importPrivateKeyPem(issuerPrivateKeyPem, 'ES256');
-		if (!key) {
-			throw new Error("Could not import private key");
+		const publicKey = await importX509(issuerCertPem, 'ES256');
+		if (!publicKey) {
+			throw new Error("Could not import issuer publicKey");
 		}
-		const jwk = await exportJWK(key)
-		return { jwk: jwk };
+		const jwk = await exportJWK(publicKey)
+		return { jwk: { kid: issuerJwkKid, ...jwk } };
 	},
 }
 
