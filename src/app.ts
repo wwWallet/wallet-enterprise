@@ -82,12 +82,11 @@ app.get('/', async (req: Request, res: Response) => {
 			locale: locale[req.lang],
 		})
 	}
-	const baseUrl = `${req.protocol}://${req.get('host')}`;
 	return res.render("landing", {
 		title: titles.index,
 		lang: req.lang,
 		locale: locale[req.lang],
-		baseUrl: baseUrl,
+		baseUrl: config.url,
 		supportedCredentials: credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((sc) => sc.exportCredentialSupportedObject()),
 	})
 })

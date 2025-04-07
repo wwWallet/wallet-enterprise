@@ -21,35 +21,26 @@ block layout-content
 				| #{locale.index.metadata} 
 				a(href=`${baseUrl}/.well-known/openid-credential-issuer`) #{baseUrl}/.well-known/openid-credential-issuer 
 				| #{locale.index.sdJwtMetadata} 
-				a(href=`${baseUrl}/.well-known/openid-credential-issuer`) #{baseUrl}/.well-known/jwt-vc-issuer.
-			p #{locale.index.specs}
+				a(href=`${baseUrl}/.well-known/jwt-vc-issuer`) #{baseUrl}/.well-known/jwt-vc-issuer.
+			p #{locale.index.specs.paragraph}
+			h4 OpenID4VCI Interoperability Profile
 			table.specs-table
-				thead
-					tr
-						th Function
-						th Specification
 				tbody
-					tr
-						td VC Issuance:
-						td
-							a(href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-14.html" target='_blank') OpenID4VCI Draft 14
-					tr
-						td VC Presentation:
-						td
-							a(href="https://openid.net/specs/openid-4-verifiable-presentations-1_0-21.html" target='_blank') OpenID4VP Draft 21
-					tr
-						td Authorization Code Grant:
-						td
-							a(href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1" target='_blank') OAuth 2.0 Authorization Code Grant Type
-					tr
-						td PKCE:
-						td
-							a(href="https://datatracker.ietf.org/doc/html/rfc7636" target='_blank') Proof Key for Code Exchange by OAuth Public Clients
-					tr
-						td DPoP:
-						td
-							a(href="https://tools.ietf.org/html/draft-ietf-oauth-dpop-11" target='_blank') OAuth 2.0 Demonstrating Proof of Possession (DPoP)
-
+					for row of locale.index.specs.tables.openid4vci
+						tr
+							td #{row[0]}
+							td #{row[1]}
+			br
+			i Notes: #{locale.index.specs.tables.openid4vci_notes}
+			br
+			br
+			h4 OpenID4VP Interoperability Profile
+			table.specs-table
+				tbody
+					for row of locale.index.specs.tables.openid4vp
+						tr
+							td #{row[0]}
+							td #{row[1]}
 
 	block footer
 		include footer.pug
