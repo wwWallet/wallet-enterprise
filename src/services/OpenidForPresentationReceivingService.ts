@@ -360,7 +360,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				// }
 
 				try {
-					const { credentialParsingEngine, sdJwtVerifier } = initializeCredentialEngine();
+					const { credentialParsingEngine, sdJwtVerifier } = await initializeCredentialEngine();
 					const verificationResultR = await sdJwtVerifier.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
 					const parseResult = await credentialParsingEngine.parse({ rawCredential: vp_token })
 					const prettyClaims = parseResult.success === true ? parseResult.value.signedClaims : null;
@@ -439,7 +439,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					responseUri: this.configurationService.getConfiguration().redirect_uri,
 				});
 
-				const ce = initializeCredentialEngine();
+				const ce = await initializeCredentialEngine();
 				const verificationResult = await ce.msoMdocVerifier.verify({
 					rawCredential: vp_token,
 					opts: {
