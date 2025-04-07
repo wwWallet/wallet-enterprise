@@ -4,12 +4,11 @@
 			a.ribbonText DEMO
 		.header-content
 			a.logo-area(href="/")
+				img.img-logo(src="/images/logo.png" alt="Logo")
 				if supportedCredentialType
 					span.logo-text #{supportedCredentialType.display[0].name}
 				else if locale.header.title
 					span.logo-text #{locale.header.title}
-				else
-					img.img-logo(src="/images/logo.png" alt="ACME Logo")
 			.menu-area
 				.mobile-menu-toggle
 					button#menu-toggle-button
