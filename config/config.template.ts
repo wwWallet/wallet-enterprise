@@ -22,8 +22,15 @@ export const config = {
 	},
 	presentationFlow: {
 		response_mode: "direct_post.jwt",
+		transaction_data_required: false,
 	},
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
 	clockTolerance: 60,
+	siteConfig: {
+		"name": "ACME",
+		"short_name": "ACME",
+		"theme_color": "#4d7e3e",
+		"background_color": "#4d7e3e",
+	}
 }
