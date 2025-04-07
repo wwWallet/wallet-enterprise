@@ -26,4 +26,10 @@ export const config = {
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
 	clockTolerance: 60,
+	siteConfig: {
+		"name": "ACME",
+		"short_name": "ACME",
+		"theme_color": "#4d7e3e",
+		"background_color": "#4d7e3e",
+	}
 }
