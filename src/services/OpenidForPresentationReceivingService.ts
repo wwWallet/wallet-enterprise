@@ -128,9 +128,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					"vc+sd-jwt": {
 						"sd-jwt_alg_values": [
 							"ES256",
+							"ES512"
 						],
 						"kb-jwt_alg_values": [
 							"ES256",
+							"ES512"
 						]
 					}
 				}

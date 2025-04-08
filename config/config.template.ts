@@ -24,6 +24,7 @@ export const config = {
 		response_mode: "direct_post.jwt",
 		transaction_data_required: false,
 	},
+	keyAlgorithm: 'ES256',
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
 	clockTolerance: 60,
