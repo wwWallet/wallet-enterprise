@@ -475,7 +475,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const signedClaimsWithDoctype = {};
 					// @ts-ignore
 					signedClaimsWithDoctype[definition.input_descriptors[0].id] = { ...parsedCredential.signedClaims };
-					console.log("Signed claims with doctype = ", signedClaimsWithDoctype)
 					const values = field.path.map((possiblePath: string) => JSONPath({ path: possiblePath, json: signedClaimsWithDoctype })[0]);
 					const val = values.filter((v: any) => v != undefined || v != null)[0]; // get first value that is not undefined
 					return val ? { key, name: (field as any).name as string, value: typeof val == 'object' ? JSON.stringify(val) : val as string } : undefined;

@@ -11,6 +11,9 @@ import fs from 'fs';
 import path from 'path';
 import * as IssuerSigner from '../configuration/issuerSigner';
 
+// @ts-ignore
+const keyAlgorithm = config?.keyAlgorithm ?? "ES256";
+
 var issuerX5C: string[] = [];
 var issuerPrivateKeyPem = "";
 var issuerCertPem = "";
@@ -25,8 +28,8 @@ if (config.appType == "ISSUER") {
 		.replace(/-----END CERTIFICATE-----/g, '')
 		.replace(/\s+/g, '');
 
-	importPrivateKeyPem(issuerPrivateKeyPem, 'ES256') // attempt to import the key
-	importX509(issuerCertPem, 'ES256'); // attempt to import the public key
+	importPrivateKeyPem(issuerPrivateKeyPem, keyAlgorithm) // attempt to import the key
+	importX509(issuerCertPem, keyAlgorithm); // attempt to import the public key
 
 }
 
@@ -145,7 +148,7 @@ export class ExpressAppService {
 						batch_size: batchSize
 					};
 				}
-				const key = await importPrivateKeyPem(issuerPrivateKeyPem, 'ES256');
+				const key = await importPrivateKeyPem(issuerPrivateKeyPem, keyAlgorithm);
 				if (!key) {
 					throw new Error("Could not import private key");
 				}
@@ -153,7 +156,7 @@ export class ExpressAppService {
 					.setIssuedAt()
 					.setIssuer(config.url)
 					.setSubject(config.url)
-					.setProtectedHeader({ typ: "JWT", alg: "ES256", x5c: issuerX5C })
+					.setProtectedHeader({ typ: "JWT", alg: keyAlgorithm, x5c: issuerX5C })
 					.sign(key);
 				// @ts-ignore
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
