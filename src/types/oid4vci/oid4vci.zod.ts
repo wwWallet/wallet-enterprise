@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ProofType } from './oid4vci.types';
-import { VerifiableCredentialFormat } from 'core/dist/types';
+import { VerifiableCredentialFormat } from 'wallet-common/dist/types';
 
 export const authorizationRequestQueryParamsSchema = z.object({
 	// required

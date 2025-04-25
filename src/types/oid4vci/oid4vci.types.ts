@@ -1,4 +1,4 @@
-import { VerifiableCredentialFormat } from 'core/dist/types';
+import { VerifiableCredentialFormat } from 'wallet-common/dist/types';
 import { JWK } from 'jose';
 
 
