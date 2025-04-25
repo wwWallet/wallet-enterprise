@@ -1,19 +1,16 @@
 FROM node:22-bullseye-slim AS builder
 
-WORKDIR /dependencies
+WORKDIR /app
+COPY . .
 
-COPY lib/ ./lib/
+RUN apt-get update -y && apt-get install -y git && rm -rf /var/lib/apt/lists/* && git clone --branch master --single-branch --depth 1 https://github.com/wwWallet/wallet-common.git ./lib/wallet-common
 
-WORKDIR /dependencies/lib/wallet-common
-RUN yarn install && yarn cache clean -f && yarn build && mkdir -p /app/lib && mv /dependencies/lib/wallet-common /app/lib/wallet-common
+WORKDIR /app/lib/wallet-common
+RUN yarn install && yarn build
+
 
 WORKDIR /app
-COPY wallet-enterprise/ .
 
-RUN rm -rf /app/src/configuration/
-COPY ./wallet-enterprise-configurations/issuer/src/configuration/ src/configuration/
-COPY ./wallet-enterprise-configurations/issuer/public/styles/main.css public/styles/main.css
-COPY ./wallet-enterprise-configurations/issuer/public/images/ public/images/
 
 RUN yarn cache clean && yarn install && yarn build
 
