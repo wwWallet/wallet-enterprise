@@ -71,8 +71,8 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 	}
 	getDisplay() {
 		return {
-			name: "Bachelor Diploma",
-			description: "Bachelor Diploma VC in sd_jwt format",
+			name: "Bachelor Diploma - SD-JWT VC",
+			description: "Bachelor Diploma - SD-JWT VC",
 			background_image: { uri: config.url + "/images/background-image.png" },
 			background_color: "#003476",
 			text_color: "#FFFFFF",
@@ -115,7 +115,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 		];
 		const rowsObject: CategorizedRawCredentialView = { rows };
 
-		const { credentialRendering } = initializeCredentialEngine();
+		const { credentialRendering } = await initializeCredentialEngine();
 		const dataUri = await credentialRendering.renderSvgTemplate({
 			json: { ...diplomaEntry },
 			credentialImageSvgTemplate: svgText,

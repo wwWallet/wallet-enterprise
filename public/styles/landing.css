@@ -42,3 +42,21 @@
 	text-align: center;
 	justify-content: space-between;
 }
+
+.specs-table, tr{
+	 border: 1px solid black;
+	 border-collapse: collapse
+}
+
+.specs-table thead tr {
+  background-color: var(--primary-color);
+	color: white;
+}
+
+.specs-table th {
+	text-align: left;
+}
+
+.specs-table td, th {
+	padding: 10px;
+}

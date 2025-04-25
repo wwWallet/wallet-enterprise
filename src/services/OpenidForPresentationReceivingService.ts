@@ -17,6 +17,7 @@ import { ClaimRecord, PresentationClaims, RelyingPartyState } from "../entities/
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import * as z from 'zod';
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
+import { TransactionData } from "../TransactionData/TransactionData";
 
 const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.server.key"), 'utf-8').toString();
 const x5c = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.server.json")).toString()) as Array<string>;
@@ -26,6 +27,8 @@ enum ResponseMode {
 	DIRECT_POST_JWT = 'direct_post.jwt'
 }
 
+// @ts-ignore
+const transaction_data_required = config?.presentationFlow?.transaction_data_required ?? false;
 
 const ResponseModeSchema = z.nativeEnum(ResponseMode);
 
@@ -132,6 +135,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 				}
 			},
+			transaction_data: transaction_data_required ? await Promise.all(presentationDefinition.input_descriptors.map(async (input_desc: any) =>
+				await TransactionData().generateTransactionDataRequestObject(input_desc.id)
+			)) : undefined,
 		})
 			.setIssuedAt()
 			.setProtectedHeader({
@@ -354,11 +360,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				// }
 
 				try {
-					const { credentialParsingEngine, sdJwtVerifier } = initializeCredentialEngine();
+					const { credentialParsingEngine, sdJwtVerifier } = await initializeCredentialEngine();
 					const verificationResultR = await sdJwtVerifier.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
 					const parseResult = await credentialParsingEngine.parse({ rawCredential: vp_token })
 					const prettyClaims = parseResult.success === true ? parseResult.value.signedClaims : null;
-					
+
 					if (verificationResultR.success === false) {
 						const error = new Error(`Verification result ${JSON.stringify(verificationResultR.error)}`);
 						error.name = JSON.stringify(verificationResultR.error);
@@ -367,6 +373,35 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					if (!prettyClaims) {
 						return { error: new Error(JSON.stringify(parseResult.success === false && parseResult.error)) };
 					}
+					if (transaction_data_required) {
+						try {
+							console.log("Parsing transaction data response...");
+							const [kbjwt,] = vp_token.split('~').reverse();
+							const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
+
+							const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
+							if (Object.keys(kbjwtPayload).includes('transaction_data_hashes')) {
+								const validationResult = await TransactionData().validateTransactionDataResponse(desc.id, {
+									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
+									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
+								});
+								if (!validationResult) {
+									return { error: new Error("transaction_data validation error") };
+								}
+								console.log("VALIDATED TRANSACTION DATA");
+							}
+							else {
+								return { error: new Error("transaction_data_hashes is missing from transaction data response") };
+							}
+						}
+						catch (e) {
+							console.error(e);
+							return { error: new Error("transaction_data validation error") };
+
+						}
+
+					}
+
 					input_descriptor.constraints.fields.map((field: any) => {
 						if (!presentationClaims[desc.id]) {
 							presentationClaims[desc.id] = []; // initialize
@@ -379,15 +414,15 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 							error.name = "VALUE_NOT_FOUND";
 							return { error: new Error("VALUE_NOT_FOUND") };
 						}
-	
+
 						const splittedPath = fieldPath.split('.');
 						const claimName = fieldName ? fieldName : splittedPath[splittedPath.length - 1];
 						presentationClaims[desc.id].push({ key: fieldPath.split('.')[fieldPath.split('.').length - 1], name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
 					});
-	
+
 
 				}
-				catch(err) {
+				catch (err) {
 					console.error("Verification error: ", err);
 					if (err instanceof Error) {
 						return { error: err };
@@ -404,7 +439,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					responseUri: this.configurationService.getConfiguration().redirect_uri,
 				});
 
-				const ce = initializeCredentialEngine();
+				const ce = await initializeCredentialEngine();
 				const verificationResult = await ce.msoMdocVerifier.verify({
 					rawCredential: vp_token,
 					opts: {
@@ -434,9 +469,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				const parsedCredential = parsingResult.value;
 				console.log("Parsed credential = ", parsedCredential);
 				const definition = this.configurationService.getPresentationDefinitions().filter((pd) => pd.id == presentation_submission.definition_id)[0]
-				
+
 				const fieldNamesWithValues = definition.input_descriptors[0].constraints.fields.map((field: any) => {
-					const key = field.path.map((possiblePath: string) => possiblePath.split('.')[possiblePath.split('.').length-1]);
+					const key = field.path.map((possiblePath: string) => possiblePath.split('.')[possiblePath.split('.').length - 1]);
 					const signedClaimsWithDoctype = {};
 					// @ts-ignore
 					signedClaimsWithDoctype[definition.input_descriptors[0].id] = { ...parsedCredential.signedClaims };
@@ -505,7 +540,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		}
 		const unkownErr = new Error("Uknown error");
 		return { status: false, error: unkownErr };
-	
+
 	}
 
 	public async getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, presentations?: unknown[] }> {

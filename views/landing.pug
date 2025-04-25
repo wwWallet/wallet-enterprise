@@ -17,12 +17,31 @@ block layout-content
 		.container
 			h1 #{locale.index.heading}
 			p #{locale.index.paragraph}
-			p #{locale.index.paragraph2}
-			.demo-text #{locale.index.demo_text}
 			p
-			| #{locale.index.metadata}
-			span
-				a(href=`${baseUrl}/.well-known/openid-credential-issuer`) #{baseUrl}/.well-known/openid-credential-issuer
+				| #{locale.index.metadata} 
+				a(href=`${baseUrl}/.well-known/openid-credential-issuer`) #{baseUrl}/.well-known/openid-credential-issuer 
+				| #{locale.index.sdJwtMetadata} 
+				a(href=`${baseUrl}/.well-known/jwt-vc-issuer`) #{baseUrl}/.well-known/jwt-vc-issuer.
+			p #{locale.index.specs.paragraph}
+			h4 OpenID4VCI Interoperability Profile
+			table.specs-table
+				tbody
+					for row of locale.index.specs.tables.openid4vci
+						tr
+							td #{row[0]}
+							td #{row[1]}
+			br
+			i Notes: #{locale.index.specs.tables.openid4vci_notes}
+			br
+			br
+			h4 OpenID4VP Interoperability Profile
+			table.specs-table
+				tbody
+					for row of locale.index.specs.tables.openid4vp
+						tr
+							td #{row[0]}
+							td #{row[1]}
+
 	block footer
 		include footer.pug
 
