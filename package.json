@@ -16,7 +16,7 @@
   "author": "",
   "description": "",
   "dependencies": {
-    "@auth0/mdl": "^2.0.1",
+    "@auth0/mdl": "^2.0.2",
     "@digitalbazaar/did-io": "^2.0.0",
     "@digitalbazaar/did-method-key": "^5.1.0",
     "@sd-jwt/core": "^0.2.1",
