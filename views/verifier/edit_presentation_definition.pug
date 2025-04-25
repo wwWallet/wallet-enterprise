@@ -1,0 +1,24 @@
+extends ../layout.pug
+
+block layout-content
+	.container
+		h1 Import Presentation Definition
+
+		if error
+			p= error.errorMessage
+				
+
+		form(method="POST", action="/verifier/public/definitions/edit-presentation-definition")
+
+			.field
+				h4.title(for="scheme") Scheme
+				textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
+
+			label(for="presentationDefinition") Presentation Definition
+			textarea(name="presentationDefinition" rows="50" style="width: 100%")
+
+			button(type="submit" class="btn btn-primary" style="margin-top: 1rem") Request Credential(s)
+
+
+			
+	link(rel="stylesheet" href="/styles/certificates.css")
