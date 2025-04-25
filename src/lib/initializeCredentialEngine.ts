@@ -1,9 +1,9 @@
-import { MsoMdocParser, MsoMdocVerifier, ParsingEngine, PublicKeyResolverEngine, SDJWTVCParser, SDJWTVCVerifier } from 'core';
+import { MsoMdocParser, MsoMdocVerifier, ParsingEngine, PublicKeyResolverEngine, SDJWTVCParser, SDJWTVCVerifier } from 'wallet-common';
 import { config } from '../../config';
 import { webcrypto } from "node:crypto";
-import { OpenID4VCICredentialRendering } from 'core/dist/functions/openID4VCICredentialRendering';
-import { CredentialRenderingService } from 'core/dist/rendering';
-import { defaultHttpClient } from 'core/dist/defaultHttpClient';
+import { OpenID4VCICredentialRendering } from 'wallet-common/dist/functions/openID4VCICredentialRendering';
+import { CredentialRenderingService } from 'wallet-common/dist/rendering';
+import { defaultHttpClient } from 'wallet-common/dist/defaultHttpClient';
 import axios from 'axios';
 
 // @ts-ignore
