@@ -1,7 +1,7 @@
 import { JWK } from "jose";
 import { CredentialView } from "../../authorization/types";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
-import { VerifiableCredentialFormat } from "core/dist/types";
+import { VerifiableCredentialFormat } from "wallet-common/dist/types";
 import { CredentialSigner } from "../../services/interfaces";
 import { Request } from "express";
 import { AuthenticationChain } from "../../authentication/AuthenticationComponent";
