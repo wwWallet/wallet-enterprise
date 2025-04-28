@@ -1,7 +1,7 @@
 import { inject, injectable } from "inversify";
 import { Request, Response } from 'express'
 import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
-import { VerifiableCredentialFormat } from "core/dist/types";
+import { VerifiableCredentialFormat } from "wallet-common/dist/types";
 import { TYPES } from "./types";
 import { compactDecrypt, exportJWK, generateKeyPair, importJWK, importPKCS8, SignJWT } from "jose";
 import { randomUUID } from "crypto";

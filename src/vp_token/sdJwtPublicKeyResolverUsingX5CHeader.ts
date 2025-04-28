@@ -1,5 +1,5 @@
 import base64url from "base64url";
-import { VerifiableCredentialFormat } from "core/dist/types";
+import { VerifiableCredentialFormat } from "wallet-common/dist/types";
 import { IPublicKeyResolver } from "./IPublicKeyResolver";
 import { importX509, JWTHeaderParameters, KeyLike } from "jose";
 import { verifyCertificateChain } from "../util/verifyCertificateChain";
