@@ -28,7 +28,6 @@ h1, h2, h3, h4, h5 {
 
 a {
 	text-decoration: none;
-	transition: 0.2s;
 }
 
 p {
@@ -52,7 +51,6 @@ p {
 	color: white;
 	border: none;
 	text-decoration: none;
-	transition: 0.4s;
 	font-size: 14px;
 	width: fit-content;
 }

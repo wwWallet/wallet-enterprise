@@ -9,40 +9,34 @@ block layout-content
 				class="presentation-form"
 			)
 				.CenteredLayout
-					h2.title Select the Fields You Wish to Present
+					h2.title Configure your Presentation Definition
+
+					.field
+						h4.title(for="type") Fields
+						select#type(name="type" class="dropdown")
+							option(value="sd-jwt") SD-JWT
+							option(value="mdoc") MDOC
 
 					.left-layout
+						.attribute-selection
+							.field
+								div#attributes-container
+									h4.title(for="attribute") Select Attributes
+									// populated by JS
+
 						.field
 							h4.title(for="purpose") Purpose
 							textarea#purpose(name="purpose" placeholder="Enter the purpose of this request" maxlength="255")
 
 						.field
-							h4.title(for="type") Type
-							select#type(name="type" class="dropdown")
-								option(value="sd-jwt") SD-JWT
-								option(value="mdoc") MDOC
-
-						.field
 							h4.title(for="scheme") Scheme
 							textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
 
-					.attribute-selection
-						.field
-							h4.title(for="attribute") Select Attributes
-							select(name="attributes" id="attribute" class="dropdown" multiple)
-								// The options will be dynamically updated by JavaScript
+					// Hidden field for descriptorId
+					input#descriptorId(type="hidden" name="descriptorId" value="")
 
-						// Display Selected Attributes Automatically
-						.selected-attributes-container
-							h4.title.selected-attributes-title Selected Attributes
-							ul.selected-attributes-list(id="selectedAttributes")
-								li.empty-placeholder No attributes added yet.
-
-						// Hidden field for descriptorId
-						input#descriptorId(type="hidden" name="descriptorId" value="")
-
-						// Submit Button
-						button.Btn.Medium.request-qr(type="submit") Request
+					// Submit Button
+					button.Btn.Medium.request-qr(type="submit") Request
 
 
 	// Link to external stylesheets

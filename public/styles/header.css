@@ -101,7 +101,7 @@ li.menu-item a {
 	display: none;
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 1068px) {
 
 	.mobile-menu-toggle {
 		display: block;
