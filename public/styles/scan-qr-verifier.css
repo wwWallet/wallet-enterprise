@@ -1,12 +1,11 @@
+/* Center layout */
 .CenteredLayout {
   width: 100%;
-
   display: flex;
   flex-direction: column;
   gap: 16px;
-  flex-wrap: wrap;
-
-  justify-content: center;
+	flex-wrap: wrap;
+	justify-content: center;
   align-items: center;
 }
 
@@ -54,11 +53,46 @@
   justify-content: center;
 }
 
+.presentation-form {
+	width: 50%;
+}
+
+/* Card containing QR + buttons */
+.qr-card {
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  padding: 30px;
+  width: 80%;
+  max-width: 800px;
+  margin: 0 auto 30px auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+#qr-image {
+  border: 10px solid white;
+}
+
+.qr-url-block {
+	max-width: 100%;
+  text-align: left;
+  margin: 0 auto;
+}
+
+.qr-url {
+  font-size: 14px;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  max-width: 100%;
+}
+
 .buttons {
-  margin-top: 20px;
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 10px;
 }
 
 button {
@@ -67,7 +101,73 @@ button {
   cursor: pointer;
 }
 
+.buttons button {
+  min-height: 48px;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
 button#cancelButton {
   background-color: gray;
   color: white;
+}
+
+/* Presentation definition collapsible container */
+.presentation-definition-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.details-toggle {
+  width: 80%;
+  max-width: 800px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f4f4f4;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.details-toggle summary {
+  font-size: 19px;
+  font-weight: bold;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.details-toggle summary::before {
+  content: "▸";
+  font-size: 22px;
+  transition: transform 0.2s ease;
+}
+
+.details-toggle[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.presentation-definition-block {
+  width: 100%;
+}
+
+.presentation-definition {
+  width: 100%;
+  font-family: monospace;
+  background-color: #f4f4f4;
+  border: none;
+  padding: 0;
+  resize: vertical;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  overflow-x: hidden;
 }

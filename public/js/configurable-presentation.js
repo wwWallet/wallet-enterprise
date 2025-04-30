@@ -59,6 +59,12 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (value === "$.vct" && type === "sd-jwt") {
 				input.checked = true;
 				input.disabled = true;
+
+				const hiddenInput = document.createElement("input");
+				hiddenInput.type = "hidden";
+				hiddenInput.name = "attributes[]";
+				hiddenInput.value = value;
+				fieldWrapper.appendChild(hiddenInput);
 			}
 
 			input.addEventListener("change", updateRequestButtonState);

@@ -1,0 +1,74 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 1.5rem;
+	text-align: center;
+}
+
+label[for="presentationDefinition"],
+h4.title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.field {
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+#edit-presentation-definition .request-button {
+	max-width: unset;
+	width: 100%;
+}
+
+#scheme {
+  width: 100%;
+  padding: 8px;
+  font-family: monospace;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+label[for="presentationDefinition"] {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  margin-top: 1rem;
+}
+
+.textarea-wrapper {
+  width: 100%;
+}
+
+textarea[name="presentationDefinition"] {
+  width: 100%;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+  box-sizing: border-box;
+  background-color: white;
+  color: #333;
+	max-height: 50%;
+}
