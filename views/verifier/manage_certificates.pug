@@ -2,19 +2,16 @@ extends ../layout.pug
 
 block layout-content
 	.container2.container-positions
-		h1 Manage Root Certificates
+		h1 Manage Certificates
 		.card-container
-			.card
+			a.card(href="/verifier/certificates")
 				.card-title Root Certificates
-				.card-buttons
-						button.btn.btn-primary(onclick=`window.location.href = "/verifier/certificates"`) Show
-			.card
-				.card-title New Certificate
-				.card-buttons
-						button.btn.btn-primary(onclick=`window.location.href = "/verifier/import-certificate"`) Import
+			a.card(href="/verifier/import-certificate")
+				.card-title Import Certificate
 
 	block footer
 		include ../footer.pug
 
 	link(rel="stylesheet" href="/styles/index.css")
+	link(rel="stylesheet" href="/styles/certificates.css")
 	script(src="/js/index.js")

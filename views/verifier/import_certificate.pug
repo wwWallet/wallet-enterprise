@@ -6,15 +6,12 @@ block layout-content
 			h1 Import Certificate
 
 			if error
-				p= error.errorMessage
-					
+				p.error-message= error.errorMessage
 
-			form(method="POST", action="/verifier/import-certificate")
-				label(for="certificate") X509 Certificate (PEM or Base64)
-				textarea(name="certificate" rows="10" style="width: 100%")
+			form(method="POST", action="/verifier/import-certificate", class="cert-form")
+				label(for="certificate") X.509 Certificate (PEM or Base64)
+				textarea(name="certificate" rows="10")
 
-				button(type="submit" class="btn btn-primary" style="margin-top: 1rem") Add X509 Certificate
+				button(type="submit" class="btn btn-primary submit-button") Add X.509 Certificate
 
-
-			
 	link(rel="stylesheet" href="/styles/certificates.css")

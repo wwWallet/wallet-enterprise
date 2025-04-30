@@ -1,4 +1,95 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.centered-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1 {
+  font-weight: 600;
+}
+
 .cert-container {
-	width: 80%;
-	word-wrap: break-word;
+  width: 100%;
+  padding: 1rem;
+}
+
+details {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+summary {
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  outline: none;
+  margin-bottom: 0.5rem;
+	padding: 0.5rem;
+}
+
+pre {
+  font-family: monospace;
+  font-size: 14px;
+  background-color: #fefefe;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+/* Import Cert */
+
+.cert-form {
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  max-width: 600px;
+}
+
+.cert-form label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.cert-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  font-family: monospace;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 200px;
+  background-color: #fefefe;
+}
+
+.submit-button {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.error-message {
+  color: red;
+  margin-bottom: 1rem;
+  font-weight: bold;
 }

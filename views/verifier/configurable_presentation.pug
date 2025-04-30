@@ -17,20 +17,19 @@ block layout-content
 							option(value="sd-jwt") SD-JWT
 							option(value="mdoc") MDOC
 
-					.left-layout
-						.attribute-selection
-							.field
-								div#attributes-container
-									h4.title(for="attribute") Select Attributes
-									// populated by JS
-
+					.attribute-selection
 						.field
-							h4.title(for="purpose") Purpose
-							textarea#purpose(name="purpose" placeholder="Enter the purpose of this request" maxlength="255")
+							div#attributes-container
+								h4.title(for="attribute") Select Attributes
+								// populated by JS
 
-						.field
-							h4.title(for="scheme") Scheme
-							textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
+					.field
+						h4.title(for="purpose") Purpose
+						textarea#purpose(name="purpose" placeholder="Enter the purpose of this request" maxlength="255")
+
+					.field
+						h4.title(for="scheme") Scheme
+						textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
 
 					// Hidden field for descriptorId
 					input#descriptorId(type="hidden" name="descriptorId" value="")
