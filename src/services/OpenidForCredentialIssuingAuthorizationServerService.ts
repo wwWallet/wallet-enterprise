@@ -11,11 +11,12 @@ import { Repository } from "typeorm";
 import { CONSENT_ENTRYPOINT } from "../authorization/constants";
 import base64url from "base64url";
 import { config } from "../../config";
-import { importJWK, JWK, jwtVerify } from "jose";
+import { importJWK, importX509, JWK, jwtVerify } from "jose";
 import { TYPES } from "./types";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 import { arrayBufferToBase64Url } from "../util/arrayBufferToBase64Url";
+import { verifyX5C } from "wallet-common";
 
 // @ts-ignore
 const access_token_expires_in = config.issuanceFlow.access_token_expires_in ? config.issuanceFlow.access_token_expires_in : 60; // 1 minute
@@ -760,6 +761,50 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return;
 		}
 
+		async function keyAttestationVerificaton() {
+			// @ts-ignore
+			const supportedBatchSize: number = config.issuanceFlow?.batchCredentialIssuance?.batchSize ?? 1;
+
+			if (ctx.req.body?.proof?.proof_type && ctx.req.body?.proof?.proof_type === 'attestation' && ctx.req.body?.proof?.attestation && typeof ctx.req.body.proof.attestation === 'string') {
+				const attestation = ctx.req.body.proof.attestation as string;
+				const header = JSON.parse(base64url.decode(attestation.split('.')[0])) as Record<string, unknown>;
+				if (header.x5c && header.alg && Array.isArray(header.x5c) && typeof header.alg === 'string') {
+					const verificationResult = await verifyX5C(header.x5c as string[], [ ...config.trustedRootCertificates ]);
+					console.log("Chain validation result = ", verificationResult)
+					if (!verificationResult) {
+						const r = { error: "Key attestation: Chain validation error" };
+						console.log(r);
+						return r;
+					}
+					try {
+						const x509 = `-----BEGIN CERTIFICATE-----\n${(header.x5c as string[])[0]}\n-----END CERTIFICATE-----`
+						const publicKey = await importX509(x509, header.alg);
+						const { payload } = await jwtVerify(attestation, publicKey);
+						if (!payload.attested_keys) {
+							const r = { error: "Key attestation: 'attested_keys' claim is missing from key attestation JWT payload" };
+							console.error(r);
+							return r;
+						}
+						if (Array.isArray(payload.attested_keys) && payload.attested_keys.length > supportedBatchSize) {
+							const r = { error: "Key attestation: 'attested_keys' length is bigger than the supported batch size" };
+							console.error(r);
+							return r;
+						}
+						return { attested_keys: payload.attested_keys as JWK[] };
+					}
+					catch(err) {
+						const r = { error: "Key attestation: Signature validation failed" };
+						console.error(r);
+						console.error(err);
+						return r;
+					}
+				}
+			}
+			const r = { error: "Key attestation: Nothing to verify the received key attestation" };
+			console.error(r);
+			return r;
+		}
+
 		async function proofJwtVerification() {
 			// @ts-ignore
 			const supportedBatchSize: number = config.issuanceFlow?.batchCredentialIssuance?.batchSize ?? 1;
@@ -797,53 +842,49 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return results;
 		}
 
+		const credentialConfigurationRegistryService = this.credentialConfigurationRegistryService;
+	
+		async function sendCredentialResponse(holderJwks: JWK[]) {
+			const responses = (await Promise.all(holderJwks.map(async (jwk) => {
+				return credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, jwk);
+			}))).filter(r => r != null);
+			const format = responses[0]?.format;
 
-		const results = await proofJwtVerification();
-
-		if ('error' in results) {
-			const { error } = results;
-			console.log(error);
-			ctx.res.status(400).send({ error });
-			return;
-		}
-
-		for (const result of results) {
-			if ('error' in result) {
-				const { error } = result;
-				console.log(error);
-				ctx.res.status(400).send({ error });
-				return;
-			}
-		}
-
-		const responses = await Promise.all(results.map(async (result) => {
-			if ('error' in result) {
-				return null;
-			}
-			return this.credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, result.jwk);
-		}));
-		const filteredResponses = responses.filter((r) => r !== null);
-
-		if (responses && responses.length > 0 && responses[0] !== null) {
-			const format = responses[0].format;
-
-			console.log("Credential Responses to send = ", filteredResponses);
-			if (ctx.req.body?.proofs) { // if user requested in batches
+			console.log("Credential Responses to send = ", responses);
+			if (holderJwks.length > 1) {
 				ctx.res.send({
-					credentials: filteredResponses.map((response: any) => response.credential),
+					credentials: responses.map((response: any) => response.credential),
 					format: format,
 				});
 				return;
 			}
 			else {
 				ctx.res.send({
-					credential: filteredResponses.map((response: any) => response.credential)[0],
+					credential: responses.map((response: any) => response.credential)[0],
 					format: format,
 				});
 				return;
 			}
-
 		}
+
+		if (ctx.req.body.proof?.proof_type === 'attestation') {
+			const keyAttestationVerificationResult = await keyAttestationVerificaton();
+			console.log("Key attestation result = ", keyAttestationVerificationResult)
+			if ('error' in keyAttestationVerificationResult) {
+				ctx.res.status(400).send({ error: keyAttestationVerificationResult.error });
+				return;	
+			}
+			await sendCredentialResponse([...keyAttestationVerificationResult.attested_keys]);
+			return;
+		}
+		else {
+			const results = await proofJwtVerification();
+			if (!('error' in results) && results instanceof Array) {
+				await sendCredentialResponse(results.map((r) => 'jwk' in r ? r.jwk : null).filter(r => r !== null) as JWK[]);
+				return;
+			}
+		}
+
 		console.log("Failed to generate credential response")
 		ctx.res.status(400).send({ error: "Failed to generate credential response" });
 	}
