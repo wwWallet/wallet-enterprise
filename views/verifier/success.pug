@@ -41,7 +41,7 @@ block layout-content
 									each claim in presentationClaims[claimType]
 										tr
 											td= claim.name
-											td= claim.value
+											td.claim-value(data-raw-value=claim.value)= claim.value
 
 				h3 Credentials
 
@@ -75,3 +75,4 @@ block layout-content
 	link(rel="stylesheet" href="/styles/presentation-data.css")
 	script(src="/js/index.js")
 	script(src="/js/check-expired.js")
+	script(src="/js/truncate-long-fields.js")
