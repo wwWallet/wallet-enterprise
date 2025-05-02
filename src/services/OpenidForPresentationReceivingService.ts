@@ -468,7 +468,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				}
 				const parsedCredential = parsingResult.value;
 				console.log("Parsed credential = ", parsedCredential);
-				const definition = this.configurationService.getPresentationDefinitions().filter((pd) => pd.id == presentation_submission.definition_id)[0]
+				const definition = rpState.presentation_definition;
 
 				const fieldNamesWithValues = definition.input_descriptors[0].constraints.fields.map((field: any) => {
 					const key = field.path.map((possiblePath: string) => possiblePath.split('.')[possiblePath.split('.').length - 1]);
