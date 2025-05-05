@@ -1,0 +1,96 @@
+.attribute-selection {
+	width: 100%;
+}
+
+.checkbox-wrapper {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+input[type="checkbox"]:disabled + label {
+  color: gray;
+  cursor: not-allowed;
+}
+
+#attributes-container {
+	max-height: 300px;
+	overflow-y: auto;
+}
+
+/* Form Elements */
+.field {
+	margin-bottom: 15px;
+	width: 100%;
+}
+
+textarea,
+select {
+	width: 100%;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	font-size: 14px;
+}
+
+textarea {
+	resize: vertical;
+	min-height: 40px;
+	max-height: 80px;
+}
+
+.dropdown {
+	cursor: pointer;
+}
+
+/* Buttons */
+.add-button,
+.submit-button {
+	background-color: #007bff;
+	color: #fff;
+	border: none;
+	padding: 10px 15px;
+	font-size: 14px;
+	border-radius: 5px;
+	cursor: pointer;
+	margin-top: 10px;
+}
+
+.add-button:hover,
+.submit-button:hover {
+	background-color: #0056b3;
+}
+
+.request-qr {
+	width: 100%;
+}
+
+.request-qr:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+.dropdown {
+	height: auto;
+	padding: 10px;
+	background-color: #f9f9f9;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	resize: vertical;
+}
+
+#attribute option {
+	cursor: pointer;
+	margin-bottom: 2px;
+	padding: 5px;
+	background-color: #f9f9f9;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	margin-right: 10px;
+}
+
+.title{
+	margin-bottom: 5px;
+}

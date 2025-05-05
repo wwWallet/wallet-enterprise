@@ -9,8 +9,17 @@ block layout-content
 				.content-column
 					h1 #{locale.index.heading}
 					p #{locale.index.paragraph}
-					h4 #{locale.index.phrase}
-					button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.proceed}
+					br
+					h4 #{locale.index.oid4vpProfile}
+					table.oid4vp-table
+						tbody
+							for row of locale.index.openid4vp
+								tr
+									td #{row[0]}
+									td #{row[1]}
+					br
+					br
+					button.Btn.Large.Landing(id="mainBtn" type="submit") #{locale.index.verifyCredential}
 					input(type="hidden" id="verifier" name="verifier" value="true")
 
 	block footer

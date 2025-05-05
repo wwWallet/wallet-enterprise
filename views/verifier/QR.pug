@@ -2,21 +2,32 @@ extends ../layout.pug
 block layout-content
 
 	.container
-		.centered-layout
+		.qr-card
 			form(id="PresentationRequestForm" name="PresentationRequestForm" method="POST")
 				.CenteredLayout
-
-					h1 Scan the QR code
+					h1 Present your Credentials
 
 					img(src=authorizationRequestQR id="qr-image")
-					
-					- const modifiedURL = authorizationRequestURL.replace("openid4vp://cb", wwwalletURL)
-					button.Btn.Medium.openwithwalletbutton(type="submit" name="action" value=`${modifiedURL}`) Open with wwWallet
-					button.Btn.Medium.openwithwalletbuttonnative(type="submit" name="action" value=`${authorizationRequestURL}`) Open with a native wallet
+
+					.qr-url-block
+						p.qr-url(id="qrURLDisplay") #{authorizationRequestURL}
+
+					.buttons
+						- const modifiedURL = authorizationRequestURL.replace("openid4vp://cb", wwwalletURL)
+						button.Btn.Medium.openwithwalletbutton(type="submit" name="action" value=`${modifiedURL}`) Open with wwWallet
+						button.Btn.Medium.openwithwalletbuttonnative(type="submit" name="action" value=`${authorizationRequestURL}`) Open with a native wallet
 
 					input(type='hidden' name='state' id='state' value=state)
 					input(type='hidden' name='authorizationRequestQR' id='authorizationRequestQR' value=authorizationRequestQR)
 					input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
+
+		.presentation-definition-container
+			details.details-toggle
+				summary Presentation Definition
+				.presentation-definition-block
+					textarea.presentation-definition(readonly rows="20") !{JSON.stringify(JSON.parse(presentationDefinition), null, 2)}
+
+
 
 	block footer
 		include ../footer.pug

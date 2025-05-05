@@ -17,6 +17,15 @@ th {
 	color: white;
 }
 
+.oid4vp-table {
+	width: 100%;
+}
+
+#Index #mainBtn {
+	display: block;
+	margin: auto;
+	width: 100%;
+}
 
 /* CSS for the claims tables */
 .claims-tables {

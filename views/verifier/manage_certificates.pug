@@ -1,0 +1,17 @@
+extends ../layout.pug
+
+block layout-content
+	.container2.container-positions
+		h1 Manage Certificates
+		.card-container
+			a.card(href="/verifier/certificates")
+				.card-title Root Certificates
+			a.card(href="/verifier/import-certificate")
+				.card-title Import Certificate
+
+	block footer
+		include ../footer.pug
+
+	link(rel="stylesheet" href="/styles/index.css")
+	link(rel="stylesheet" href="/styles/certificates.css")
+	script(src="/js/index.js")

@@ -28,8 +28,8 @@ export const config = {
 	trustedRootCertificates: [],
 	clockTolerance: 60,
 	siteConfig: {
-		"name": "ACME",
-		"short_name": "ACME",
+		"name": "wwWallet Verifier",
+		"short_name": "wwwWallet Verifier",
 		"theme_color": "#4d7e3e",
 		"background_color": "#4d7e3e",
 	}

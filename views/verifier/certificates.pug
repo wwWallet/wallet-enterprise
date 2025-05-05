@@ -1,0 +1,17 @@
+extends ../layout.pug
+
+block layout-content
+	.container
+		.centered-layout
+			h1 Trusted Root Certificates
+			.cert-container
+				details(open)
+					summary X.509 Certificate PEM
+					pre !{trustedRootCertificates.join('\n\n')}
+
+				details
+					summary X.509 Certificate Base64
+					- const base64Certs = trustedRootCertificates.map(cert => cert.replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').replace(/\n/g, '')).join('\n\n')
+					pre !{base64Certs}
+
+	link(rel="stylesheet" href="/styles/certificates.css")

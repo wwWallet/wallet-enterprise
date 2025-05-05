@@ -177,7 +177,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 			given_name: true,
 			title: true,
 			grade: true,
-			eqf_level: false, // no ability to hide
+			eqf_level: true,
 			graduation_date: true,
 		}
 

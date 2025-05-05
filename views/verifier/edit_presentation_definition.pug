@@ -1,0 +1,55 @@
+extends ../layout.pug
+
+block layout-content
+	.container
+		h1 Edit Presentation Definition
+
+		if error
+			p= error.errorMessage
+				
+		form(id='edit-presentation-definition', method="POST", action="/verifier/public/definitions/edit-presentation-definition")
+
+			.field
+				h4.title(for="scheme") Scheme
+				textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
+
+			.label-wrapper
+				label(for="presentationDefinition") Presentation Definition
+				p.form-subtitle You can edit this template as needed
+			.textarea-wrapper
+				textarea(name="presentationDefinition" rows="50").
+					{
+					  "id": "VerifiableId",
+					  "title": "PID",
+					  "description": "Personal Identification",
+					  "input_descriptors": [
+					    {
+					      "name": "Custom PID",
+					      "purpose": "wwWallet Verifier requests your credentials",
+					      "constraints": {
+					        "limit_disclosure": "required",
+					        "fields": [
+					          {
+					            "name": "VC type",
+					            "path": ["$.vct"],
+					            "filter": {
+					              "type": "string",
+					              "const": "urn:eudi:pid:1"
+					            }
+					          }
+					        ]
+					      },
+					      "format": {
+					        "vc+sd-jwt": {
+					          "sd-jwt_alg_values": ["ES256"],
+					          "kb-jwt_alg_values": ["ES256"]
+					        }
+					      },
+					      "id": "SdJwtPID"
+					    }
+					  ]
+					}
+
+			button.Btn.Medium.request-button(type="submit") Request Credentials
+
+	link(rel="stylesheet" href="/styles/edit-presentation-definition.css")
