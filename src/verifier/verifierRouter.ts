@@ -102,7 +102,7 @@ verifierRouter.post('/import-certificate', async (req, res) => {
 			: `-----BEGIN CERTIFICATE-----\n${sanitizedCert.trim()}\n-----END CERTIFICATE-----`;
 
 		const normalizedPem = pem.replace(/\r\n/g, '\n');
-		config.trustedRootCertificates.push(normalizedPem.trim());
+		(config.trustedRootCertificates as string[]).push(normalizedPem.trim());
 		res.redirect('/verifier/import-certificate');
 	} catch (error) {
 		res.render('verifier/import_certificate.pug', {
