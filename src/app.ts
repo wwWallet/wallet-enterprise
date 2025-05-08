@@ -98,13 +98,6 @@ app.get('/offer/:scope', async (req: Request, res: Response) => {
 
 		const supportedCredentialType = supportedCredentialConfig.exportCredentialSupportedObject();
 
-		let sdjwtVcMetadata: unknown | undefined;
-		// @ts-ignore
-		if (typeof supportedCredentialConfig?.metadata === 'function') {
-			// @ts-ignore
-			sdjwtVcMetadata = supportedCredentialConfig.metadata();
-		}
-
 		req.session.authenticationChain = {};
 		const result = await openidForCredentialIssuingAuthorizationServerService.generateCredentialOfferURL({ req, res }, [supportedCredentialConfig.getId()]);
 
@@ -125,7 +118,6 @@ app.get('/offer/:scope', async (req: Request, res: Response) => {
 			title: titles.index,
 			credentialOfferURL: result.url,
 			credentialOfferQR,
-			sdjwtVcMetadata,
 			supportedCredentialType,
 			lang: req.lang,
 			locale: locale[req.lang]
