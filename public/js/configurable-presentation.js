@@ -15,16 +15,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const calculateDescriptorId = () => {
 		const type = typeDropdown.value;
-		if (type === "sd-jwt") {
-			if (presentationDefinitionId === "CustomVerifiableId") {
-				return "SdJwtPID";
-			} else if (presentationDefinitionId === "POR") {
-				return "POR";
-			}
-		} else if (type === "mdoc") {
-			if (presentationDefinitionId === "CustomVerifiableId") {
-				return "eu.europa.ec.eudi.pid.1";
-			}
+		const sdJwtMap = {
+			CustomVerifiableId: "SdJwtPID",
+			POR: "POR",
+			EuropeanHealthInsuranceCard: "EuropeanHealthInsuranceCard",
+			PortableDocumentA1: "PortableDocumentA1",
+			Bachelor: "Bachelor",
+		};
+
+		const mdocMap = {
+			CustomVerifiableId: "eu.europa.ec.eudi.pid.1"
+		};
+
+		if (type === "sd-jwt" && sdJwtMap[presentationDefinitionId]) {
+			return sdJwtMap[presentationDefinitionId];
+		} else if (type === "mdoc" && mdocMap[presentationDefinitionId]) {
+			return mdocMap[presentationDefinitionId];
 		}
 		return "";
 	};
