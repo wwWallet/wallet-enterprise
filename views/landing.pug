@@ -45,6 +45,17 @@ block layout-content
 								tr
 									td #{row[0]}
 									td #{row[1]}
+							div.specs-box
+					h4 OpenID4VP Interoperability Profile
+					
+			h4 #{locale.index.typeMetatadaExamplesHeader}
+			table.specs-table
+				tbody
+					for row in locale.index.typeMetatadaExamples
+						tr
+							td #{row[0]}
+							td
+								a(href=baseUrl + "/public/creds/" + row[1], target="_blank")= baseUrl + "/public/creds/" + row[1]
 
 
 	block footer
