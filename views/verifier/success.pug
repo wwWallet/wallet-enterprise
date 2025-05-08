@@ -41,7 +41,7 @@ block layout-content
 									each claim in presentationClaims[claimType]
 										tr
 											td= claim.name
-											td.claim-value(data-raw-value=claim.value)= claim.value
+											td.claim-value(data-raw-value=String(claim.value))= claim.value
 
 				h3 Credentials
 
