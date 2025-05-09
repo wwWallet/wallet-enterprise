@@ -23,24 +23,39 @@ block layout-content
 				| #{locale.index.sdJwtMetadata} 
 				a(href=`${baseUrl}/.well-known/jwt-vc-issuer`) #{baseUrl}/.well-known/jwt-vc-issuer.
 			p #{locale.index.specs.paragraph}
-			h4 OpenID4VCI Interoperability Profile
+			div.specs-container
+				div.specs-box
+					h4 OpenID4VCI Interoperability Profile
+					table.specs-table
+						tbody
+							for row of locale.index.specs.tables.openid4vci
+								tr
+									td #{row[0]}
+									td #{row[1]}
+					br
+					i Notes: #{locale.index.specs.tables.openid4vci_notes}
+					br
+					br
+
+				div.specs-box
+					h4 OpenID4VP Interoperability Profile
+					table.specs-table
+						tbody
+							for row of locale.index.specs.tables.openid4vp
+								tr
+									td #{row[0]}
+									td #{row[1]}
+							div.specs-box
+					
+			h4 #{locale.index.typeMetatadaExamplesHeader}
 			table.specs-table
 				tbody
-					for row of locale.index.specs.tables.openid4vci
+					for row in locale.index.typeMetatadaExamples
 						tr
 							td #{row[0]}
-							td #{row[1]}
-			br
-			i Notes: #{locale.index.specs.tables.openid4vci_notes}
-			br
-			br
-			h4 OpenID4VP Interoperability Profile
-			table.specs-table
-				tbody
-					for row of locale.index.specs.tables.openid4vp
-						tr
-							td #{row[0]}
-							td #{row[1]}
+							td
+								a(href=baseUrl + "/public/creds/" + row[1], target="_blank")= baseUrl + "/public/creds/" + row[1]
+
 
 	block footer
 		include footer.pug
