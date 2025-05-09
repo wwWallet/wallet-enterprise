@@ -191,7 +191,7 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 		return {
 			"vct": this.getId(),
 			"name": "Power of Representation",
-			"description": "Power of Representation VC in sd_jwt format",
+			"description": "Power of Representation (POR) SD-JWT VC",
 			"display": [
 				{
 					"lang": "en-US",
@@ -220,8 +220,8 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 					"display": [
 						{
 							"lang": "en-US",
-							"label": "Legal Name",
-							"description": "The Legal name of the Power of Representation credential"
+							"label": "Legal Entity Name",
+							"description": "Name of the legal entity being represented."
 						}
 					],
 					"svg_id": "legal_name"
@@ -231,8 +231,8 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 					"display": [
 						{
 							"lang": "en-US",
-							"label": "legal_person_identifier",
-							"description": "The Legal legal person identifier of the Power of Representation credential"
+							"label": "Legal entity ID",
+							"description": "Unique identifier of the legal entity being represented."
 						}
 					],
 					"svg_id": "legal_person_identifier"
@@ -242,8 +242,8 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 					"display": [
 						{
 							"lang": "en-US",
-							"label": "full Powers",
-							"description": "The full Powers of the Power of Representation credential"
+							"label": "Full Representation Powers",
+							"description": "Indicates whether the representative is fully authorized to act on behalf of the legal entity."
 						}
 					],
 					"svg_id": "full_powers"
@@ -253,8 +253,8 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 					"display": [
 						{
 							"lang": "en-US",
-							"label": "Effective from date",
-							"description": "The effective from date"
+							"label": "Effective from",
+							"description": "Start date of valid representation (inclusive)."
 						}
 					],
 					"svg_id": "effective_from_date"
@@ -264,8 +264,8 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 					"display": [
 						{
 							"lang": "en-US",
-							"label": "Effective until date",
-							"description": "The effective until date"
+							"label": "Effective until",
+							"description": "End date of valid representation (inclusive)."
 						}
 					],
 					"svg_id": "effective_until_date"
