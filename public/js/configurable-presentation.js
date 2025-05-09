@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 	const selectableFields = JSON.parse(document.querySelector('script[src="/js/configurable-presentation.js"]').dataset.fields);
 	const presentationDefinitionId = document.querySelector('script[src="/js/configurable-presentation.js"]').dataset.presentationId;
-
+	const presentationDefinitionDescriptorId = document.querySelector('script[src="/js/configurable-presentation.js"]').dataset.presentationDescriptorId;
 	const descriptorIdInput = document.getElementById("descriptorId");
 
 	const calculateDescriptorId = () => {
@@ -36,7 +36,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	};
 
 	const updateDescriptorId = () => {
-		descriptorIdInput.value = calculateDescriptorId();
+		if (presentationDefinitionDescriptorId === 'undefined') {
+			descriptorIdInput.value = calculateDescriptorId();
+		} else {
+			descriptorIdInput.value = presentationDefinitionDescriptorId;
+		}
 	};
 	typeDropdown.addEventListener("change", updateDescriptorId);
 	updateDescriptorId();

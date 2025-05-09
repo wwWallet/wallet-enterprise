@@ -238,6 +238,7 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 	console.log("Selectable fields = ", selectableFields)
 	return res.render('verifier/configurable_presentation', {
 		presentationDefinitionId: presentationDefinition.id,
+		presentationDefinitionDescriptorId: presentationDefinition.input_descriptors[0].id,
 		selectableFields,
 		lang: req.lang,
 		locale: locale[req.lang],
