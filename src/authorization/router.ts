@@ -8,9 +8,10 @@ const authorizationRouter = Router();
 authorizationRouter.use((req, res, next) => {
 	const originalRender = res.render;
 
+	console.log("Session: ", req.session, req.authorizationServerState)
 	// @ts-ignore
 	res.render = function (view, options = {}, callback: any) {
-		const supportedCredentialType = credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().filter((sc) => sc.getScope() === req.authorizationServerState.scope)[0];
+		const supportedCredentialType = credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().filter((sc) => req.authorizationServerState && sc.getScope() === req.authorizationServerState.scope)[0];
 
 		const extraData = { supportedCredentialType: supportedCredentialType ? supportedCredentialType.exportCredentialSupportedObject(): undefined };
 
