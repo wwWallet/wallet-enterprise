@@ -58,7 +58,7 @@ block layout-content
 						tr
 							td #{row[0]}
 							td
-								a(href=baseUrl + "/public/creds/" + row[1], target="_blank")= baseUrl + "/public/creds/" + row[1]
+								a(href=baseUrl + "/public/creds/" + row[1], target="_blank")= row[1].split("/")[1]
 
 
 	block footer
