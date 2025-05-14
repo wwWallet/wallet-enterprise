@@ -12,7 +12,8 @@ block layout-content
 						img(src=credentialOfferQR)
 					| - OR -
 					button.Btn.Large.Landing(id="mainBtn" onclick=`window.location.href = "${credentialOfferURL}"`) #{locale.index.proceed}
-
+					textarea#url-textarea.wide
+						| #{credentialOfferURL}
 			//- div.item.VerifierSection
 			//- 	.ItemLayout
 			//- 		i.fa.fa-university.LargeIcon
@@ -29,6 +30,5 @@ block layout-content
 		include footer.pug
 
 	link(rel="stylesheet" href="/styles/index.css")
-	link(rel="stylesheet" href="/styles/presentation-data.css")
 
 	script(src="/js/index.js")

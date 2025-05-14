@@ -121,7 +121,6 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 			credentialImageSvgTemplate: svgText,
 			sdJwtVcMetadataClaims: this.metadata().claims,
 		});
-		console.log("Data uri = ", dataUri);
 		if (!dataUri) {
 			throw new Error("Could not render svg");
 		}
@@ -177,7 +176,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 			given_name: true,
 			title: true,
 			grade: true,
-			eqf_level: false, // no ability to hide
+			eqf_level: true,
 			graduation_date: true,
 		}
 

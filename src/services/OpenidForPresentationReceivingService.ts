@@ -18,6 +18,7 @@ import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import * as z from 'zod';
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 import { TransactionData } from "../TransactionData/TransactionData";
+import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
 
 const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.server.key"), 'utf-8').toString();
 const x5c = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.server.json")).toString()) as Array<string>;
@@ -27,8 +28,6 @@ enum ResponseMode {
 	DIRECT_POST_JWT = 'direct_post.jwt'
 }
 
-// @ts-ignore
-const transaction_data_required = config?.presentationFlow?.transaction_data_required ?? false;
 
 const ResponseModeSchema = z.nativeEnum(ResponseMode);
 
@@ -105,6 +104,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		exportedEphPriv.kid = exportedEphPub.kid;
 		exportedEphPub.use = 'enc';
 
+		const transactionDataObject = await Promise.all(presentationDefinition.input_descriptors
+			.filter(((input_desc: any) => input_desc._transaction_data_type !== undefined))
+			.map(async (input_desc: any) => {
+				if (input_desc._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
+					return await TransactionData().generateTransactionDataRequestObject(input_desc.id)
+				}
+				return null;
+			}));
+		console.log("Transaction data = ", transactionDataObject);
+
 		const signedRequestObject = await new SignJWT({
 			response_uri: responseUri,
 			aud: "https://self-issued.me/v2",
@@ -115,7 +124,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			response_mode: response_mode,
 			state: state,
 			nonce: nonce,
-			presentation_definition: presentationDefinition,
+			presentation_definition: serializePresentationDefinition(JSON.parse(JSON.stringify(presentationDefinition))),
 			client_metadata: {
 				"jwks": {
 					"keys": [
@@ -135,9 +144,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 				}
 			},
-			transaction_data: transaction_data_required ? await Promise.all(presentationDefinition.input_descriptors.map(async (input_desc: any) =>
-				await TransactionData().generateTransactionDataRequestObject(input_desc.id)
-			)) : undefined,
+			transaction_data: transactionDataObject.length > 0 ? transactionDataObject.filter((td) => td !== null) : undefined,
 		})
 			.setIssuedAt()
 			.setProtectedHeader({
@@ -373,14 +380,14 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					if (!prettyClaims) {
 						return { error: new Error(JSON.stringify(parseResult.success === false && parseResult.error)) };
 					}
-					if (transaction_data_required) {
-						try {
-							console.log("Parsing transaction data response...");
-							const [kbjwt,] = vp_token.split('~').reverse();
-							const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
+					try {
+						const [kbjwt,] = vp_token.split('~').reverse();
+						const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
 
-							const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
-							if (Object.keys(kbjwtPayload).includes('transaction_data_hashes')) {
+						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
+						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && desc._transaction_data_type !== undefined) {
+							console.log("Parsing transaction data response...");
+							if (desc._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
 								const validationResult = await TransactionData().validateTransactionDataResponse(desc.id, {
 									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
 									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
@@ -388,17 +395,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 								if (!validationResult) {
 									return { error: new Error("transaction_data validation error") };
 								}
-								console.log("VALIDATED TRANSACTION DATA");
 							}
-							else {
-								return { error: new Error("transaction_data_hashes is missing from transaction data response") };
-							}
+							console.log("VALIDATED TRANSACTION DATA");
 						}
-						catch (e) {
-							console.error(e);
-							return { error: new Error("transaction_data validation error") };
-
+						else if (desc._transaction_data_type !== undefined) {
+							return { error: new Error("transaction_data_hashes is missing from transaction data response") };
 						}
+					}
+					catch (e) {
+						console.error(e);
+						return { error: new Error("transaction_data validation error") };
 
 					}
 
@@ -468,7 +474,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				}
 				const parsedCredential = parsingResult.value;
 				console.log("Parsed credential = ", parsedCredential);
-				const definition = this.configurationService.getPresentationDefinitions().filter((pd) => pd.id == presentation_submission.definition_id)[0]
+				const definition = rpState.presentation_definition;
 
 				const fieldNamesWithValues = definition.input_descriptors[0].constraints.fields.map((field: any) => {
 					const key = field.path.map((possiblePath: string) => possiblePath.split('.')[possiblePath.split('.').length - 1]);

@@ -14,18 +14,114 @@ import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 import AppDataSource from "../AppDataSource";
 import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
+import Ajv from 'ajv';
+import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
+const ajv = new Ajv();
 
+const presentationDefinitionSchema = {
+  type: "object",
+  required: ["id", "input_descriptors"],
+  properties: {
+    id: { type: "string" },
+    input_descriptors: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["id", "constraints"],
+        properties: {
+          id: { type: "string" },
+          constraints: {
+            type: "object",
+            required: ["fields"],
+            properties: {
+              fields: {
+                type: "array",
+                items: {
+                  type: "object",
+                  required: ["path"],
+                  properties: {
+                    path: {
+                      type: "array",
+                      items: { type: "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+export const sanitizeInput = (input: string): string =>
+	input.replace(/[^\x20-\x7E\n]/g, '');
 
 export enum CredentialFormat {
 	VC_SD_JWT = "vc+sd-jwt",
 	JWT_VC_JSON = "jwt_vc_json"
 }
 
+const MAX_CERT_LENGTH = 5000;
 
 const verifierRouter = Router();
 // const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
 const verifierConfiguration = appContainer.get<VerifierConfigurationInterface>(TYPES.VerifierConfigurationServiceInterface);
 const openidForPresentationReceivingService = appContainer.get<OpenidForPresentationsReceivingInterface>(TYPES.OpenidForPresentationsReceivingService);
+
+verifierRouter.get('/certificates', async (req, res) => {
+	return res.render('verifier/certificates.pug', {
+		lang: req.lang,
+		locale: locale[req.lang],
+		trustedRootCertificates: config.trustedRootCertificates
+	})
+})
+
+verifierRouter.get('/import-certificate', async (req, res) => {
+	return res.render('verifier/import_certificate.pug', {
+		lang: req.lang,
+		locale: locale[req.lang]
+	})
+})
+
+verifierRouter.post('/import-certificate', async (req, res) => {
+	const { certificate } = req.body;
+	try {
+		if (!certificate) {
+			throw new Error("No certificate provided");
+		}
+		if (certificate.length > MAX_CERT_LENGTH) {
+			throw new Error("Certificate too large");
+		}
+		if (!/^([A-Za-z0-9+/=\s-]+)$/.test(certificate)) {
+			throw new Error("Invalid characters in certificate input");
+		}
+		const sanitizedCert = sanitizeInput(certificate);
+		const pem = sanitizedCert.includes('-----BEGIN CERTIFICATE-----')
+			? sanitizedCert
+			: `-----BEGIN CERTIFICATE-----\n${sanitizedCert.trim()}\n-----END CERTIFICATE-----`;
+
+		const normalizedPem = pem.replace(/\r\n/g, '\n');
+		(config.trustedRootCertificates as string[]).push(normalizedPem.trim());
+		res.redirect('/verifier/import-certificate');
+	} catch (error) {
+		res.render('verifier/import_certificate.pug', {
+			lang: req.lang,
+			locale: locale[req.lang],
+			error: {
+				errorMessage: 'error adding x509 certificate'
+			}
+		});
+	}
+});
+
+verifierRouter.get('/public/manage-certificates', async (req, res) => {
+	return res.render('verifier/manage_certificates.pug', {
+		lang: req.lang,
+		locale: locale[req.lang]
+	})
+})
 
 verifierRouter.get('/public/definitions', async (req, res) => {
 
@@ -114,7 +210,7 @@ verifierRouter.post('/callback', async (req, res) => {
 })
 
 
-verifierRouter.use('/public/definitions/selectable-presentation-request/:presentation_definition_id', async (req, res) => {
+verifierRouter.use('/public/definitions/configurable-presentation-request/:presentation_definition_id', async (req, res) => {
 	const presentation_definition_id = req.params.presentation_definition_id;
 	if (!presentation_definition_id) {
 		return res.render('error', {
@@ -141,14 +237,79 @@ verifierRouter.use('/public/definitions/selectable-presentation-request/:present
 	});
 
 	console.log("Selectable fields = ", selectableFields)
-	return res.render('verifier/selectable_presentation', {
+	return res.render('verifier/configurable_presentation', {
 		presentationDefinitionId: presentationDefinition.id,
+		presentationDefinitionDescriptorId: presentationDefinition.input_descriptors[0].id,
 		selectableFields,
 		lang: req.lang,
 		locale: locale[req.lang],
 	});
 })
 
+verifierRouter.get('/public/definitions/edit-presentation-definition', async (req, res) => {
+	return res.render('verifier/edit_presentation_definition', {
+		lang: req.lang,
+		locale: locale[req.lang],
+	});
+})
+
+verifierRouter.post('/public/definitions/edit-presentation-definition', async (req, res) => {
+	if (req.method === "POST" && req.body.action && req.cookies.session_id) {
+		// update is_cross_device --> false since the button was pressed
+		await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder("rp_state")
+			.update({ is_cross_device: false })
+			.where("session_id = :session_id", { session_id: req.cookies.session_id })
+			.execute();
+		return res.redirect(req.body.action);
+	}
+	let presentationDefinition;
+	try {
+		presentationDefinition = JSON.parse(req.body.presentationDefinition);
+		const validate = ajv.compile(presentationDefinitionSchema);
+		if (!validate(presentationDefinition)) {
+			return res.render('error.pug', {
+				msg: "Invalid presentation definition format",
+				code: 0,
+				lang: req.lang,
+				locale: locale[req.lang],
+			});
+		}
+	} catch (error) {
+		return res.render('error.pug', {
+			msg: "Error while parsing the presentation definition",
+			code: 0,
+			lang: req.lang,
+			locale: locale[req.lang],
+		})
+	}
+	const scheme = req.body.scheme
+
+	const newSessionId = generateRandomIdentifier(12);
+	addSessionIdCookieToResponse(res, newSessionId);
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationDefinition, newSessionId, config.url + "/verifier/callback");
+	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
+	let authorizationRequestQR = await new Promise((resolve) => {
+		qrcode.toDataURL(modifiedUrl.toString(), {
+			margin: 1,
+			errorCorrectionLevel: 'L',
+			type: 'image/png'
+		},
+			(err, data) => {
+				if (err) return resolve("NO_QR");
+				return resolve(data);
+			});
+	}) as string;
+
+	return res.render('verifier/QR.pug', {
+		wwwalletURL: config.wwwalletURL,
+		authorizationRequestURL: modifiedUrl,
+		authorizationRequestQR,
+		presentationDefinition: JSON.stringify(JSON.parse(req.body.presentationDefinition)),
+		state: url.searchParams.get('state'),
+		lang: req.lang,
+		locale: locale[req.lang],
+	})
+})
 
 
 verifierRouter.get('/public/definitions/presentation-request/status/:presentation_definition_id', async (req, res) => {
@@ -167,6 +328,7 @@ verifierRouter.get('/public/definitions/presentation-request/status/:presentatio
 	}
 })
 
+
 verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
 
 	const presentation_definition_id = req.params.presentation_definition_id;
@@ -182,7 +344,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 	}
 
 
-	const presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as any;
+	let presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as any;
 	if (!presentationDefinition) {
 		return res.render('error', {
 			msg: "No presentation definition was found",
@@ -191,10 +353,11 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			locale: locale[req.lang]
 		});
 	}
-
+	presentationDefinition = serializePresentationDefinition(JSON.parse(JSON.stringify(presentationDefinition))); // remove attributes that start with '_'
+	let scheme = "openid4vp://cb";
 	// If there are selected fields from a POST request, update the constraints accordingly
-	if (req.method === "POST" && req.body.fields) {
-		let selectedFieldPaths = req.body.fields;
+	if (req.method === "POST" && req.body.attributes) {
+		let selectedFieldPaths = req.body.attributes;
 		if (!Array.isArray(selectedFieldPaths)) {
 			selectedFieldPaths = [selectedFieldPaths];
 		}
@@ -209,6 +372,26 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 
 		console.log("filtered fields = ", filteredFields)
 		presentationDefinition.input_descriptors[0].constraints.fields = filteredFields;
+		// Determine the presentation format based on the 'type' (sd-jwt or mdoc) provided by the form
+		const selectedType = req.body.type // Default to sd-jwt if type is not provided
+		if (selectedType === "sd-jwt") {
+			presentationDefinition.input_descriptors[0].format = {
+				"vc+sd-jwt": {
+					"sd-jwt_alg_values": ["ES256"],
+					"kb-jwt_alg_values": ["ES256"]
+				},
+			};
+		} else if (selectedType === "mdoc") {
+			presentationDefinition.input_descriptors[0].format = {
+				"mso_mdoc": {
+					"sd-jwt_alg_values": ["ES256"],
+					"kb-jwt_alg_values": ["ES256"]
+				},
+			};
+		}
+		presentationDefinition.input_descriptors[0].purpose = req.body.purpose
+		presentationDefinition.input_descriptors[0].id = req.body.descriptorId
+		scheme = req.body.scheme
 	}
 	else if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
 		console.log("Cookie = ", req.cookies)
@@ -223,10 +406,10 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId); // start session here
-	console.log("call")
 	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationDefinition, newSessionId, config.url + "/verifier/callback");
+	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
 	let authorizationRequestQR = await new Promise((resolve) => {
-		qrcode.toDataURL(url.toString(), {
+		qrcode.toDataURL(modifiedUrl.toString(), {
 			margin: 1,
 			errorCorrectionLevel: 'L',
 			type: 'image/png'
@@ -237,11 +420,11 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			});
 	}) as string;
 
-	console.log("URL = ", url)
 	return res.render('verifier/QR.pug', {
 		wwwalletURL: config.wwwalletURL,
-		authorizationRequestURL: url.toString(),
+		authorizationRequestURL: modifiedUrl,
 		authorizationRequestQR,
+		presentationDefinition: JSON.stringify(presentationDefinition),
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],

@@ -1,0 +1,49 @@
+extends ../layout.pug
+
+block layout-content
+	.container
+		.presentation-card
+			.centered-layout
+				form(
+					action=`/verifier/public/definitions/presentation-request/${presentationDefinitionId}` 
+					method='POST' 
+					class="presentation-form"
+				)
+					.CenteredLayout
+						h2.title Configure your Presentation Definition
+
+						.field
+							h4.title(for="type") Fields
+							select#type(name="type" class="dropdown")
+								option(value="sd-jwt") SD-JWT
+								option(value="mdoc") MDOC
+
+						.attribute-selection
+							.field
+								div#attributes-container
+									h4.title(for="attribute") Select Attributes
+									// populated by JS
+
+						.field
+							h4.title(for="purpose") Purpose
+							textarea#purpose(name="purpose" placeholder="Enter the purpose of this request" maxlength="255")
+
+						.field
+							h4.title(for="scheme") Scheme
+							textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
+
+						// Hidden field for descriptorId
+						input#descriptorId(type="hidden" name="descriptorId" value="")
+
+						// Submit Button
+						button.Btn.Medium.request-qr(type="submit") Request
+
+
+	// Link to external stylesheets
+	link(rel="stylesheet" href="/styles/scan-qr-verifier.css")
+	link(rel="stylesheet" href="/styles/configurable-presentation.css")
+	link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css")
+	// Scripts
+	script(src="/js/index.js")
+	script(src="/js/configurable-presentation.js" data-fields=`${JSON.stringify(selectableFields)}` data-presentation-id=`${presentationDefinitionId}` data-presentation-descriptor-id=`${presentationDefinitionDescriptorId}`
+	)

@@ -58,7 +58,7 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 	}
 
 	getId(): string {
-		return "urn:credential:ehic"
+		return "urn:eudi:ehic:1"
 	}
 	getFormat(): VerifiableCredentialFormat {
 		return VerifiableCredentialFormat.VC_SDJWT;
@@ -117,7 +117,6 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 						credentialImageSvgTemplate: svgText,
 						sdJwtVcMetadataClaims: this.metadata().claims,
 					});
-					console.log("Data uri = ", dataUri);
 					if (!dataUri) {
 						throw new Error("Could not render svg");
 					}
@@ -181,7 +180,7 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 				"jwk": holderPublicKeyJwk
 			},
 			"vct": this.getId(),
-			"jti": `urn:ehic:${randomUUID()}`,
+			"jti": `urn:eudi:ehic:1:${randomUUID()}`,
 			...ehic,
 			ssn: String(ehic.ssn),
 		};

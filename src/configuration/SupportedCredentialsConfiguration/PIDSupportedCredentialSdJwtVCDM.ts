@@ -107,7 +107,6 @@ export class PIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 					credentialImageSvgTemplate: svgText,
 					sdJwtVcMetadataClaims: this.metadata().claims,
 				})
-				console.log("Data uri = ", dataUri);
 				if (!dataUri) {
 					throw new Error("Could not render svg");
 				}
@@ -159,7 +158,7 @@ export class PIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 			age_over_18: vidEntry.age_over_18 === '1' ? true : false,
 			age_over_21: true,
 			sex: vidEntry.sex,
-			nationality: vidEntry.nationality,
+			nationality: vidEntry.nationality.split(','),
 			birth_place: vidEntry.birth_place,
 			resident_address: vidEntry.resident_address,
 			email_address: vidEntry.email_address,

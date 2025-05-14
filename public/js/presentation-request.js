@@ -9,7 +9,6 @@ const nonEmptySegments = pathSegments.filter(segment => segment !== '');
 const presentationDefinitionId = nonEmptySegments[nonEmptySegments.length - 1];
 
 setInterval(() => {
-	
 	fetch('/verifier/public/definitions/presentation-request/status/' + presentationDefinitionId, {
 			method: 'GET',
 		}).then((response) => {

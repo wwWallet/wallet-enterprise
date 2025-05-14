@@ -5,14 +5,18 @@ block layout-content
 		h1 Present your Verifiable Credentials
 		.card-container
 			for definition in presentationDefinitions
-				.card
-					.card-title #{definition.title}
-					p.card-text #{definition.description}
-					.card-buttons
-						if definition._selectable === true
-							button.btn.btn-primary(onclick=`window.location.href = "/verifier/public/definitions/selectable-presentation-request/${definition.id}"`) Present
-						else
-							button.btn.btn-primary(onclick=`window.location.href = "/verifier/public/definitions/presentation-request/${definition.id}"`) Present
+				if definition._selectable === true
+					a.card(href=`/verifier/public/definitions/configurable-presentation-request/${definition.id}`)
+						.card-title #{definition.title}
+						p.card-text #{definition.description}
+				else
+					a.card(href=`/verifier/public/definitions/presentation-request/${definition.id}`)
+						.card-title #{definition.title}
+						p.card-text #{definition.description}
+
+			a.card(href="/verifier/public/definitions/edit-presentation-definition")
+				.card-title Custom Presentation Definition
+				p.card-text Import the presentation definition of your choice.
 
 	block footer
 		include ../footer.pug

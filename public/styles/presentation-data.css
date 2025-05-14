@@ -17,6 +17,15 @@ th {
 	color: white;
 }
 
+.oid4vp-table {
+	width: 100%;
+}
+
+#Index #mainBtn {
+	display: block;
+	margin: auto;
+	width: 100%;
+}
 
 /* CSS for the claims tables */
 .claims-tables {
@@ -34,14 +43,19 @@ th {
 .table-container {
 	width: 60%;
 	margin-bottom: 20px;
-	overflow-x: auto;
-	/* Enable horizontal scrolling */
+	overflow: auto;
+	max-height: 300px;
 }
 
 .table-container table {
 	width: 100%;
 	border-collapse: collapse;
 	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table-container table thead {
+	position: sticky;
+	top: -1px;
 }
 
 @media (max-width: 768px) {
