@@ -385,10 +385,10 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
 
 						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
-						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && desc._transaction_data_type !== undefined) {
+						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && input_descriptor._transaction_data_type !== undefined) {
 							console.log("Parsing transaction data response...");
-							if (desc._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-								const validationResult = await TransactionData().validateTransactionDataResponse(desc.id, {
+							if (input_descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
+								const validationResult = await TransactionData().validateTransactionDataResponse(input_descriptor.id, {
 									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
 									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
 								});
@@ -398,7 +398,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 							}
 							console.log("VALIDATED TRANSACTION DATA");
 						}
-						else if (desc._transaction_data_type !== undefined) {
+						else if (input_descriptor._transaction_data_type !== undefined) {
 							return { error: new Error("transaction_data_hashes is missing from transaction data response") };
 						}
 					}
