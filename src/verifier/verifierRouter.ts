@@ -15,6 +15,7 @@ import AppDataSource from "../AppDataSource";
 import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 import Ajv from 'ajv';
+import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
 const ajv = new Ajv();
 
 const presentationDefinitionSchema = {
@@ -343,7 +344,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 	}
 
 
-	const presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as any;
+	let presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as any;
 	if (!presentationDefinition) {
 		return res.render('error', {
 			msg: "No presentation definition was found",
@@ -352,6 +353,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			locale: locale[req.lang]
 		});
 	}
+	presentationDefinition = serializePresentationDefinition(JSON.parse(JSON.stringify(presentationDefinition))); // remove attributes that start with '_'
 	let scheme = "openid4vp://cb";
 	// If there are selected fields from a POST request, update the constraints accordingly
 	if (req.method === "POST" && req.body.attributes) {
