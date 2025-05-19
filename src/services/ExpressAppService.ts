@@ -106,6 +106,9 @@ export class ExpressAppService {
 
 
 			app.get('/.well-known/oauth-authorization-server', async (_req, res) => {
+				const x = await Promise.all(this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations());
+				
+
 				return res.send({
 					issuer: config.url,
 					authorization_endpoint: config.url + '/openid4vci/authorize',
@@ -129,6 +132,7 @@ export class ExpressAppService {
 						"refresh_token",
 					],
 					jwks_uri: config.url + '/.well-known/jwks',
+					scopes_supported: x.map((cred) => cred.getScope())
 				})
 			});
 
