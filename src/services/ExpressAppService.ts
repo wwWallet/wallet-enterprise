@@ -74,13 +74,31 @@ export class ExpressAppService {
 
 			// @ts-ignore
 			if (config.appType == "ISSUER" && IssuerSigner.issuerSigner) {
+				app.get('/.well-known/jwks', async (_req, res) => {
+					// @ts-ignore
+					const { jwk } = await IssuerSigner.issuerSigner.getPublicKeyJwk();
+					return res.send({
+						keys: [
+							{
+								...jwk,
+								use: "sig",
+							}
+						]
+					})
+				})
+
 				app.get('/.well-known/jwt-vc-issuer', async (_req, res) => {
 					// @ts-ignore
 					const { jwk } = await IssuerSigner.issuerSigner.getPublicKeyJwk();
 					return res.send({
 						issuer: config.url,
 						jwks: {
-							keys: [jwk]
+							keys: [
+								{
+									...jwk,
+									use: "sig",
+								}
+							]
 						}
 					})
 				})
@@ -105,7 +123,12 @@ export class ExpressAppService {
 					code_challenge_methods_supported: [
 						"S256"
 					],
-					dpop_signing_alg_values_supported: ["ES256"]
+					dpop_signing_alg_values_supported: ["ES256"],
+					grant_types_supported: [
+						"authorization_code",
+						"refresh_token",
+					],
+					jwks_uri: config.url + '/.well-known/jwks',
 				})
 			});
 
