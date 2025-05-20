@@ -714,9 +714,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 			const [_header, payload] = dpopJwt.split('.').slice(0, 2).map((part) => JSON.parse(base64url.decode(part))) as Array<any>;
 			const { htu, htm, jti, ath } = payload;
-			if (!jti || jti !== state.dpop_jti) {
-				console.log("CredentialRequest: Invalid dpop jti");
-				ctx.res.status(400).send({ error: "Invalid dpop jti" });
+			if (!jti || jti === state.dpop_jti) {
+				console.log("CredentialRequest: Missing or re-used dpop jti");
+				ctx.res.status(400).send({ error: "Missing or re-used dpop jti" });
 				return;
 			}
 
