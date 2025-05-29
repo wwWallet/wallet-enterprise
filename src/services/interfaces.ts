@@ -6,7 +6,6 @@ import { SupportedCredentialProtocol } from "../lib/CredentialIssuerConfig/Suppo
 import { CredentialView } from "../authorization/types";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
-import { VerifiableCredentialFormat } from "wallet-common/dist/types";
 
 export interface CredentialSigner {
 	signSdJwtVc(payload: any, headers?: any, disclosureFrame?: any): Promise<{ credential: string }>;
@@ -74,7 +73,6 @@ export interface CredentialConfigurationRegistry {
  * @param authorizationServerState 
  */
 	getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: Request, holderPublicKeyToBind: JWK): Promise<{
-		format?: VerifiableCredentialFormat;
 		credential?: unknown;
 		acceptance_token?: string;
 	} | null>;
