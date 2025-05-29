@@ -3,7 +3,7 @@ import { Request, Response } from 'express'
 import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
 import { VerifiableCredentialFormat } from "wallet-common/dist/types";
 import { TYPES } from "./types";
-import { compactDecrypt, exportJWK, generateKeyPair, importJWK, importPKCS8, SignJWT } from "jose";
+import { compactDecrypt, CompactDecryptResult, exportJWK, generateKeyPair, importJWK, importPKCS8, SignJWT } from "jose";
 import { randomUUID } from "crypto";
 import base64url from "base64url";
 import 'reflect-metadata';
@@ -222,7 +222,17 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				throw new Error();
 			}
 			const rp_eph_priv = await importJWK(rpState.rp_eph_priv, 'ECDH-ES');
-			const { protectedHeader, plaintext } = await compactDecrypt(ctx.req.body.response, rp_eph_priv);
+			const result = await compactDecrypt(ctx.req.body.response, rp_eph_priv).then((r) => ({ data: r, err: null })).catch((err) => ({ data: null, err: err }));
+			if (result.err) {
+				const error = { error: "JWE Decryption failure", error_description: result.err };
+				console.error(error);
+				console.log("Received JWE headers: ", JSON.parse(base64url.decode(ctx.req.body.response.split('.')[0])));
+				console.log("Received JWE: ", ctx.req.body.response);
+				ctx.res.status(500).send(error);
+				return;
+			}
+
+			const { protectedHeader, plaintext } = result.data as CompactDecryptResult;
 			console.log("Protected header = ", protectedHeader)
 			const payload = JSON.parse(new TextDecoder().decode(plaintext)) as { state: string | undefined, vp_token: string | undefined, presentation_submission: any };
 			if (!payload?.state) {
