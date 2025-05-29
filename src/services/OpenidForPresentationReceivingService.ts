@@ -327,45 +327,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					return { error: new Error("Input descriptor not found") };
 				}
 
-				// const parsedSdJwt = SdJwt.fromCompact(sdJwt).withHasher(hasherAndAlgorithm);
-
-
-				// kbjwt validation
-				// const kbJwtValidationResult = await verifyKbJwt(vp_token, { aud: rpState.audience, nonce: rpState.nonce });
-				// if (!kbJwtValidationResult) {
-				// 	const error = new Error("KB JWT validation failed");
-				// 	error.name = "PRESENTATION_RESPONSE:INVALID_KB_JWT";
-				// 	return { error };
-				// }
-				// console.info("Passed KBJWT verification...");
-
-				// let error = "";
-				// const errorCallback = (errorName: string) => {
-				// 	error = errorName;
-				// }
-
-				// const verifyCb: Verifier = async ({ header, message, signature }) => {
-				// 	if (header.alg !== SignatureAndEncryptionAlgorithm.ES256) {
-				// 		throw new Error('only ES256 is supported')
-				// 	}
-
-				// 	const publicKeyResolutionResult = await this.configurationService.getPublicKeyResolverChain().resolve(vp_token, VerifiableCredentialFormat.VC_SD_JWT);
-				// 	if ('error' in publicKeyResolutionResult) {
-				// 		return false;
-				// 	}
-
-				// 	if (!publicKeyResolutionResult.isTrusted) {
-				// 		return false;
-				// 	}
-				// 	const verificationResult = await jwtVerify(message + '.' + uint8ArrayToBase64Url(signature), publicKeyResolutionResult.publicKey).then(() => true).catch((err: any) => {
-				// 		console.log("Error verifying")
-				// 		console.error(err);
-				// 		// errorCallback(err.name);
-				// 		throw new Error(err);
-				// 	});
-				// 	return verificationResult;
-				// }
-
 				try {
 					const { credentialParsingEngine, sdJwtVerifier } = await initializeCredentialEngine();
 					const verificationResultR = await sdJwtVerifier.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
