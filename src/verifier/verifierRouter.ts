@@ -370,7 +370,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		const selectedType = req.body.type // Default to sd-jwt if type is not provided
 		if (selectedType === "sd-jwt") {
 			presentationDefinition.input_descriptors[0].format = {
-				"vc+sd-jwt": {
+				"dc+sd-jwt": {
 					"sd-jwt_alg_values": ["ES256"],
 					"kb-jwt_alg_values": ["ES256"]
 				},

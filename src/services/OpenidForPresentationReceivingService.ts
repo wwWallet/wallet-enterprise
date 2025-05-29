@@ -134,7 +134,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				"authorization_encrypted_response_alg": "ECDH-ES",
 				"authorization_encrypted_response_enc": "A256GCM",
 				"vp_formats": {
-					"vc+sd-jwt": {
+					"dc+sd-jwt": {
 						"sd-jwt_alg_values": [
 							"ES256",
 						],
