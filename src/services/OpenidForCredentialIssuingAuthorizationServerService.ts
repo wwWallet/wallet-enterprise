@@ -714,9 +714,9 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 
 			const [_header, payload] = dpopJwt.split('.').slice(0, 2).map((part) => JSON.parse(base64url.decode(part))) as Array<any>;
 			const { htu, htm, jti, ath } = payload;
-			if (!jti || jti !== state.dpop_jti) {
-				console.log("CredentialRequest: Invalid dpop jti");
-				ctx.res.status(400).send({ error: "Invalid dpop jti" });
+			if (!jti || jti === state.dpop_jti) {
+				console.log("CredentialRequest: Missing or re-used dpop jti");
+				ctx.res.status(400).send({ error: "Missing or re-used dpop jti" });
 				return;
 			}
 
@@ -848,20 +848,17 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			const responses = (await Promise.all(holderJwks.map(async (jwk) => {
 				return credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, jwk);
 			}))).filter(r => r != null);
-			const format = responses[0]?.format;
 
 			console.log("Credential Responses to send = ", responses);
 			if (holderJwks.length > 1) {
 				ctx.res.send({
 					credentials: responses.map((response: any) => response.credential),
-					format: format,
 				});
 				return;
 			}
 			else {
 				ctx.res.send({
 					credential: responses.map((response: any) => response.credential)[0],
-					format: format,
 				});
 				return;
 			}

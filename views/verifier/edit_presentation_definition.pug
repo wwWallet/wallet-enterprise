@@ -16,40 +16,67 @@ block layout-content
 			.label-wrapper
 				label(for="presentationDefinition") Presentation Definition
 				p.form-subtitle You can edit this template as needed
-			.textarea-wrapper
-				textarea(name="presentationDefinition" rows="50").
-					{
-					  "id": "VerifiableId",
-					  "title": "PID",
-					  "description": "Personal Identification",
-					  "input_descriptors": [
-					    {
-					      "name": "Custom PID",
-					      "purpose": "wwWallet Verifier requests your credentials",
-					      "constraints": {
-					        "limit_disclosure": "required",
-					        "fields": [
-					          {
-					            "name": "VC type",
-					            "path": ["$.vct"],
-					            "filter": {
-					              "type": "string",
-					              "const": "urn:eudi:pid:1"
-					            }
-					          }
-					        ]
-					      },
-					      "format": {
-					        "vc+sd-jwt": {
-					          "sd-jwt_alg_values": ["ES256"],
-					          "kb-jwt_alg_values": ["ES256"]
-					        }
-					      },
-					      "id": "SdJwtPID"
-					    }
-					  ]
-					}
+				textarea(id="presentationDefinitionText" name="presentationDefinition" style="display: none")
+			div(id="jsoneditor")
+			button.Btn.Medium.request-button(type="submit" id="submit-btn") Request Credentials
+	script(src="https://cdn.jsdelivr.net/npm/jsoneditor@latest")
+	script.
+		const container = document.getElementById('jsoneditor');
+		var schema = !{JSON.stringify(schema)};
 
-			button.Btn.Medium.request-button(type="submit") Request Credentials
+		const options = {
+			mode: 'code',
+			modes: ['code', 'tree', 'view'],
+			schema: schema,
+			onValidationError: function(errors) {
+				if (errors.length > 0) {
+					document.querySelector("#submit-btn").disabled = true;
+				} else {
+					document.querySelector("#submit-btn").disabled = false;
+				}
+			}
+		};
+
+		const editor = new JSONEditor(container, options);
+
+		editor.set({
+						"id": "VerifiableId",
+						"title": "PID",
+						"description": "Personal Identification",
+						"input_descriptors": [
+							{
+								"name": "Custom PID",
+								"purpose": "wwWallet Verifier requests your credentials",
+								"constraints": {
+									"limit_disclosure": "required",
+									"fields": [
+										{
+											"name": "VC type",
+											"path": ["$.vct"],
+											"filter": {
+												"type": "string",
+												"const": "urn:eudi:pid:1"
+											}
+										}
+									]
+								},
+								"format": {
+									"dc+sd-jwt": {
+										"sd-jwt_alg_values": ["ES256"],
+										"kb-jwt_alg_values": ["ES256"]
+									}
+								},
+								"id": "SdJwtPID"
+							}
+						]
+					});
+
+		document.querySelector('#edit-presentation-definition').addEventListener('submit', (e) => {
+			e.preventDefault();
+			const definition = editor.get();
+			document.querySelector("#presentationDefinitionText").innerText = JSON.stringify(definition);
+			e.target.submit();
+		});
 
 	link(rel="stylesheet" href="/styles/edit-presentation-definition.css")
+	link(rel="stylesheet" href="/styles/jsoneditor.css")

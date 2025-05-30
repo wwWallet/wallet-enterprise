@@ -97,11 +97,34 @@ th {
 }
 
 
-textarea.wide {
+textarea.wide, #jsoneditor.wide {
 	width: 60% !important;
 }
 
-#json-textarea {
+#jsoneditor {
+	position: relative;
+}
+
+#jsoneditor.wide {
+	padding: 0;
+}
+
+#jsoneditor #copy {
+	position: absolute;
+	top: 70px;
+	right: 10px;
+	z-index: 1;
+}
+
+#jsoneditor #copy #checkmark {
+	display: none;
+}
+
+#jsoneditor #copy #checkmark.visible {
+	display: inline;
+}
+
+#json-textarea, #jsoneditor {
 	border: 1px solid #ccc;
 	padding: 10px;
 	margin-bottom: 20px;
@@ -134,7 +157,7 @@ textarea.wide {
 
 @media (max-width: 768px) {
 
-	#json-textarea {
+	#json-textarea, #jsoneditor, #jsoneditor.wide {
 		width: -webkit-fill-available !important;
 		margin-left: 1%;
 		margin-right: 1%;

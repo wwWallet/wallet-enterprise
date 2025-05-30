@@ -1,0 +1,28 @@
+.jsoneditor-poweredby {
+	display: none !important;
+}
+
+.jsoneditor-string {
+	display: -webkit-box;
+  -webkit-line-clamp: 3;
+	line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.jsoneditor-tree tr, .jsoneditor-tree td, .jsoneditor-tree table {
+	border: 0 !important;
+	border-collapse: collapse;
+}
+
+.jsoneditor-menu {
+	background-color: var(--primary-color);
+}
+
+.jsoneditor-color {
+	display: none !important;
+}
+
+.jsoneditor {
+	border: none;
+}

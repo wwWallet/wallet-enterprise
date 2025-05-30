@@ -15,7 +15,6 @@ import AppDataSource from "../AppDataSource";
 import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 import Ajv from 'ajv';
-import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
 const ajv = new Ajv();
 
 const presentationDefinitionSchema = {
@@ -58,10 +57,6 @@ const presentationDefinitionSchema = {
 export const sanitizeInput = (input: string): string =>
 	input.replace(/[^\x20-\x7E\n]/g, '');
 
-export enum CredentialFormat {
-	VC_SD_JWT = "vc+sd-jwt",
-	JWT_VC_JSON = "jwt_vc_json"
-}
 
 const MAX_CERT_LENGTH = 5000;
 
@@ -250,6 +245,7 @@ verifierRouter.get('/public/definitions/edit-presentation-definition', async (re
 	return res.render('verifier/edit_presentation_definition', {
 		lang: req.lang,
 		locale: locale[req.lang],
+		schema: presentationDefinitionSchema
 	});
 })
 
@@ -353,7 +349,6 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			locale: locale[req.lang]
 		});
 	}
-	presentationDefinition = serializePresentationDefinition(JSON.parse(JSON.stringify(presentationDefinition))); // remove attributes that start with '_'
 	let scheme = "openid4vp://cb";
 	// If there are selected fields from a POST request, update the constraints accordingly
 	if (req.method === "POST" && req.body.attributes) {
@@ -376,7 +371,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		const selectedType = req.body.type // Default to sd-jwt if type is not provided
 		if (selectedType === "sd-jwt") {
 			presentationDefinition.input_descriptors[0].format = {
-				"vc+sd-jwt": {
+				"dc+sd-jwt": {
 					"sd-jwt_alg_values": ["ES256"],
 					"kb-jwt_alg_values": ["ES256"]
 				},

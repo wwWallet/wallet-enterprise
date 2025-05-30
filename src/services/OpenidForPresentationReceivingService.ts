@@ -3,7 +3,7 @@ import { Request, Response } from 'express'
 import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
 import { VerifiableCredentialFormat } from "wallet-common/dist/types";
 import { TYPES } from "./types";
-import { compactDecrypt, exportJWK, generateKeyPair, importJWK, importPKCS8, SignJWT } from "jose";
+import { compactDecrypt, CompactDecryptResult, exportJWK, generateKeyPair, importJWK, importPKCS8, SignJWT } from "jose";
 import { randomUUID } from "crypto";
 import base64url from "base64url";
 import 'reflect-metadata';
@@ -134,7 +134,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				"authorization_encrypted_response_alg": "ECDH-ES",
 				"authorization_encrypted_response_enc": "A256GCM",
 				"vp_formats": {
-					"vc+sd-jwt": {
+					"dc+sd-jwt": {
 						"sd-jwt_alg_values": [
 							"ES256",
 						],
@@ -150,6 +150,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			.setProtectedHeader({
 				alg: 'RS256',
 				x5c: x5c,
+				typ: 'oauth-authz-req+jwt',
 			})
 			.sign(rsaImportedPrivateKey);
 		// try to get the redirect uri from the authorization server state in case this is a Dynamic User Authentication during OpenID4VCI authorization code flow
@@ -222,7 +223,17 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				throw new Error();
 			}
 			const rp_eph_priv = await importJWK(rpState.rp_eph_priv, 'ECDH-ES');
-			const { protectedHeader, plaintext } = await compactDecrypt(ctx.req.body.response, rp_eph_priv);
+			const result = await compactDecrypt(ctx.req.body.response, rp_eph_priv).then((r) => ({ data: r, err: null })).catch((err) => ({ data: null, err: err }));
+			if (result.err) {
+				const error = { error: "JWE Decryption failure", error_description: result.err };
+				console.error(error);
+				console.log("Received JWE headers: ", JSON.parse(base64url.decode(ctx.req.body.response.split('.')[0])));
+				console.log("Received JWE: ", ctx.req.body.response);
+				ctx.res.status(500).send(error);
+				return;
+			}
+
+			const { protectedHeader, plaintext } = result.data as CompactDecryptResult;
 			console.log("Protected header = ", protectedHeader)
 			const payload = JSON.parse(new TextDecoder().decode(plaintext)) as { state: string | undefined, vp_token: string | undefined, presentation_submission: any };
 			if (!payload?.state) {
@@ -320,51 +331,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				throw new Error(`Couldn't find vp_token for path ${path}`);
 			}
 			const vp_token = jsonPathResult[0];
-			if (desc.format == VerifiableCredentialFormat.VC_SDJWT) {
+			if (desc.format == VerifiableCredentialFormat.DC_SDJWT) {
 				// const sdJwt = vp_token.split('~').slice(0, -1).join('~') + '~';
 				const input_descriptor = rpState!.presentation_definition!.input_descriptors.filter((input_desc: any) => input_desc.id == desc.id)[0];
 				if (!input_descriptor) {
 					return { error: new Error("Input descriptor not found") };
 				}
-
-				// const parsedSdJwt = SdJwt.fromCompact(sdJwt).withHasher(hasherAndAlgorithm);
-
-
-				// kbjwt validation
-				// const kbJwtValidationResult = await verifyKbJwt(vp_token, { aud: rpState.audience, nonce: rpState.nonce });
-				// if (!kbJwtValidationResult) {
-				// 	const error = new Error("KB JWT validation failed");
-				// 	error.name = "PRESENTATION_RESPONSE:INVALID_KB_JWT";
-				// 	return { error };
-				// }
-				// console.info("Passed KBJWT verification...");
-
-				// let error = "";
-				// const errorCallback = (errorName: string) => {
-				// 	error = errorName;
-				// }
-
-				// const verifyCb: Verifier = async ({ header, message, signature }) => {
-				// 	if (header.alg !== SignatureAndEncryptionAlgorithm.ES256) {
-				// 		throw new Error('only ES256 is supported')
-				// 	}
-
-				// 	const publicKeyResolutionResult = await this.configurationService.getPublicKeyResolverChain().resolve(vp_token, VerifiableCredentialFormat.VC_SD_JWT);
-				// 	if ('error' in publicKeyResolutionResult) {
-				// 		return false;
-				// 	}
-
-				// 	if (!publicKeyResolutionResult.isTrusted) {
-				// 		return false;
-				// 	}
-				// 	const verificationResult = await jwtVerify(message + '.' + uint8ArrayToBase64Url(signature), publicKeyResolutionResult.publicKey).then(() => true).catch((err: any) => {
-				// 		console.log("Error verifying")
-				// 		console.error(err);
-				// 		// errorCallback(err.name);
-				// 		throw new Error(err);
-				// 	});
-				// 	return verificationResult;
-				// }
 
 				try {
 					const { credentialParsingEngine, sdJwtVerifier } = await initializeCredentialEngine();
@@ -385,10 +357,10 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
 
 						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
-						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && desc._transaction_data_type !== undefined) {
+						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && input_descriptor._transaction_data_type !== undefined) {
 							console.log("Parsing transaction data response...");
-							if (desc._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-								const validationResult = await TransactionData().validateTransactionDataResponse(desc.id, {
+							if (input_descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
+								const validationResult = await TransactionData().validateTransactionDataResponse(input_descriptor.id, {
 									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
 									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
 								});
@@ -398,7 +370,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 							}
 							console.log("VALIDATED TRANSACTION DATA");
 						}
-						else if (desc._transaction_data_type !== undefined) {
+						else if (input_descriptor._transaction_data_type !== undefined) {
 							return { error: new Error("transaction_data_hashes is missing from transaction data response") };
 						}
 					}
