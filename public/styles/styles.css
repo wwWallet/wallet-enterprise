@@ -133,6 +133,10 @@ p {
 	background: var(--btn-yellow-hov);
 }
 
+.Btn:disabled {
+	background: #555;
+}
+
 .Errors {
 	color: rgb(209, 3, 3);
 	opacity: 0.8;
