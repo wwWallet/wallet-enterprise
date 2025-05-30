@@ -150,6 +150,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			.setProtectedHeader({
 				alg: 'RS256',
 				x5c: x5c,
+				typ: 'oauth-authz-req+jwt',
 			})
 			.sign(rsaImportedPrivateKey);
 		// try to get the redirect uri from the authorization server state in case this is a Dynamic User Authentication during OpenID4VCI authorization code flow
