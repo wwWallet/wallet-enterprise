@@ -134,7 +134,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				"authorization_encrypted_response_alg": "ECDH-ES",
 				"authorization_encrypted_response_enc": "A256GCM",
 				"vp_formats": {
-					"vc+sd-jwt": {
+					"dc+sd-jwt": {
 						"sd-jwt_alg_values": [
 							"ES256",
 						],
@@ -330,51 +330,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				throw new Error(`Couldn't find vp_token for path ${path}`);
 			}
 			const vp_token = jsonPathResult[0];
-			if (desc.format == VerifiableCredentialFormat.VC_SDJWT) {
+			if (desc.format == VerifiableCredentialFormat.DC_SDJWT) {
 				// const sdJwt = vp_token.split('~').slice(0, -1).join('~') + '~';
 				const input_descriptor = rpState!.presentation_definition!.input_descriptors.filter((input_desc: any) => input_desc.id == desc.id)[0];
 				if (!input_descriptor) {
 					return { error: new Error("Input descriptor not found") };
 				}
-
-				// const parsedSdJwt = SdJwt.fromCompact(sdJwt).withHasher(hasherAndAlgorithm);
-
-
-				// kbjwt validation
-				// const kbJwtValidationResult = await verifyKbJwt(vp_token, { aud: rpState.audience, nonce: rpState.nonce });
-				// if (!kbJwtValidationResult) {
-				// 	const error = new Error("KB JWT validation failed");
-				// 	error.name = "PRESENTATION_RESPONSE:INVALID_KB_JWT";
-				// 	return { error };
-				// }
-				// console.info("Passed KBJWT verification...");
-
-				// let error = "";
-				// const errorCallback = (errorName: string) => {
-				// 	error = errorName;
-				// }
-
-				// const verifyCb: Verifier = async ({ header, message, signature }) => {
-				// 	if (header.alg !== SignatureAndEncryptionAlgorithm.ES256) {
-				// 		throw new Error('only ES256 is supported')
-				// 	}
-
-				// 	const publicKeyResolutionResult = await this.configurationService.getPublicKeyResolverChain().resolve(vp_token, VerifiableCredentialFormat.VC_SD_JWT);
-				// 	if ('error' in publicKeyResolutionResult) {
-				// 		return false;
-				// 	}
-
-				// 	if (!publicKeyResolutionResult.isTrusted) {
-				// 		return false;
-				// 	}
-				// 	const verificationResult = await jwtVerify(message + '.' + uint8ArrayToBase64Url(signature), publicKeyResolutionResult.publicKey).then(() => true).catch((err: any) => {
-				// 		console.log("Error verifying")
-				// 		console.error(err);
-				// 		// errorCallback(err.name);
-				// 		throw new Error(err);
-				// 	});
-				// 	return verificationResult;
-				// }
 
 				try {
 					const { credentialParsingEngine, sdJwtVerifier } = await initializeCredentialEngine();

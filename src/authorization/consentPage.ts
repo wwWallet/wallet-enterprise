@@ -4,9 +4,6 @@ import _ from "lodash";
 import { credentialConfigurationRegistryService, openidForCredentialIssuingAuthorizationServerService } from "../services/instances";
 import locale from "../configuration/locale";
 import { config } from '../../config';
-import AppDataSource from "../AppDataSource";
-import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
-
 
 const consentSubmitSchema = z.object({
 	selected_credential_id_list: z.array(z.string())
@@ -24,11 +21,6 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 			locale: locale[req.lang]
 		});
 		return;
-	}
-
-	if (!req.authorizationServerState.credential_configuration_ids) {
-		req.authorizationServerState.credential_configuration_ids = config?.issuanceFlow?.defaultCredentialConfigurationIds as string[] ?? [];
-		await AppDataSource.getRepository(AuthorizationServerState).save(req.authorizationServerState);
 	}
 
 

@@ -57,10 +57,6 @@ const presentationDefinitionSchema = {
 export const sanitizeInput = (input: string): string =>
 	input.replace(/[^\x20-\x7E\n]/g, '');
 
-export enum CredentialFormat {
-	VC_SD_JWT = "vc+sd-jwt",
-	JWT_VC_JSON = "jwt_vc_json"
-}
 
 const MAX_CERT_LENGTH = 5000;
 
@@ -375,7 +371,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		const selectedType = req.body.type // Default to sd-jwt if type is not provided
 		if (selectedType === "sd-jwt") {
 			presentationDefinition.input_descriptors[0].format = {
-				"vc+sd-jwt": {
+				"dc+sd-jwt": {
 					"sd-jwt_alg_values": ["ES256"],
 					"kb-jwt_alg_values": ["ES256"]
 				},

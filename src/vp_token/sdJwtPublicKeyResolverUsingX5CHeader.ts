@@ -7,7 +7,7 @@ import { config } from "../../config";
 
 export const sdJwtPublicKeyResolverUsingX5CHeader: IPublicKeyResolver = {
 	async resolve(rawPresentation: string | object, format: string): Promise<{ publicKey: KeyLike, isTrusted: boolean } | { error: "UNABLE_TO_RESOLVE_PUBKEY" }> {
-		if (format != VerifiableCredentialFormat.VC_SDJWT || typeof rawPresentation != 'string') {
+		if (format != VerifiableCredentialFormat.DC_SDJWT || typeof rawPresentation != 'string') {
 			return { error: "UNABLE_TO_RESOLVE_PUBKEY" };
 		}
 

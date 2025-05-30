@@ -6,7 +6,7 @@ import { AuthorizationServerState } from "../entities/AuthorizationServerState.e
 import { SupportedCredentialProtocol } from "../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
 import { JWK } from "jose";
 import EventEmitter from "node:events";
-
+import { Request } from 'express';
 
 class CredentialConfigurationRegistryServiceEmitter extends EventEmitter { }
 
@@ -42,9 +42,15 @@ export class CredentialConfigurationRegistryService implements CredentialConfigu
 		return null;
 	}
 
-	async getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: any, holderPublicKeyToBind: JWK) {
+	async getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: Request, holderPublicKeyToBind: JWK) {
+		console.log("CRED REQ BODY = ", credentialRequest.body);
+		console.log("Authorization server state before credential response: ", authorizationServerState);
+		console.log("Authorized for scopes: ", authorizationServerState.scope);
 		for (const conf of this.credentialConfigurations) {
-			if (!authorizationServerState.scope?.split(' ').includes(conf.getScope())) {
+			if (
+				!credentialRequest.body.credential_configuration_id || // credential request body must include "credential_configuration_id" param
+				!authorizationServerState.scope?.split(',').includes(conf.getScope()) || // filter out the non authorized scopes
+				credentialRequest.body.credential_configuration_id !== conf.getId()) { // filter out if it not requested on this Credential Request
 				continue;
 			}
 			const result = await conf.generateCredentialResponse(authorizationServerState, credentialRequest, holderPublicKeyToBind).catch((err) => {
