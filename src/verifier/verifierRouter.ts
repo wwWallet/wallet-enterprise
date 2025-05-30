@@ -249,6 +249,7 @@ verifierRouter.get('/public/definitions/edit-presentation-definition', async (re
 	return res.render('verifier/edit_presentation_definition', {
 		lang: req.lang,
 		locale: locale[req.lang],
+		schema: presentationDefinitionSchema
 	});
 })
 

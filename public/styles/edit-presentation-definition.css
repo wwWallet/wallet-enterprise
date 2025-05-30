@@ -72,3 +72,11 @@ textarea[name="presentationDefinition"] {
   color: #333;
 	max-height: 50%;
 }
+
+.jsoneditor {
+	height: 600px;
+}
+
+.jsoneditor-poweredby, .jsoneditor-modes, .jsoneditor-menu, .jsoneditor-statusbar {
+	display: none !important;
+}
