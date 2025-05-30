@@ -46,14 +46,12 @@ block layout-content
 				h3 Credentials
 
 				// Text area to display credentials JSON format
-				textarea#json-textarea.wide
-					//- Display the 'credentialPayloads' JSON object
-					| #{JSON.stringify(credentialPayloads, null, 2)}
-
+				div#jsoneditor.wide
+					div#copy
+						button(id="copy-button" class="Btn Tiny" type="button") Copy Object #[span#checkmark ✔]
 
 	// JavaScript to show the spinner for 2 seconds and then hide it
 	script.
-		var credentialPayloads = !{JSON.stringify(credentialPayloads)};
 		setTimeout(() => {
 			const spinnerContainer = document.getElementById('spinner-container');
 			const successContainer = document.getElementById('success-container');
@@ -67,12 +65,47 @@ block layout-content
 			//- updateLayoutForExpiredCredentials(credentialPayloads);
 		}, 2000); // Hide the spinner after 2000 milliseconds (2 seconds)
 
+	script(src="https://cdn.jsdelivr.net/npm/jsoneditor@latest")
+	script.
+		const container = document.getElementById('jsoneditor');
+		const options = {
+			mode: 'view',
+			modes: ['view'],
+		};
+
+		const payload = !{JSON.stringify(credentialPayloads)};
+
+		const editor = new JSONEditor(container, options);
+		editor.set(payload)
+
+		editor.expandAll();
+
+		document.querySelector('#copy-button').addEventListener('click', () => {
+			try {
+				const json = editor.get();
+				const text = JSON.stringify(json, null, 2);
+
+				const tempTextarea = document.createElement('textarea');
+				tempTextarea.value = text;
+				document.body.appendChild(tempTextarea);
+				tempTextarea.select();
+				document.execCommand('copy');
+				document.body.removeChild(tempTextarea);
+				document.querySelector('#copy #checkmark').classList.add("visible");
+			} catch (err) {
+				console.error('Error getting JSON from editor:', err);
+			}
+		});
+
+
 	block footer
 		include ../footer.pug
 
 	link(rel="stylesheet" href="/styles/verifier/spinner.css")
 	link(rel="stylesheet" href="/styles/index.css")
 	link(rel="stylesheet" href="/styles/presentation-data.css")
+	link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsoneditor@10.2.0/dist/jsoneditor.min.css")
+	link(rel="stylesheet" href="/styles/jsoneditor.css")
 	script(src="/js/index.js")
 	script(src="/js/check-expired.js")
 	script(src="/js/truncate-long-fields.js")

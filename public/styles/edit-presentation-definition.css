@@ -77,6 +77,6 @@ textarea[name="presentationDefinition"] {
 	height: 600px;
 }
 
-.jsoneditor-poweredby, .jsoneditor-modes, .jsoneditor-menu, .jsoneditor-statusbar {
+.jsoneditor-modes, .jsoneditor-menu, .jsoneditor-statusbar {
 	display: none !important;
 }
