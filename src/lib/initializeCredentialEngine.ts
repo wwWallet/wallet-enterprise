@@ -21,18 +21,18 @@ export async function initializeCredentialEngine() {
 	};
 
 	if (trustedCredentialIssuerIdentifiers) {
-		const result = await Promise.all(trustedCredentialIssuerIdentifiers.map(async (credentialIssuerIdentifier) =>
+		const result = (await Promise.all(trustedCredentialIssuerIdentifiers.map(async (credentialIssuerIdentifier) =>
 			axios.get(`${credentialIssuerIdentifier}/.well-known/openid-credential-issuer`)
 				.then((res) => res.data)
 				.catch((e) => { console.error(e); return null; })
-		));
+		))).filter((r: any) => r !== null);
 
-		const iacasResponses = await Promise.all(result.map(async (metadata) => {
+		const iacasResponses = (await Promise.all(result.map(async (metadata) => {
 			if (metadata && metadata.mdoc_iacas_uri) {
 				return axios.get(metadata.mdoc_iacas_uri).then((res) => res.data).catch((e) => { console.error(e); return null; })
 			}
 			return null;
-		}));
+		}))).filter((r: any) => r !== null);
 
 		for (const iacaResponse of iacasResponses) {
 			const pemCertificates = iacaResponse.iacas.map((cert: { certificate?: string }) =>
