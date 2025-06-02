@@ -48,6 +48,10 @@ input[type="checkbox"]:disabled + label {
 	width: 100%;
 }
 
+.field.hidden {
+	display: none;
+}
+
 textarea,
 select {
 	width: 100%;

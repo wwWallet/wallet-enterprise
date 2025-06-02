@@ -89,6 +89,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	typeDropdown.addEventListener("change", (event) => {
 		updateAttributesContainer(event.target.value);
+		if (event.target.value === "sd-jwt") {
+			document.querySelector("#format").classList.remove('hidden');
+		} else {
+			document.querySelector("#format").classList.add('hidden');
+		}
 	});
 	updateAttributesContainer(typeDropdown.value);
 
