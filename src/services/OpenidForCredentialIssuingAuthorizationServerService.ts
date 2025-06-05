@@ -849,19 +849,10 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				return credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, jwk);
 			}))).filter(r => r != null);
 
-			console.log("Credential Responses to send = ", responses);
-			if (holderJwks.length > 1) {
-				ctx.res.send({
-					credentials: responses.map((response: any) => response.credential),
-				});
-				return;
-			}
-			else {
-				ctx.res.send({
-					credential: responses.map((response: any) => response.credential)[0],
-				});
-				return;
-			}
+		console.log("Credential Responses to send = ", responses);
+			ctx.res.send({
+				credentials: responses.map((response: any) => ({ credential: response.credential })),
+			});
 		}
 
 		if (ctx.req.body.proof?.proof_type === 'attestation') {
