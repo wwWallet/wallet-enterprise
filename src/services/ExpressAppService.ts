@@ -189,7 +189,6 @@ export class ExpressAppService {
 			await new Promise((resolve) => {
 				credentialConfigurationRegistryServiceEmitter.on('initialized', () => {
 					this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((configuration) => {
-						console.log('!configuration', configuration)
 						// @ts-ignore
 						if (!configuration?.metadata) return;
 						// @ts-ignore
@@ -239,8 +238,8 @@ export class ExpressAppService {
 								console.error(`❌ Error processing item.id (${item?.id}):`, error);
 							}
 						});
-						resolve(null)
 					})
+					resolve(null);
 				})
 
 			})
