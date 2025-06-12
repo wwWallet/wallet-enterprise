@@ -1,5 +1,7 @@
 import { DataSource } from "typeorm";
 import { config } from "../config";
+import { AuthorizationServerState } from './entities/AuthorizationServerState.entity'
+import { RelyingPartyState } from './entities/RelyingPartyState.entity'
 
 // Initialize DB connection
 const AppDataSource: DataSource = new DataSource({
@@ -9,7 +11,7 @@ const AppDataSource: DataSource = new DataSource({
     username: config.db.username,
     password: config.db.password,
     database: config.db.dbname,
-    entities: [__dirname + "/entities/*.entity.{js,ts}"],
+    entities: [AuthorizationServerState, RelyingPartyState],
     synchronize: true
 });
 
