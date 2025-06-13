@@ -1,5 +1,7 @@
+import { KeyObject } from "crypto";
 import { JWK } from "jose";
-import { Request, Response } from 'express'
+import { Signer, HasherAndAlg } from "@sd-jwt/types";
+import { Request, Response } from "express";
 import { OpenidForPresentationsConfiguration } from "./types/OpenidForPresentationsConfiguration.type";
 import 'reflect-metadata';
 import { SupportedCredentialProtocol } from "../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
@@ -11,6 +13,10 @@ export interface CredentialSigner {
 	signSdJwtVc(payload: any, headers?: any, disclosureFrame?: any): Promise<{ credential: string }>;
 	signMsoMdoc(doctype: string, namespaces: Map<string, Record<string, unknown>>, holderPublicKeyJwk: JWK): Promise<{ credential: string }>;
 	getPublicKeyJwk(): Promise<{ jwk: JWK }>;
+	key(): Promise<KeyObject>;
+	signer(): Signer;
+	hasherAndAlgorithm: HasherAndAlg;
+	saltGenerator: () => string;
 }
 
 export interface OpenidForCredentialIssuingAuthorizationServerInterface {
