@@ -136,26 +136,7 @@ async function main() {
 	});
 
 
-	// catch 404 and forward to error handler
-	app.use((req, _res, next) => {
-		console.error("URL path not found: ", req.url)
-		next(createHttpError(404));
-	});
-
-	// error handler
-	app.use((err: HttpError, req: Request, res: Response) => {
-		// set locals, only providing error in development
-		res.locals.message = err.message;
-		res.locals.error = req.app.get('env') === 'development' ? err : {};
-		// render the error page
-		res.status(err.status || 500);
-		res.render('error', {
-			lang: req.lang,
-			locale: locale[req.lang]
-		});
-	});
-
-	app.get('/metadata/:filename', (req, res) => {
+		app.get('/metadata/:filename', (req, res) => {
 		if (req.params.filename !== 'site.webmanifest') {
 			return res.status(404).send();
 		}
@@ -182,6 +163,25 @@ async function main() {
 
 		res.setHeader('Content-Type', 'application/manifest+json');
 		return res.send(manifest);
+	});
+
+	// catch 404 and forward to error handler
+	app.use((req, _res, next) => {
+		console.error("URL path not found: ", req.url)
+		next(createHttpError(404));
+	});
+
+	// error handler
+	app.use((err: HttpError, req: Request, res: Response) => {
+		// set locals, only providing error in development
+		res.locals.message = err.message;
+		res.locals.error = req.app.get('env') === 'development' ? err : {};
+		// render the error page
+		res.status(err.status || 500);
+		res.render('error', {
+			lang: req.lang,
+			locale: locale[req.lang]
+		});
 	});
 
 	app.listen(config.port, () => {
