@@ -5,7 +5,8 @@ import fs from 'fs';
 import path from "path";
 import { Jwt, SDJwt } from "@sd-jwt/core";
 import { Disclosure } from "@sd-jwt/utils";
-import { sign, randomBytes, createHash, KeyObject } from "crypto";
+import { digest as hasher } from "@sd-jwt/crypto-nodejs";
+import { sign, randomBytes, KeyObject } from "crypto";
 import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
 import {  base64url, calculateJwkThumbprint, exportJWK, importX509 } from 'jose';
 import { Document } from '@auth0/mdl';
@@ -138,16 +139,7 @@ export const issuerSigner: CredentialSigner = {
 		}
 	},
 	hasherAndAlgorithm: {
-		hasher: (data: string | ArrayBuffer, _alg: string) => {
-			const encoded =
-				typeof data === 'string' ? data : new TextDecoder().decode(data);
-			const hash = createHash('sha256');
-			hash.update(encoded);
-
-			return new TextEncoder().encode(
-				hash.digest('base64url')
-			);
-		},
+		hasher,
 		alg: 'sha-256',
 	},
 	saltGenerator: () => {

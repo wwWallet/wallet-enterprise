@@ -20,6 +20,8 @@
     "@digitalbazaar/did-io": "^2.0.0",
     "@digitalbazaar/did-method-key": "^5.1.0",
     "@sd-jwt/core": "^0.10.0",
+    "@sd-jwt/sd-jwt-vc": "^0.10.0",
+    "@sd-jwt/crypto-nodejs": "^0.10.0",
     "@transmute/did-key-ed25519": "^0.3.0-unstable.10",
     "ajv": "^8.11.0",
     "axios": "^0.27.2",
