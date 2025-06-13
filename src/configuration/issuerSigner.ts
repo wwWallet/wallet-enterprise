@@ -68,16 +68,8 @@ export const issuerSigner: CredentialSigner = {
 	},
 	signSdJwtVc: async function (payload, headers, disclosureFrame) {
 		const issuanceDate = new Date();
-		payload.iat = Math.floor(issuanceDate.getTime() / 1000);
-
-		// set token expiration to one year
 		const expirationDate = new Date();
 		expirationDate.setFullYear(expirationDate.getFullYear() + 1);
-		payload.exp = Math.floor(expirationDate.getTime() / 1000);
-
-		payload.iss = config.url;
-
-		payload.sub = await calculateJwkThumbprint(payload.cnf.jwk);
 
 		headers.x5c = issuerX5C;
 
@@ -87,11 +79,17 @@ export const issuerSigner: CredentialSigner = {
 
 		const claims: {
 			[key: string]: unknown
-		} = {
-			cnf: payload.cnf,
-			vct: payload.vct,
-			jti: payload.jti
-		};
+    } = {
+      iat: Math.floor(issuanceDate.getTime() / 1000),
+      // set token expiration to one year
+      expirationDate,
+      exp: Math.floor(expirationDate.getTime() / 1000),
+      iss: config.url,
+      sub: await calculateJwkThumbprint(payload.cnf.jwk),
+      cnf: payload.cnf,
+      vct: payload.vct,
+      jti: payload.jti
+    };
 
 		const disclosures = Object.keys(disclosureFrame)
 			.filter(key => disclosureFrame[key])
