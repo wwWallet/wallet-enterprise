@@ -54,6 +54,72 @@ const presentationDefinitionSchema = {
   }
 };
 
+const dcqlQuerySchema = {
+	type: "object",
+	required: ["credentials", "credential_sets"],
+	properties: {
+		credentials: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "format", "claims"],
+				properties: {
+					id: { type: "string" },
+					format: { type: "string" },
+					meta: {
+						type: "object",
+						properties: {
+							doctype_value: { type: "string" },
+							"sd-jwt_alg_values": {
+								type: "array",
+								items: { type: "string" }
+							},
+							"kb-jwt_alg_values": {
+								type: "array",
+								items: { type: "string" }
+							}
+						},
+						additionalProperties: true
+					},
+					claims: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "path"],
+							properties: {
+								id: { type: "string" },
+								path: {
+									type: "array",
+									items: { type: "string" }
+								},
+								intent_to_retain: { type: "boolean" },
+								filter: { type: "object" }
+							}
+						}
+					}
+				}
+			}
+		},
+		credential_sets: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["options", "purpose"],
+				properties: {
+					options: {
+						type: "array",
+						items: {
+							type: "array",
+							items: { type: "string" }
+						}
+					},
+					purpose: { type: "string" }
+				}
+			}
+		}
+	}
+};
+
 export const sanitizeInput = (input: string): string =>
 	input.replace(/[^\x20-\x7E\n]/g, '');
 
@@ -242,10 +308,14 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 })
 
 verifierRouter.get('/public/definitions/edit-presentation-definition', async (req, res) => {
+	const combinedSchema = {
+		anyOf: [presentationDefinitionSchema, dcqlQuerySchema]
+	};
+
 	return res.render('verifier/edit_presentation_definition', {
 		lang: req.lang,
 		locale: locale[req.lang],
-		schema: presentationDefinitionSchema
+		schema: combinedSchema
 	});
 })
 
@@ -258,11 +328,14 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 			.execute();
 		return res.redirect(req.body.action);
 	}
-	let presentationDefinition;
+	let def;
 	try {
-		presentationDefinition = JSON.parse(req.body.presentationDefinition);
-		const validate = ajv.compile(presentationDefinitionSchema);
-		if (!validate(presentationDefinition)) {
+		def = JSON.parse(req.body.presentationDefinition);
+		const combinedSchema = {
+			anyOf: [presentationDefinitionSchema, dcqlQuerySchema]
+		};
+		const validate = ajv.compile(combinedSchema);
+		if (!validate(def)) {
 			return res.render('error.pug', {
 				msg: "Invalid presentation definition format",
 				code: 0,
@@ -282,7 +355,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId);
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationDefinition, newSessionId, config.url + "/verifier/callback");
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, def, newSessionId, config.url + "/verifier/callback");
 	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(modifiedUrl.toString(), {
