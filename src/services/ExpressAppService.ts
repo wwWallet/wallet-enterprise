@@ -10,6 +10,7 @@ import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
 import fs from 'fs';
 import path from 'path';
 import * as IssuerSigner from '../configuration/issuerSigner';
+import { credentialConfigurationRegistryServiceEmitter } from './CredentialConfigurationRegistryService';
 
 var issuerX5C: string[] = [];
 var issuerPrivateKeyPem = "";
@@ -43,7 +44,7 @@ export class ExpressAppService {
 	) { }
 
 
-	public configure(app: Application) {
+	public async configure(app: Application): Promise<void> {
 		app.get('/verification/request-object', async (req, res) => { this.presentationsReceivingService.getSignedRequestObject({ req, res }) });
 
 		app.post('/verification/direct_post', async (req, res) => { this.presentationsReceivingService.responseHandler({ req, res }) });
@@ -103,8 +104,6 @@ export class ExpressAppService {
 					})
 				})
 			}
-
-
 			app.get('/.well-known/oauth-authorization-server', async (_req, res) => {
 				const x = await Promise.all(this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations());
 				
@@ -185,7 +184,66 @@ export class ExpressAppService {
 				// @ts-ignore
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
 			});
-		}
 
+
+			await new Promise((resolve) => {
+				credentialConfigurationRegistryServiceEmitter.on('initialized', () => {
+					this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((configuration) => {
+						// @ts-ignore
+						if (!configuration?.metadata) return;
+						// @ts-ignore
+						const metadata = configuration?.metadata();
+						const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
+
+						// @ts-ignore
+						if (!configuration?.schema) return;
+						// @ts-ignore
+						const schema = configuration?.schema();
+						const schemaArray = Array.isArray(schema) ? schema : [schema];
+
+						metadataArray.forEach((item: any) => {
+							try {
+								const newUrl = new URL(item.vct);
+								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+
+								const path = newUrl.pathname;
+								console.log(`✅ Registering route: ${path}`);
+
+								app.get(path, async (_req, res) => {
+									return res.send({
+										...item
+									})
+								});
+							} catch (error) {
+								console.error(`❌ Error processing item.vct (${item.vct}):`, error);
+							}
+						});
+
+						schemaArray.forEach((item: any) => {
+							try {
+								if (!('id' in item)) return;
+								const newUrl = new URL(item.id);
+								if (!newUrl) return;
+								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+
+								const path = newUrl.pathname;
+								console.log(`✅ Registering route: ${path}`);
+
+								app.get(path, async (_req, res) => {
+									return res.send({
+										...item
+									})
+								});
+							} catch (error) {
+								console.error(`❌ Error processing item.id (${item?.id}):`, error);
+							}
+						});
+					})
+					resolve(null);
+				})
+
+			})
+
+		}
 	}
 }
