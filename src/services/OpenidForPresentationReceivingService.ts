@@ -522,7 +522,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					});
 					if (!verificationResult.success) {
 						return { error: new Error(`SD-JWT verification failed for ${descriptor.id}: ${verificationResult.error}`) };
-					} vp
+					}
 
 					const parseResult = await ce.credentialParsingEngine.parse({ rawCredential: vp });
 					if (!parseResult.success) {
@@ -561,7 +561,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 				} else {
 					// ========== mdoc ==========
-					// const credentialBytes = base64url.decode(vp);
 					const verificationResult = await ce.msoMdocVerifier.verify({
 						rawCredential: vp,
 						opts: {

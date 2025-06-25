@@ -14,6 +14,8 @@ import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 import AppDataSource from "../AppDataSource";
 import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
+import { buildDcqlQuery } from "../util/buildDcqlQuery";
+
 import Ajv from 'ajv';
 const ajv = new Ajv();
 
@@ -85,7 +87,7 @@ const dcqlQuerySchema = {
 						type: "array",
 						items: {
 							type: "object",
-							required: ["id", "path"],
+							required: ["path"],
 							properties: {
 								id: { type: "string" },
 								path: {
@@ -422,7 +424,11 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			locale: locale[req.lang]
 		});
 	}
+
+	const queryType = req.body.queryType || "dcql";
 	let scheme = "openid4vp://cb";
+	let queryToSend: any = presentationDefinition;
+
 	// If there are selected fields from a POST request, update the constraints accordingly
 	if (req.method === "POST" && req.body.attributes) {
 		let selectedFieldPaths = req.body.attributes;
@@ -431,46 +437,52 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		}
 		const selectedPaths = new Set(selectedFieldPaths);
 		console.log("Selectd paths", selectedPaths);
-		// Filter existing paths to keep only those selected by the user and update presentationDefinition
-		const availableFields = presentationDefinition.input_descriptors[0].constraints.fields;
-		console.log("Available fields = ", availableFields)
-		const filteredFields = presentationDefinition.input_descriptors[0].constraints.fields.filter((field: any) =>
-			selectedPaths.has(field.path[0])
-		);
+		scheme = req.body.scheme
 
-		console.log("filtered fields = ", filteredFields)
-		presentationDefinition.input_descriptors[0].constraints.fields = filteredFields;
-		// Determine the presentation format based on the 'type' (sd-jwt or mdoc) provided by the form
-		const selectedType = req.body.type // Default to sd-jwt if type is not provided
-		if (selectedType === "sd-jwt") {
-			const selectedFormat = req.body.format;
-			if (selectedFormat && selectedFormat === "vc+sd-jwt") {
+		if (queryType === "dcql") {
+			queryToSend = buildDcqlQuery(presentationDefinition, req.body);
+		} else {
+
+			const availableFields = presentationDefinition.input_descriptors[0].constraints.fields;
+			console.log("Available fields = ", availableFields)
+			const filteredFields = presentationDefinition.input_descriptors[0].constraints.fields.filter((field: any) =>
+				selectedPaths.has(field.path[0])
+			);
+
+			console.log("filtered fields = ", filteredFields)
+			presentationDefinition.input_descriptors[0].constraints.fields = filteredFields;
+			// Determine the presentation format based on the 'type' (sd-jwt or mdoc) provided by the form
+			const selectedType = req.body.type // Default to sd-jwt if type is not provided
+			if (selectedType === "sd-jwt") {
+				const selectedFormat = req.body.format;
+				if (selectedFormat && selectedFormat === "vc+sd-jwt") {
+					presentationDefinition.input_descriptors[0].format = {
+						"vc+sd-jwt": {
+							"sd-jwt_alg_values": ["ES256"],
+							"kb-jwt_alg_values": ["ES256"]
+						},
+					};
+				} else {
+					presentationDefinition.input_descriptors[0].format = {
+						"dc+sd-jwt": {
+							"sd-jwt_alg_values": ["ES256"],
+							"kb-jwt_alg_values": ["ES256"]
+						},
+					};
+				}
+
+			} else if (selectedType === "mdoc") {
 				presentationDefinition.input_descriptors[0].format = {
-					"vc+sd-jwt": {
-						"sd-jwt_alg_values": ["ES256"],
-						"kb-jwt_alg_values": ["ES256"]
-					},
-				};
-			} else {
-				presentationDefinition.input_descriptors[0].format = {
-					"dc+sd-jwt": {
+					"mso_mdoc": {
 						"sd-jwt_alg_values": ["ES256"],
 						"kb-jwt_alg_values": ["ES256"]
 					},
 				};
 			}
-
-		} else if (selectedType === "mdoc") {
-			presentationDefinition.input_descriptors[0].format = {
-				"mso_mdoc": {
-					"sd-jwt_alg_values": ["ES256"],
-					"kb-jwt_alg_values": ["ES256"]
-				},
-			};
+			presentationDefinition.input_descriptors[0].purpose = req.body.purpose
+			presentationDefinition.input_descriptors[0].id = req.body.descriptorId
+			queryToSend = presentationDefinition;
 		}
-		presentationDefinition.input_descriptors[0].purpose = req.body.purpose
-		presentationDefinition.input_descriptors[0].id = req.body.descriptorId
-		scheme = req.body.scheme
 	}
 	else if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
 		console.log("Cookie = ", req.cookies)
@@ -485,7 +497,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId); // start session here
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationDefinition, newSessionId, config.url + "/verifier/callback");
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, queryToSend, newSessionId, config.url + "/verifier/callback");
 	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(modifiedUrl.toString(), {
@@ -503,7 +515,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		wwwalletURL: config.wwwalletURL,
 		authorizationRequestURL: modifiedUrl,
 		authorizationRequestQR,
-		presentationDefinition: JSON.stringify(presentationDefinition),
+		presentationDefinition: JSON.stringify(queryToSend),
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],
