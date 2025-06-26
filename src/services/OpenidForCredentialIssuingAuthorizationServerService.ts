@@ -612,6 +612,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			access_token: ctx.req.authorizationServerState.access_token,
 			expires_in: access_token_expires_in,
 			c_nonce: c_nonce, // maintain for backwards compatibility
+			c_nonce_expires_in: c_nonce_expires_in, // maintain for backwards compatibility
 			refresh_token: ctx.req.authorizationServerState.refresh_token,
 			auth_session: ctx.req.authorizationServerState.auth_session
 		}
