@@ -65,6 +65,9 @@ export class ExpressAppService {
 				this.authorizationServerService.authorizationRequestHandler({ req, res });
 			});
 
+			app.post('/openid4vci/nonce', async (req, res) => {
+				this.authorizationServerService.nonceRequestHandler({ req, res });
+			});
 			app.post('/openid4vci/token', async (req, res) => {
 				this.authorizationServerService.tokenRequestHandler({ req, res });
 			});
@@ -106,7 +109,6 @@ export class ExpressAppService {
 			}
 			app.get('/.well-known/oauth-authorization-server', async (_req, res) => {
 				const x = await Promise.all(this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations());
-				
 
 				return res.send({
 					issuer: config.url,
@@ -155,6 +157,7 @@ export class ExpressAppService {
 
 				const metadata = {
 					credential_issuer: config.url,
+					nonce_endpoint: config.url + "/openid4vci/nonce",
 					credential_endpoint: config.url + "/openid4vci/credential",
 					batch_credential_issuance: undefined,
 					display: config.display,

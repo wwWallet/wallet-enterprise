@@ -11,7 +11,7 @@ import { Repository } from "typeorm";
 import { CONSENT_ENTRYPOINT } from "../authorization/constants";
 import base64url from "base64url";
 import { config } from "../../config";
-import { importJWK, importX509, JWK, jwtVerify } from "jose";
+import { importJWK, importX509, JWK, jwtVerify, SignJWT } from "jose";
 import { TYPES } from "./types";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
@@ -27,7 +27,25 @@ const c_nonce_expires_in = config.issuanceFlow.c_nonce_expires_in ? config.issua
 // @ts-ignore
 const refresh_token_expires_in = config.issuanceFlow.refresh_token_expires_in ? config.issuanceFlow.refresh_token_expires_in : 24 * 60 * 60; // 1 day
 
+const secret = new TextEncoder().encode(config.appSecret);
 
+async function generateCNonce(): Promise<string> {
+	return await new SignJWT({ uuid: randomUUID(), exp: Math.floor(new Date().getTime() / 1000) + c_nonce_expires_in })
+		.setAudience(config.url)
+		.setIssuedAt()
+		.setProtectedHeader({ alg: 'HS512', typ: 'JWT' })
+		.sign(secret);
+}
+
+async function verifyCNonce(c_nonce: string): Promise<boolean> {
+	try {
+		await jwtVerify(c_nonce, secret, { algorithms: ['HS512'], audience: config.url });
+		return true;
+	}
+	catch (err) {
+		return false;
+	}
+}
 
 @injectable()
 export class OpenidForCredentialIssuingAuthorizationServerService implements OpenidForCredentialIssuingAuthorizationServerInterface {
@@ -40,6 +58,12 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		@inject(TYPES.VerifierConfigurationServiceInterface) private verifierConfigurationService: VerifierConfigurationInterface,
 
 	) { }
+
+	async nonceRequestHandler(ctx: { req: Request; res: Response; }): Promise<void> {
+		const cNonce = await generateCNonce();
+		ctx.res.status(200).setHeader('Cache-Control', 'no-store').send({ c_nonce: cNonce });
+		return;
+	}
 
 	metadataRequestHandler(): Promise<void> {
 		throw new Error("Method not implemented.");
@@ -573,8 +597,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		ctx.req.authorizationServerState.token_type = "DPoP";
 		ctx.req.authorizationServerState.access_token_expiration_timestamp = Math.floor(Date.now() / 1000) + access_token_expires_in;
 
-		ctx.req.authorizationServerState.c_nonce = crypto.randomBytes(16).toString('hex');
-		ctx.req.authorizationServerState.c_nonce_expiration_timestamp = Math.floor(Date.now() / 1000) + c_nonce_expires_in;
+		const c_nonce = await generateCNonce();
 
 		/**
 		 * No rotation in refresh token. A new refresh token will not be issued every time in case of refresh_token grant type
@@ -588,8 +611,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			token_type: ctx.req.authorizationServerState.token_type,
 			access_token: ctx.req.authorizationServerState.access_token,
 			expires_in: access_token_expires_in,
-			c_nonce: ctx.req.authorizationServerState.c_nonce,
-			c_nonce_expires_in: c_nonce_expires_in,
+			c_nonce: c_nonce, // maintain for backwards compatibility
 			refresh_token: ctx.req.authorizationServerState.refresh_token,
 			auth_session: ctx.req.authorizationServerState.auth_session
 		}
@@ -769,7 +791,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				const attestation = ctx.req.body.proof.attestation as string;
 				const header = JSON.parse(base64url.decode(attestation.split('.')[0])) as Record<string, unknown>;
 				if (header.x5c && header.alg && Array.isArray(header.x5c) && typeof header.alg === 'string') {
-					const verificationResult = await verifyX5C(header.x5c as string[], [ ...config.trustedRootCertificates ]);
+					const verificationResult = await verifyX5C(header.x5c as string[], [...config.trustedRootCertificates]);
 					console.log("Chain validation result = ", verificationResult)
 					if (!verificationResult) {
 						const r = { error: "Key attestation: Chain validation error" };
@@ -792,7 +814,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 						}
 						return { attested_keys: payload.attested_keys as JWK[] };
 					}
-					catch(err) {
+					catch (err) {
 						const r = { error: "Key attestation: Signature validation failed" };
 						console.error(r);
 						console.error(err);
@@ -822,12 +844,12 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 					return { error: "Proof jwt: Invalid alg" };
 				}
 
-				if (!nonce || nonce !== state?.c_nonce) {
+				if (!nonce) {
 					return { error: "Proof jwt: Invalid nonce" };
 				}
 
-				if (state?.c_nonce_expiration_timestamp as number < Math.floor(Date.now() / 1000)) {
-					return { error: "Proof jwt: Expired c_nonce" };
+				if (!(await verifyCNonce(nonce))) {
+					return { error: "c_nonce: Invalid signature for c_nonce" };
 				}
 
 				try {
@@ -843,13 +865,13 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 
 		const credentialConfigurationRegistryService = this.credentialConfigurationRegistryService;
-	
+
 		async function sendCredentialResponse(holderJwks: JWK[]) {
 			const responses = (await Promise.all(holderJwks.map(async (jwk) => {
 				return credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, jwk);
 			}))).filter(r => r != null);
 
-		console.log("Credential Responses to send = ", responses);
+			console.log("Credential Responses to send = ", responses);
 			ctx.res.send({
 				credentials: responses.map((response: any) => ({ credential: response.credential })),
 			});
@@ -860,7 +882,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			console.log("Key attestation result = ", keyAttestationVerificationResult)
 			if ('error' in keyAttestationVerificationResult) {
 				ctx.res.status(400).send({ error: keyAttestationVerificationResult.error });
-				return;	
+				return;
 			}
 			await sendCredentialResponse([...keyAttestationVerificationResult.attested_keys]);
 			return;
