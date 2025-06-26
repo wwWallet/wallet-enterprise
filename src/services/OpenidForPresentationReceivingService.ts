@@ -118,8 +118,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			response_uri: responseUri,
 			aud: "https://self-issued.me/v2",
 			iss: new URL(responseUri).hostname,
-			client_id_scheme: "x509_san_dns",
-			client_id: client_id,
+			client_id: "x509_san_dns:" + client_id,
 			response_type: "vp_token",
 			response_mode: response_mode,
 			state: state,
@@ -180,7 +179,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		newRpState.rp_eph_pub = exportedEphPub;
 		newRpState.rp_eph_priv = exportedEphPriv;
 		newRpState.rp_eph_kid = exportedEphPub.kid;
-		newRpState.audience = client_id;
+		newRpState.audience = "x509_san_dns:" + client_id;
 
 		newRpState.session_id = sessionId;
 		newRpState.signed_request = signedRequestObject;
@@ -195,7 +194,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const requestUri = config.url + "/verification/request-object?id=" + state;
 
 		const redirectParameters = {
-			client_id: client_id,
+			client_id: "x509_san_dns:" + client_id,
 			request_uri: requestUri
 		};
 
