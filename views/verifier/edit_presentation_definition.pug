@@ -22,9 +22,8 @@ block layout-content
 	script(src="https://cdn.jsdelivr.net/npm/jsoneditor@latest")
 	script.
 		const container = document.getElementById('jsoneditor');
-		var schema = !{JSON.stringify(schema)};
-
-		const options = {
+			var schema = !{JSON.stringify(schema)};
+			const options = {
 			mode: 'code',
 			modes: ['code', 'tree', 'view'],
 			schema: schema,
