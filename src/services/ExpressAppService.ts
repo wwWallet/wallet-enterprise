@@ -11,15 +11,20 @@ import fs from 'fs';
 import path from 'path';
 import * as IssuerSigner from '../configuration/issuerSigner';
 import { credentialConfigurationRegistryServiceEmitter } from './CredentialConfigurationRegistryService';
+import { pemToBase64 } from '../util/pemToBase64';
 
 var issuerX5C: string[] = [];
 var issuerPrivateKeyPem = "";
 var issuerCertPem = "";
 var rootCaBase64DER = "";
 if (config.appType == "ISSUER") {
-	issuerX5C = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.json"), 'utf-8').toString()) as string[];
+	const caCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString() as string;
 	issuerPrivateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
 	issuerCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString() as string;
+	issuerX5C = [
+		pemToBase64(issuerCertPem),
+		pemToBase64(caCertPem)
+	];
 
 	rootCaBase64DER = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString() as string;
 	rootCaBase64DER = rootCaBase64DER.replace(/-----BEGIN CERTIFICATE-----/g, '')

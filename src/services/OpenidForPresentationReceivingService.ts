@@ -19,15 +19,22 @@ import * as z from 'zod';
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 import { TransactionData } from "../TransactionData/TransactionData";
 import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
+import { pemToBase64 } from "../util/pemToBase64";
 
-const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.server.key"), 'utf-8').toString();
-const x5c = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.server.json")).toString()) as Array<string>;
+const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
+const caCert = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString();
+const leafCert = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString();
 
 enum ResponseMode {
 	DIRECT_POST = 'direct_post',
 	DIRECT_POST_JWT = 'direct_post.jwt'
 }
 
+
+const x5c = [
+	pemToBase64(leafCert),
+	pemToBase64(caCert)
+];
 
 const ResponseModeSchema = z.nativeEnum(ResponseMode);
 
@@ -92,7 +99,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const client_id = new URL(responseUri).hostname
 
 		const [rsaImportedPrivateKey, rpEphemeralKeypair] = await Promise.all([
-			importPKCS8(privateKeyPem, 'RS256'),
+			importPKCS8(privateKeyPem, 'ES256'),
 			generateKeyPair('ECDH-ES')
 		]);
 		const [exportedEphPub, exportedEphPriv] = await Promise.all([
@@ -158,7 +165,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		})
 			.setIssuedAt()
 			.setProtectedHeader({
-				alg: 'RS256',
+				alg: 'ES256',
 				x5c: x5c,
 				typ: 'oauth-authz-req+jwt',
 			})
