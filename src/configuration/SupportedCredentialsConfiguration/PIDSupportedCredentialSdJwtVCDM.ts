@@ -209,6 +209,7 @@ export class PIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 			"vct": this.getId(),
 			"name": "PID",
 			"description": "This is a PID document issued by the well known PID Issuer",
+			"schema_uri": "https://demo-issuer.wwwallet.org/public/creds/pid/person-identification-data-arf-15-schema-example-01.json",
 			"display": [
 				{
 					"lang": "en-US",
