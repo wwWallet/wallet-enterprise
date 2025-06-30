@@ -193,6 +193,7 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 			"name": "Power of Representation",
 			"description": "Power of Representation (POR) SD-JWT VC",
 			"schema_uri": "https://demo-issuer.wwwallet.org/public/creds/por/power-of-representation-schema-potential-01.json",
+			"schema_uri#integrity": "sha256-p2W6TNutwz7BqSlO4KuFb9YP98/p4adSL/+hHqmbJIA=",
 			"display": [
 				{
 					"lang": "en-US",

@@ -209,6 +209,7 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 			"name": "EHIC",
 			"description": "This is a European Health Insurance Card verifiable credential",
 			"schema_uri": "https://demo-issuer.wwwallet.org/public/creds/ehic/european-health-insurance-card-schema-dc4eu-01.json",
+			"schema_uri#integrity": "sha256-lNMpT2YzCPU1AuIpSIjryv6KUgBUBUVs3eNbZQoMJNA=",
 			"display": [
 				{
 					"lang": "en-US",
