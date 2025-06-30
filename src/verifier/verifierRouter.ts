@@ -58,7 +58,7 @@ const presentationDefinitionSchema = {
 
 const dcqlQuerySchema = {
 	type: "object",
-	required: ["credentials", "credential_sets"],
+	required: ["credentials"],
 	properties: {
 		credentials: {
 			type: "array",
@@ -494,7 +494,11 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			.execute();
 		return res.redirect(req.body.action);
 	}
-
+	else { //combined, non-configurable presentation
+		if (queryType === "dcql") {
+			queryToSend = buildDcqlQuery(presentationDefinition);
+		}
+	}
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId); // start session here
 	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, queryToSend, newSessionId, config.url + "/verifier/callback");
