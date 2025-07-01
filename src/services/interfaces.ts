@@ -29,6 +29,7 @@ export interface OpenidForCredentialIssuingAuthorizationServerInterface {
 
 	sendAuthorizationResponse(ctx: { req: Request, res: Response }, bindedUserSessionId: number): Promise<void>;
 
+	nonceRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 	tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 	credentialRequestHandler(ctx: { req: Request, res: Response }): Promise<void>;
 }

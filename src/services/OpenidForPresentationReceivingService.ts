@@ -20,15 +20,22 @@ import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 import { TransactionData } from "../TransactionData/TransactionData";
 import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
 import { DcqlPresentationResult } from 'dcql';
+import { pemToBase64 } from "../util/pemToBase64";
 
-const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.server.key"), 'utf-8').toString();
-const x5c = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.server.json")).toString()) as Array<string>;
+const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
+const caCert = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString();
+const leafCert = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString();
 
 enum ResponseMode {
 	DIRECT_POST = 'direct_post',
 	DIRECT_POST_JWT = 'direct_post.jwt'
 }
 
+
+const x5c = [
+	pemToBase64(leafCert),
+	pemToBase64(caCert)
+];
 
 const ResponseModeSchema = z.nativeEnum(ResponseMode);
 
@@ -93,7 +100,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const client_id = new URL(responseUri).hostname
 
 		const [rsaImportedPrivateKey, rpEphemeralKeypair] = await Promise.all([
-			importPKCS8(privateKeyPem, 'RS256'),
+			importPKCS8(privateKeyPem, 'ES256'),
 			generateKeyPair('ECDH-ES')
 		]);
 		const [exportedEphPub, exportedEphPriv] = await Promise.all([
@@ -122,8 +129,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			response_uri: responseUri,
 			aud: "https://self-issued.me/v2",
 			iss: new URL(responseUri).hostname,
-			client_id_scheme: "x509_san_dns",
-			client_id: client_id,
+			client_id: "x509_san_dns:" + client_id,
 			response_type: "vp_token",
 			response_mode: response_mode,
 			state: state,
@@ -164,7 +170,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		})
 			.setIssuedAt()
 			.setProtectedHeader({
-				alg: 'RS256',
+				alg: 'ES256',
 				x5c: x5c,
 				typ: 'oauth-authz-req+jwt',
 			})
@@ -185,7 +191,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		newRpState.rp_eph_pub = exportedEphPub;
 		newRpState.rp_eph_priv = exportedEphPriv;
 		newRpState.rp_eph_kid = exportedEphPub.kid;
-		newRpState.audience = client_id;
+		newRpState.audience = "x509_san_dns:" + client_id;
 
 		newRpState.session_id = sessionId;
 		newRpState.signed_request = signedRequestObject;
@@ -200,7 +206,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const requestUri = config.url + "/verification/request-object?id=" + state;
 
 		const redirectParameters = {
-			client_id: client_id,
+			client_id: "x509_san_dns:" + client_id,
 			request_uri: requestUri
 		};
 

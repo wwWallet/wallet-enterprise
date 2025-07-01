@@ -11,15 +11,20 @@ import fs from 'fs';
 import path from 'path';
 import * as IssuerSigner from '../configuration/issuerSigner';
 import { credentialConfigurationRegistryServiceEmitter } from './CredentialConfigurationRegistryService';
+import { pemToBase64 } from '../util/pemToBase64';
 
 var issuerX5C: string[] = [];
 var issuerPrivateKeyPem = "";
 var issuerCertPem = "";
 var rootCaBase64DER = "";
 if (config.appType == "ISSUER") {
-	issuerX5C = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.json"), 'utf-8').toString()) as string[];
+	const caCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString() as string;
 	issuerPrivateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
 	issuerCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString() as string;
+	issuerX5C = [
+		pemToBase64(issuerCertPem),
+		pemToBase64(caCertPem)
+	];
 
 	rootCaBase64DER = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString() as string;
 	rootCaBase64DER = rootCaBase64DER.replace(/-----BEGIN CERTIFICATE-----/g, '')
@@ -65,6 +70,9 @@ export class ExpressAppService {
 				this.authorizationServerService.authorizationRequestHandler({ req, res });
 			});
 
+			app.post('/openid4vci/nonce', async (req, res) => {
+				this.authorizationServerService.nonceRequestHandler({ req, res });
+			});
 			app.post('/openid4vci/token', async (req, res) => {
 				this.authorizationServerService.tokenRequestHandler({ req, res });
 			});
@@ -106,7 +114,6 @@ export class ExpressAppService {
 			}
 			app.get('/.well-known/oauth-authorization-server', async (_req, res) => {
 				const x = await Promise.all(this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations());
-				
 
 				return res.send({
 					issuer: config.url,
@@ -155,6 +162,7 @@ export class ExpressAppService {
 
 				const metadata = {
 					credential_issuer: config.url,
+					nonce_endpoint: config.url + "/openid4vci/nonce",
 					credential_endpoint: config.url + "/openid4vci/credential",
 					batch_credential_issuance: undefined,
 					display: config.display,
