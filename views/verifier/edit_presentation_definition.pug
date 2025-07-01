@@ -2,7 +2,7 @@ extends ../layout.pug
 
 block layout-content
 	.container
-		h1 Edit Presentation Definition
+		h1 Edit Request
 
 		if error
 			p= error.errorMessage
@@ -14,7 +14,7 @@ block layout-content
 				textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
 
 			.label-wrapper
-				label(for="presentationDefinition") Presentation Definition
+				label(for="presentationDefinition") Presentation Definition or DCQL Query
 				p.form-subtitle You can edit this template as needed
 				textarea(id="presentationDefinitionText" name="presentationDefinition" style="display: none")
 			div(id="jsoneditor")
@@ -22,9 +22,8 @@ block layout-content
 	script(src="https://cdn.jsdelivr.net/npm/jsoneditor@latest")
 	script.
 		const container = document.getElementById('jsoneditor');
-		var schema = !{JSON.stringify(schema)};
-
-		const options = {
+			var schema = !{JSON.stringify(schema)};
+			const options = {
 			mode: 'code',
 			modes: ['code', 'tree', 'view'],
 			schema: schema,
