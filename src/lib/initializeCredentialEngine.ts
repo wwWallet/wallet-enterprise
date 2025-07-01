@@ -18,6 +18,7 @@ export async function initializeCredentialEngine() {
 		subtle: webcrypto.subtle as SubtleCrypto,
 		lang: 'en-US',
 		trustedCertificates: [...config.trustedRootCertificates] as string[],
+		config,
 	};
 
 	if (trustedCredentialIssuerIdentifiers) {
