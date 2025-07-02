@@ -11,6 +11,7 @@ import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
 import {  base64url, calculateJwkThumbprint, exportJWK, importX509 } from 'jose';
 import { Document } from '@auth0/mdl';
 import { cborEncode } from "@auth0/mdl/lib/cbor";
+import { COSEKey } from "@auth0/cose";
 import { pemToBase64 } from '../util/pemToBase64';
 
 const issuerPrivateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
@@ -45,13 +46,14 @@ export const issuerSigner: CredentialSigner = {
 		const expirationDate = new Date();
 
 		expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+		const coseKey = COSEKey.fromJWK(holderPublicKeyJwk)
 		const signedDocument = await document
 			.addValidityInfo({
 				signed: new Date(),
 				validUntil: expirationDate,
 				validFrom: validFromDate,
 			})
-			.addDeviceKeyInfo({ deviceKey: holderPublicKeyJwk })
+			.addDeviceKeyInfo({ deviceKey: coseKey.encode() })
 			.sign({
 				issuerPrivateKey: {
 					...issuerPrivateKeyJwk,
