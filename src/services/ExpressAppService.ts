@@ -229,8 +229,8 @@ export class ExpressAppService {
 
 						schemaArray.forEach((item: any) => {
 							try {
-								if (!('id' in item)) return;
-								const newUrl = new URL(item.id);
+								if (!('$id' in item)) return;
+								const newUrl = new URL(item["$id"]);
 								if (!newUrl) return;
 								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
 
