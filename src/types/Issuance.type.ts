@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export type VcJwtJsonCred = {
 	format: "jwt_vc_json",
-	types: string[] // VerifiableCredential, UniversityDegreeCredential 
+	types: string[] // VerifiableCredential, UniversityDegreeCredential
 }
 
 export type CredentialOfferCredential = string | VcJwtJsonCred;

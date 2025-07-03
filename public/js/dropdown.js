@@ -1,6 +1,6 @@
 $('.ui.selection.dropdown')
   .dropdown({
-    clearable: false 
+    clearable: false
 });
 
 $('.ui.inline.dropdown')

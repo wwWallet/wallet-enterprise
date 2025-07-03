@@ -1,7 +1,7 @@
 /**
- * removes _ underscore 
- * @param obj 
- * @returns 
+ * removes _ underscore
+ * @param obj
+ * @returns
  */
 export function serializePresentationDefinition(obj: any): any {
   if (Array.isArray(obj)) {

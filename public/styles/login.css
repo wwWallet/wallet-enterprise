@@ -89,7 +89,7 @@
 }
 
 button[disabled] {
-	background-color: #adadad;  
+	background-color: #adadad;
 	cursor: not-allowed;
 }
 

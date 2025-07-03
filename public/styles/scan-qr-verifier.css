@@ -29,7 +29,7 @@
 
 .loader {
   border: 8px solid #f3f3f3;
-  border-top: 8px solid var(--primary-color); 
+  border-top: 8px solid var(--primary-color);
   border-radius: 50%;
   width: 80px;
   height: 80px;

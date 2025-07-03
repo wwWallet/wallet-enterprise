@@ -7,7 +7,7 @@ export function addSeconds(date: Date, numOfSeconds: number) {
 }
 
 function isValid8DigitDate(date: string): {value: boolean, err: ConvertDateErrors} {
-	
+
 	if (date.length != 8) {
 		return {value: false, err: 'INVALID_DATE_LENGTH'};
 	}
@@ -23,12 +23,12 @@ function isValid8DigitDate(date: string): {value: boolean, err: ConvertDateError
 	const day: string = date.slice(6, 8);
 	if(isNaN(+day))
 		return {value: false, err: 'INVALID_DAY_VALUE'};
-	
+
 	return {value: true, err: ''};
 }
 
 /**
-	 * 
+	 *
 	 * @param date 8 digit date string (YYYYMMDD)
 	 * @returns string
 	 */
@@ -47,7 +47,7 @@ function isValid8DigitDate(date: string): {value: boolean, err: ConvertDateError
 }
 
 /**
- * 
+ *
  * @param date 8 digit date string (YYYYMMDD)
  * @returns string
  */

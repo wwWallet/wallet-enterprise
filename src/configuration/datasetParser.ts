@@ -4,15 +4,15 @@ import fs from 'fs';
 export function parsePidData(filePath: string) {
 	try {
 		const readOpts: XLSX.ParsingOptions = {
-			cellText: false, 
+			cellText: false,
 			cellDates: true,
 			type: 'buffer'
 		};
 		const fileBuffer = fs.readFileSync(filePath);
-	
+
 		// Parse the workbook
 		const workbook = XLSX.read(fileBuffer, readOpts);
-		
+
 		const sheetName = "PID"
 		// Get the first worksheet
 		const worksheet = workbook.Sheets[sheetName];
@@ -24,7 +24,7 @@ export function parsePidData(filePath: string) {
 			// skipHidden: true,
 			// header: 0
 		});
-	
+
 		if (data.length == 0) {
 			throw new Error("Empty dataset");
 		}
@@ -49,15 +49,15 @@ export function parsePidData(filePath: string) {
 export function parseEhicData(filePath: string) {
 	try {
 		const readOpts: XLSX.ParsingOptions = {
-			cellText: false, 
+			cellText: false,
 			cellDates: true,
 			type: 'buffer'
 		};
 		const fileBuffer = fs.readFileSync(filePath);
-	
+
 		// Parse the workbook
 		const workbook = XLSX.read(fileBuffer, readOpts);
-		
+
 		const sheetName = "EHIC"
 		// Get the first worksheet
 		const worksheet = workbook.Sheets[sheetName];
@@ -69,7 +69,7 @@ export function parseEhicData(filePath: string) {
 			// skipHidden: true,
 			// header: 0
 		});
-	
+
 		if (data.length == 0) {
 			throw new Error("Empty dataset");
 		}
@@ -93,15 +93,15 @@ export function parseEhicData(filePath: string) {
 export function parseDiplomaData(filePath: string) {
 	try {
 		const readOpts: XLSX.ParsingOptions = {
-			cellText: false, 
+			cellText: false,
 			cellDates: true,
 			type: 'buffer'
 		};
 		const fileBuffer = fs.readFileSync(filePath);
-	
+
 		// Parse the workbook
 		const workbook = XLSX.read(fileBuffer, readOpts);
-		
+
 		const sheetName = "DIPLOMA"
 		// Get the first worksheet
 		const worksheet = workbook.Sheets[sheetName];
@@ -113,7 +113,7 @@ export function parseDiplomaData(filePath: string) {
 			// skipHidden: true,
 			// header: 0
 		});
-	
+
 		if (data.length == 0) {
 			throw new Error("Empty dataset");
 		}
@@ -140,15 +140,15 @@ export function parseDiplomaData(filePath: string) {
 export function parsePorData(filePath: string) {
 	try {
 		const readOpts: XLSX.ParsingOptions = {
-			cellText: false, 
+			cellText: false,
 			cellDates: true,
 			type: 'buffer'
 		};
 		const fileBuffer = fs.readFileSync(filePath);
-	
+
 		// Parse the workbook
 		const workbook = XLSX.read(fileBuffer, readOpts);
-		
+
 		const sheetName = "POR"
 		// Get the first worksheet
 		const worksheet = workbook.Sheets[sheetName];
@@ -160,7 +160,7 @@ export function parsePorData(filePath: string) {
 			// skipHidden: true,
 			// header: 0
 		});
-	
+
 		if (data.length == 0) {
 			throw new Error("Empty dataset");
 		}

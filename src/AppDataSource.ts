@@ -30,7 +30,7 @@ export async function initDataSource() {
   while (!connected) {
     await new Promise((resolve) => setTimeout(resolve, 3000)).then(async () => {
       await AppDataSource.initialize()
-        .then(() => {					
+        .then(() => {
           console.log("App Data Source has been initialized!");
           connected = true;
         })

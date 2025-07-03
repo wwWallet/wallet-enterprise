@@ -18,13 +18,13 @@ block layout-content
 			h1 #{locale.index.heading}
 			p #{locale.index.paragraph}
 			p
-				| #{locale.index.metadata} 
-				a(href=`${baseUrl}/.well-known/openid-credential-issuer`) #{baseUrl}/.well-known/openid-credential-issuer 
-				| #{locale.index.sdJwtMetadata} 
+				| #{locale.index.metadata}
+				a(href=`${baseUrl}/.well-known/openid-credential-issuer`) #{baseUrl}/.well-known/openid-credential-issuer
+				| #{locale.index.sdJwtMetadata}
 				a(href=`${baseUrl}/.well-known/jwt-vc-issuer`) #{baseUrl}/.well-known/jwt-vc-issuer.
 			p #{locale.index.specs.paragraph}
 			p #{locale.index.specs.iacas.paragraph}
-				| 
+				|
 				a(href=`${baseUrl}/mdoc-iacas`) #{baseUrl}/mdoc-iacas.
 
 			div.specs-container
@@ -50,7 +50,7 @@ block layout-content
 									td #{row[0]}
 									td #{row[1]}
 							div.specs-box
-					
+
 			h4 #{locale.index.typeMetatadaExamplesHeader}
 			table.specs-table
 				tbody

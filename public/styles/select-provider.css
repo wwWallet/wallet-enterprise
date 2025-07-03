@@ -15,8 +15,8 @@
 }
 
 #ProviderSelection .header { grid-area: header; }
-#ProviderSelection .main { 
-	grid-area: main; 
+#ProviderSelection .main {
+	grid-area: main;
 	margin: 0 auto;
 	width: 80%;
 	display: block;
