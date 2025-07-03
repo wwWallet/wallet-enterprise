@@ -55,7 +55,7 @@ export async function authorizationServerStateMiddleware(req: Request, _res: Res
 // 				.createQueryBuilder("state")
 // 				.where("state.id = :id", { id: state_id })
 // 				.getOne();
-	
+
 // 			if (!authorizationServerState) {
 // 				authorizationServerState = await createNewAuthorizationServerState();
 // 			}

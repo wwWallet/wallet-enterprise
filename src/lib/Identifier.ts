@@ -19,8 +19,8 @@ export enum SigningAlgorithm {
 
 export type DidEbsiKeyTypeObject = {
 	privateKeyHex: string,
-  address: string;
-  did: string,
+	address: string;
+	did: string,
 	keys: {
 		EdDSA?: SingleKey,
 		ES256?: SingleKey,

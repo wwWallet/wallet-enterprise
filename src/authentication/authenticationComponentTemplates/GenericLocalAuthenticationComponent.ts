@@ -22,21 +22,21 @@ export class GenericLocalAuthenticationComponent extends AuthenticationComponent
 		req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
 		res: Response<any, Record<string, any>>,
 		next: NextFunction) {
-		
+
 		return super.authenticate(req, res, async () => {
 			if (await this.isAuthenticated(req).catch(() => false)) {
 				return next();
 			}
-	
+
 			if (req.authorizationServerState.authenticationMethod &&
 				req.authorizationServerState.authenticationMethod != UserAuthenticationMethod.SSO) {
-					
+
 				return next();
 			}
 			if (req.method == "POST") {
 				return this.handleLoginSubmission(req, res);
 			}
-	
+
 			return this.renderLogin(req, res);
 		})
 		.catch(() => {
@@ -45,7 +45,7 @@ export class GenericLocalAuthenticationComponent extends AuthenticationComponent
 	}
 
 
-	
+
 	private async isAuthenticated(req: Request): Promise<boolean> {
 		if (!req.cookies['session_id']) {
 			return false;
@@ -61,7 +61,7 @@ export class GenericLocalAuthenticationComponent extends AuthenticationComponent
 
 		const extractedValues = Object.keys(this.mapping).map((authorizationServerStateColumnName) => {
 			// @ts-ignore
-			return authorizationServerState[authorizationServerStateColumnName];		
+			return authorizationServerState[authorizationServerStateColumnName];
 		}).filter((x) => x != undefined && x != null);
 
 		console.log("Extracted values = ", extractedValues);
@@ -105,7 +105,7 @@ export class GenericLocalAuthenticationComponent extends AuthenticationComponent
 				console.log("Dataset column name = ", datasetColumnName)
 				console.log("column parser = ", parser)
 				const columnParser = parser ?? ((value: string) => value);
-	
+
 				// @ts-ignore
 				req.authorizationServerState[authorizationServerStateColumnName] = columnParser(usersFound[0][datasetColumnName]);
 			});
@@ -121,5 +121,3 @@ export class GenericLocalAuthenticationComponent extends AuthenticationComponent
 		}
 	}
 }
-
-

@@ -1,12 +1,12 @@
 .presentation-card {
-  background-color: #f0f0f0;
-  border-radius: 10px;
-  padding: 30px;
-  width: 75%;
-  max-width: 800px;
-  margin: 0 auto 30px auto;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  text-align: center;
+	background-color: #f0f0f0;
+	border-radius: 10px;
+	padding: 30px;
+	width: 75%;
+	max-width: 800px;
+	margin: 0 auto 30px auto;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+	text-align: center;
 }
 
 .attribute-selection {
@@ -14,11 +14,11 @@
 }
 
 .checkbox-wrapper {
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-align: left;
+	margin-bottom: 8px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	text-align: left;
 }
 
 .checkbox-wrapper input[type="checkbox"] {
@@ -27,8 +27,8 @@
 }
 
 input[type="checkbox"]:disabled + label {
-  color: gray;
-  cursor: not-allowed;
+	color: gray;
+	cursor: not-allowed;
 }
 
 .checkbox-controls {

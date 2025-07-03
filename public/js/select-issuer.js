@@ -14,5 +14,5 @@ document.forms.issuer.onsubmit = function (event) {
 		popupAlert('invalid-issuer');
 		return;
 	}
-	
+
 }

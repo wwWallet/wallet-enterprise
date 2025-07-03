@@ -1,195 +1,195 @@
 .Footer {
-  background-color: var(--primary-color);
-  position: relative;
-  height: 250px;
-  padding: 30px 30px;
-  z-index: 1;
-  height: auto;
-  position: relative;
-  padding-right: 20px;
-  display: grid;
-  grid-template-columns: 1fr 50px;
+	background-color: var(--primary-color);
+	position: relative;
+	height: 250px;
+	padding: 30px 30px;
+	z-index: 1;
+	height: auto;
+	position: relative;
+	padding-right: 20px;
+	display: grid;
+	grid-template-columns: 1fr 50px;
 }
 
 .Footer a {
-  color: #fafafa;
-  transition: color 0.5s;
+	color: #fafafa;
+	transition: color 0.5s;
 	text-decoration: none;
-  font-weight: normal !important;
+	font-weight: normal !important;
 }
 
 .Footer a:hover {
-  color: #00aeef;
-  transition: color 0.5s;
+	color: #00aeef;
+	transition: color 0.5s;
 }
 
 .Footer li a {
-  font-size: 16px;
+	font-size: 16px;
 }
 
 .Footer .left,
 .Footer .right {
-  float: unset !important;
+	float: unset !important;
 }
 
 .Footer .left.content {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-gap: 15px;
-  margin-left: 40px;
+	position: relative;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-gap: 15px;
+	margin-left: 40px;
 }
 
 .Footer .left.content > div {
-  display: inline-block;
-  position: relative;
-  margin-right: 5%;
-  margin-bottom: 20px;
-  vertical-align: top;
+	display: inline-block;
+	position: relative;
+	margin-right: 5%;
+	margin-bottom: 20px;
+	vertical-align: top;
 }
 
 .Footer .right.content {
-  position: absolute;
-  float: right;
-  margin-top: 15px;
-  right: 0;
-  bottom: 40px;
-  max-width: 200px;
-  margin-left: 40px;
+	position: absolute;
+	float: right;
+	margin-top: 15px;
+	right: 0;
+	bottom: 40px;
+	max-width: 200px;
+	margin-left: 40px;
 }
 
 .Footer .copyright-area {
-  display: block;
-  position: absolute;
-  right: 0;
-  bottom: -40;
+	display: block;
+	position: absolute;
+	right: 0;
+	bottom: -40;
 }
 
 .Footer #contact li:last-child {
-  border: 0;
+	border: 0;
 }
 
 .Footer .left.content ul {
-  list-style: none;
-  padding-left: 0;
+	list-style: none;
+	padding-left: 0;
 }
 
 .Footer .left.content ul {
-  margin-left: 0;
+	margin-left: 0;
 }
 
 .Footer .right.content {
-  display: inline-block;
-  margin-right: 40px;
-  margin-top: 300px;
-  color: rgb(267, 264, 237);
+	display: inline-block;
+	margin-right: 40px;
+	margin-top: 300px;
+	color: rgb(267, 264, 237);
 }
 
 .Footer .left.content ul > li {
-  margin-bottom: 25px;
-  color: rgb(267, 264, 237);
-  font-size: 14px;
-  border-bottom: 1px solid rgb(267, 264, 237);
-  padding-bottom: 6px;
+	margin-bottom: 25px;
+	color: rgb(267, 264, 237);
+	font-size: 14px;
+	border-bottom: 1px solid rgb(267, 264, 237);
+	padding-bottom: 6px;
 }
 
 .Footer .content .header {
-  color: rgb(267, 264, 237);
+	color: rgb(267, 264, 237);
 }
 
 .Footer .left.content .header {
-  margin-bottom: 30px;
-  width: 391px;
+	margin-bottom: 30px;
+	width: 391px;
 }
 
 .Footer .subheader {
-  margin-right: 10px;
-  word-break: break-all;
+	margin-right: 10px;
+	word-break: break-all;
 }
 
 .Footer .fas {
-  color: rgb(267, 264, 237) !important;
+	color: rgb(267, 264, 237) !important;
 }
 
 .Footer #contact .header,
 .Footer #info .header,
 .Footer #services .header {
-  margin-bottom: 15px;
+	margin-bottom: 15px;
 }
 
 .Footer #info a,
 .Footer #services a {
-  font-weight: 900;
+	font-weight: 900;
 }
 
 #FooterLogo {
-  height: auto;
-  width: 110px;
+	height: auto;
+	width: 110px;
 	filter: brightness(0) invert(1);
 }
 
 #website-url {
-  margin-top: 15px;
+	margin-top: 15px;
 }
 
 .Footer h3.header {
-  font-size: 14px !important;
-  font-weight: bold;
+	font-size: 14px !important;
+	font-weight: bold;
 }
 
 @media only screen and (max-width: 1365px) {
-  .Footer .left.content {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr;
-    margin-left: 40px;
-  }
+	.Footer .left.content {
+		position: relative;
+		display: grid;
+		grid-template-columns: 1fr;
+		margin-left: 40px;
+	}
 
-  .Footer .left.content div {
-    margin-bottom: 0;
-    max-width: 391px;
-  }
+	.Footer .left.content div {
+		margin-bottom: 0;
+		max-width: 391px;
+	}
 
-  .Footer .copyright-area {
-    top: 20px;
-    position: relative;
-  }
+	.Footer .copyright-area {
+		top: 20px;
+		position: relative;
+	}
 }
 
 @media only screen and (max-width: 1500px) {
-  .Footer {
-    grid-template-columns: 1fr;
-  }
+	.Footer {
+		grid-template-columns: 1fr;
+	}
 
-  .Footer .right.content {
-    position: relative;
-    margin-top: 50px;
-  }
+	.Footer .right.content {
+		position: relative;
+		margin-top: 50px;
+	}
 }
 
 @media only screen and (max-width: 782px) {
-  .Footer .left.content ul {
-    width: 90%;
-  }
+	.Footer .left.content ul {
+		width: 90%;
+	}
 
-  .Footer > * {
-    padding-right: 20px;
-  }
+	.Footer > * {
+		padding-right: 20px;
+	}
 
-  .Footer h3.header {
-    width: 70vw !important;
-  }
+	.Footer h3.header {
+		width: 70vw !important;
+	}
 
-  .Footer .left.content,
-  .Footer .right.content {
-    margin-left: 0;
-  }
+	.Footer .left.content,
+	.Footer .right.content {
+		margin-left: 0;
+	}
 }
 
 @media only screen and (max-width: 1776px) {
-  /*fixes smaller screens footer bug */
+	/*fixes smaller screens footer bug */
 
-  .Footer {
-    height: auto !important;
-  }
+	.Footer {
+		height: auto !important;
+	}
 }

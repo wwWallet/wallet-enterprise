@@ -82,7 +82,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 
 		const extractedValues = Object.keys(this.mapping).map((authorizationServerStateColumnName) => {
 			// @ts-ignore
-			return authorizationServerState[authorizationServerStateColumnName];		
+			return authorizationServerState[authorizationServerStateColumnName];
 		}).filter((x) => x != undefined && x != null);
 
 		console.log("Extracted values = ", extractedValues);
@@ -107,7 +107,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 			.createQueryBuilder("authz_state")
 			.where("authz_state.session_id = :session_id", { session_id: result.rpState.session_id })
 			.getOne();
-		
+
 		console.log("Authorization server state = ", authorizationServerState)
 
 		if (!authorizationServerState || !vp_token || !result.rpState.claims || !result.rpState.claims[this.inputDescriptorId]) {
@@ -160,5 +160,5 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 		}
 
 	}
-	
+
 }

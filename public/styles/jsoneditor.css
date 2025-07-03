@@ -4,10 +4,10 @@
 
 .jsoneditor-string {
 	display: -webkit-box;
-  -webkit-line-clamp: 3;
+	-webkit-line-clamp: 3;
 	line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 .jsoneditor-tree tr, .jsoneditor-tree td, .jsoneditor-tree table {

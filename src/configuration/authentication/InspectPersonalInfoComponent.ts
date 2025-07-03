@@ -43,7 +43,7 @@ export class InspectPersonalInfoComponent extends AuthenticationComponent {
 		req.session.authenticationChain.inspectPersonalInfoComponent = {
 			proceed: true
 		};
-		
+
 		if (req.body.has('proceed')) {
 			return res.redirect(this.protectedEndpoint);
 		}
@@ -60,7 +60,6 @@ export class InspectPersonalInfoComponent extends AuthenticationComponent {
 			locale: locale[req.lang]
 		})
 	}
-	
-	
-}
 
+
+}

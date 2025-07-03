@@ -24,17 +24,17 @@ export class LocalAuthenticationComponent extends AuthenticationComponent {
 		req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
 		res: Response<any, Record<string, any>>,
 		next: NextFunction) {
-		
+
 		return super.authenticate(req, res, async () => {
 			if (await this.isAuthenticated(req).catch(() => false)) {
 				return next();
 			}
 
-	
+
 			if (req.method == "POST") {
 				return this.handleLoginSubmission(req, res);
 			}
-	
+
 			return this.renderLogin(req, res);
 		})
 		.catch(() => {
@@ -43,7 +43,7 @@ export class LocalAuthenticationComponent extends AuthenticationComponent {
 	}
 
 
-	
+
 	private async isAuthenticated(req: Request): Promise<boolean> {
 		console.log("Called is authentiated")
 		const users = parsePidData(path.join(__dirname, "../../../../dataset/vid-dataset.xlsx"));
@@ -103,5 +103,3 @@ export class LocalAuthenticationComponent extends AuthenticationComponent {
 		}
 	}
 }
-
-

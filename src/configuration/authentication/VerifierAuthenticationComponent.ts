@@ -22,16 +22,16 @@ export class VerifierAuthenticationComponent extends AuthenticationComponent {
 		req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
 		res: Response<any, Record<string, any>>,
 		next: NextFunction) {
-		
+
 		return super.authenticate(req, res, async () => {
 			if (await this.isAuthenticated(req)) {
 				return next();
 			}
-	
+
 			if (req.method == "POST") {
 				return this.handleLoginSubmission(req, res);
 			}
-	
+
 			return this.renderLogin(req, res);
 		})
 		.catch(() => {
@@ -40,7 +40,7 @@ export class VerifierAuthenticationComponent extends AuthenticationComponent {
 	}
 
 
-	
+
 	private async isAuthenticated(req: Request): Promise<boolean> {
 		const jws = req.cookies['verifier_jws'];
 		if (!jws) {
@@ -85,5 +85,3 @@ export class VerifierAuthenticationComponent extends AuthenticationComponent {
 		}
 	}
 }
-
-

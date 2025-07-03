@@ -5,18 +5,18 @@ import { UserAuthenticationMethod } from "./UserAuthenticationMethod.enum";
 // to make the file a module and avoid the TypeScript error
 
 declare global {
-  namespace Express {
-    export interface Request {
-      lang: Language;
+	namespace Express {
+		export interface Request {
+			lang: Language;
 			authorizationServerState: AuthorizationServerState;
-    }
+		}
 
-  }
+	}
 }
 
 
 declare module 'express-session' {
-  interface Session {
+	interface Session {
 		authorizationServerStateIdentifier?: number; // keep the id (PK) from the AuthorizationServerState
 		authenticationChain: {
 			authenticationMethodSelectionComponent?: {
@@ -41,6 +41,6 @@ declare module 'express-session' {
 				proceed?: boolean;
 			}
 		};
-    // Add any other custom properties or methods here
-  }
+		// Add any other custom properties or methods here
+	}
 }

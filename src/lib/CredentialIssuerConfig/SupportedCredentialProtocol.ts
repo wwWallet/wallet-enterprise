@@ -20,7 +20,7 @@ export interface SupportedCredentialProtocol {
 
 	getProfile(userSession: AuthorizationServerState): Promise<CredentialView | null>;
 	generateCredentialResponse(userSession: AuthorizationServerState, credentialRequest: Request, holderJWK: JWK): Promise<{ credential?: any, acceptance_token?: string }>;
-	
+
 	exportCredentialSupportedObject(): any;
 }
 

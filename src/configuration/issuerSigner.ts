@@ -8,7 +8,7 @@ import { Disclosure } from "@sd-jwt/utils";
 import { digest as hasher } from "@sd-jwt/crypto-nodejs";
 import { sign, randomBytes, KeyObject } from "crypto";
 import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
-import {  base64url, calculateJwkThumbprint, exportJWK, importX509 } from 'jose';
+import { base64url, calculateJwkThumbprint, exportJWK, importX509 } from 'jose';
 import { Document } from '@auth0/mdl';
 import { cborEncode } from "@auth0/mdl/lib/cbor";
 import { pemToBase64 } from '../util/pemToBase64';
@@ -84,17 +84,17 @@ export const issuerSigner: CredentialSigner = {
 
 		const claims: {
 			[key: string]: unknown
-    } = {
-      iat: Math.floor(issuanceDate.getTime() / 1000),
-      // set token expiration to one year
-      exp: Math.floor(expirationDate.getTime() / 1000),
-      iss: config.url,
-      sub: await calculateJwkThumbprint(payload.cnf.jwk),
-      cnf: payload.cnf,
-      vct: payload.vct,
-      'vct#integrity': payload['vct#integrity'],
-      jti: payload.jti
-    };
+		} = {
+			iat: Math.floor(issuanceDate.getTime() / 1000),
+			// set token expiration to one year
+			exp: Math.floor(expirationDate.getTime() / 1000),
+			iss: config.url,
+			sub: await calculateJwkThumbprint(payload.cnf.jwk),
+			cnf: payload.cnf,
+			vct: payload.vct,
+			'vct#integrity': payload['vct#integrity'],
+			jti: payload.jti
+		};
 
 		const disclosures = Object.keys(disclosureFrame)
 			.filter(key => disclosureFrame[key])
@@ -149,9 +149,8 @@ export const issuerSigner: CredentialSigner = {
 	saltGenerator: () => {
 		const buffer = randomBytes(16);
 		return buffer.toString('base64')
-		.replace(/\+/g, '-')
-		.replace(/\//g, '_')
-		.replace(/=/g, '');
+			.replace(/\+/g, '-')
+			.replace(/\//g, '_')
+			.replace(/=/g, '');
 	},
 }
-

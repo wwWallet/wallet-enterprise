@@ -3,7 +3,7 @@
 	font-size: 20px;
 	text-align: left;
 	padding: 0 5%;
-  margin: 0;
+	margin: 0;
 	width: auto;
 }
 
@@ -13,7 +13,7 @@
 }
 
 .details-header table{
-  width: 80%;
+	width: 80%;
 }
 
 .subtitle {
@@ -21,18 +21,18 @@
 	color: var(--secondary-color);
 	font-weight: 600;
 	padding: 2% 0 10px 5%;
-  font-size: 26px;
+	font-size: 26px;
 }
 
 .subtitle.big {
 	font-size: 28px;
-  text-align: center;
-  padding-left: 0;
-  padding-right: 0;
+	text-align: center;
+	padding-left: 0;
+	padding-right: 0;
 }
 
 .subtitle#contact {
-  padding: 2% 0 1% 0;
+	padding: 2% 0 1% 0;
 }
 
 .fa {
@@ -44,11 +44,11 @@
 }
 
 .details-form input[type=text] {
-  /* line-height: 28px; */
+	/* line-height: 28px; */
 	background: none;
 	border: 1px solid lightgray;
-  border-radius: 4px;
-  font-size: 1em;
+	border-radius: 4px;
+	font-size: 1em;
 }
 
 .details-form input[type=text]:focus-visible {
@@ -56,8 +56,8 @@
 }
 
 .details-form ::placeholder {
-  color: gray;
-  font-size: 1em;
+	color: gray;
+	font-size: 1em;
 }
 
 .err-feedback {
@@ -71,7 +71,7 @@
 }
 
 @media screen and (max-width: 800px){
-  .details.header {
-    width: 80%;
-  }
+	.details.header {
+		width: 80%;
+	}
 }

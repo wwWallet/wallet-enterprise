@@ -1,17 +1,17 @@
 
 #FlowSelection .container {
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  justify-content: center;
-  align-items: auto;
-  align-content: start
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: row;
+	justify-content: center;
+	align-items: auto;
+	align-content: start
 }
 
 
 #FlowSelection .item {
-  flex: 0 0 auto;
-  margin: 16px;
+	flex: 0 0 auto;
+	margin: 16px;
 }
 
 a {
@@ -50,22 +50,22 @@ a {
 
 #FlowSelection .box-interior-container {
 
-  display: flex;
-  flex-wrap: nowrap;
-  flex-direction: column;
-  justify-content: start;
-  align-items: center;
-  align-content: stretch
+	display: flex;
+	flex-wrap: nowrap;
+	flex-direction: column;
+	justify-content: start;
+	align-items: center;
+	align-content: stretch
 
 }
 
 #FlowSelection .box-interior-item {
-  flex: 0 0 auto;
-  margin: 10px;
+	flex: 0 0 auto;
+	margin: 10px;
 }
 
 @media only screen and (max-width: 500px) {
-	
+
 	#FlowSelection .item {
 		width: 100%;
 	}
@@ -76,7 +76,7 @@ a {
 }
 
 @media only screen and (max-width: 250px) {
-	
+
 	#FlowSelection .flow-img {
 		width: 75px;
 		height: 75px;
