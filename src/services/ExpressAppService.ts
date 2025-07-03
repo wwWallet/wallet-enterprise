@@ -193,7 +193,8 @@ export class ExpressAppService {
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
 			});
 
-			const registeredPaths = new Set<string>();
+			const dynamicVctMap = new Map();
+
 			await new Promise((resolve) => {
 				credentialConfigurationRegistryServiceEmitter.on('initialized', () => {
 					this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((configuration) => {
@@ -210,26 +211,16 @@ export class ExpressAppService {
 									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
 										path = newUrl.pathname;
 
+										console.log(`✅ Registering route: ${path}`);
+										app.get(path, async (_req, res) => {
+											return res.send({
+												...item
+											})
+										});
+
 									} else {
-										path = "/" + item.vct;
+										dynamicVctMap.set(item.vct, item)
 									}
-									if (!path) return;
-									path = '/type-metadata' + path;
-
-									if (registeredPaths.has(path)) {
-										console.warn(`⚠️ Skipping duplicate route: ${path}`);
-										return;
-									}
-									registeredPaths.add(path);
-
-									app.get(path, async (_req, res) => {
-										return res.send({
-											...item
-										})
-									});
-
-									console.log(`✅ Registering route: ${path}`);
-
 								} catch (error) {
 									console.error(`❌ Error processing item.vct (${item.vct}):`, error);
 								}
@@ -246,30 +237,20 @@ export class ExpressAppService {
 								try {
 									if (!('$id' in item)) return;
 									const newUrl = new URL(item["$id"]);
-
+									console.log('item["$id"]', item["$id"])
 									let path = null;
 									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
 										path = newUrl.pathname;
 
-									} else {
-										path = "/" + item['$id'];
+										console.log(`✅ Registering route: ${path}`);
+
+										app.get(path, async (_req, res) => {
+											return res.send({
+												...item
+											})
+										});
+
 									}
-									if (!path) return;
-									path = '/schema' + path;
-
-									if (registeredPaths.has(path)) {
-										console.warn(`⚠️ Skipping duplicate route: ${path}`);
-										return;
-									}
-									registeredPaths.add(path);
-
-									app.get(path, async (_req, res) => {
-										return res.send({
-											...item
-										})
-									});
-
-									console.log(`✅ Registering route: ${path}`);
 
 								} catch (error) {
 									console.error(`❌ Error processing item.id (${item?.id}):`, error);
@@ -277,6 +258,20 @@ export class ExpressAppService {
 							});
 						}
 					})
+
+					console.log("✅ Registering route /type-metadata VCTs:", Array.from(dynamicVctMap.keys()));
+
+					app.get('/type-metadata', async (req, res) => {
+						const vct = req.query.vct;
+						console.log('!vct', vct)
+						if (!dynamicVctMap.has(vct)) {
+							return res.status(500).send({});
+						}
+						return res.send({
+							...dynamicVctMap.get(vct)
+						})
+					});
+
 					resolve(null);
 				})
 
