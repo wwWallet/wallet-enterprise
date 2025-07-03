@@ -16,18 +16,18 @@
 }
 
 section.MainLayout {
-  width: 100%;
-  display: flex;
+	width: 100%;
+	display: flex;
 	flex-direction: row;
-  gap: 100px;
-  flex-wrap: wrap;
+	gap: 100px;
+	flex-wrap: wrap;
 }
 
 .DetailsArea section.DetailsLayout {
 	/* width: 100%; */
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 .CredentialsArea {
@@ -112,15 +112,15 @@ section.MainLayout {
 	flex-direction: column;
 	border-radius: 3.18mm;
 	width: clamp(120px, 85.6mm, 80vw);
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out; /* Set the animation duration and easing */
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.3s ease-out; /* Set the animation duration and easing */
 }
 
 .ConsentDetails {
 	width: clamp(120px, 85.6mm, 80vw);
-  overflow: hidden;
-  transition: max-height 0.3s ease-out; /* Set the animation duration and easing */
+	overflow: hidden;
+	transition: max-height 0.3s ease-out; /* Set the animation duration and easing */
 }
 
 .AuthorizationBtn {

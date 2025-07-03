@@ -16,7 +16,7 @@ export type CredentialOffer = {
 		},
 		"urn:ietf:params:oauth:grant-type:pre-authorized_code": {
 			"pre-authorized_code": string,
-      "user_pin_required": boolean
+			"user_pin_required": boolean
 		}
 	}
 }

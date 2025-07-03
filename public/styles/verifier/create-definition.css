@@ -3,9 +3,9 @@
 }
 
 #CreateDefinition .select-scopes-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 #CreateDefinition .SchemaScopes {
@@ -13,9 +13,9 @@
 }
 
 #CreateDefinition ul.ScopeList {
-  list-style-type: none; /* Remove bullets */
-  padding: 0; /* Remove padding */
-  margin: 0; /* Remove margins */
+	list-style-type: none; /* Remove bullets */
+	padding: 0; /* Remove padding */
+	margin: 0; /* Remove margins */
 }
 
 #CreateDefinition .ScopeName {
