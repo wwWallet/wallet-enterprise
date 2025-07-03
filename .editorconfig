@@ -2,3 +2,5 @@
 
 [*]
 charset = utf-8
+# Type of newline is managed by git in .gitattributes
+insert_final_newline = true
