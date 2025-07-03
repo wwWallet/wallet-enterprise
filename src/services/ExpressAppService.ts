@@ -212,16 +212,24 @@ export class ExpressAppService {
 						metadataArray.forEach((item: any) => {
 							try {
 								const newUrl = new URL(item.vct);
-								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+								let path = null;
+								if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
+									path = newUrl.pathname;
 
-								const path = newUrl.pathname;
-								console.log(`✅ Registering route: ${path}`);
+								} else {
+									path = "/" + item.vct;
+								}
+								if (!path) return;
+								path = '/type-metadata' + path;
 
 								app.get(path, async (_req, res) => {
 									return res.send({
 										...item
 									})
 								});
+
+								console.log(`✅ Registering route: ${path}`);
+
 							} catch (error) {
 								console.error(`❌ Error processing item.vct (${item.vct}):`, error);
 							}
@@ -231,17 +239,25 @@ export class ExpressAppService {
 							try {
 								if (!('$id' in item)) return;
 								const newUrl = new URL(item["$id"]);
-								if (!newUrl) return;
-								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
 
-								const path = newUrl.pathname;
-								console.log(`✅ Registering route: ${path}`);
+								let path = null;
+								if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
+									path = newUrl.pathname;
+
+								} else {
+									path = "/" + item['$id'];
+								}
+								if (!path) return;
+								path = '/schema' + path;
 
 								app.get(path, async (_req, res) => {
 									return res.send({
 										...item
 									})
 								});
+
+								console.log(`✅ Registering route: ${path}`);
+
 							} catch (error) {
 								console.error(`❌ Error processing item.id (${item?.id}):`, error);
 							}
