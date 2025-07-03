@@ -193,75 +193,89 @@ export class ExpressAppService {
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
 			});
 
-
+			const registeredPaths = new Set<string>();
 			await new Promise((resolve) => {
 				credentialConfigurationRegistryServiceEmitter.on('initialized', () => {
 					this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((configuration) => {
 						// @ts-ignore
-						if (!configuration?.metadata) return;
-						// @ts-ignore
-						const metadata = configuration?.metadata();
-						const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
+						if (configuration?.metadata) {
+							// @ts-ignore
+							const metadata = configuration?.metadata();
+							const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
 
-						// @ts-ignore
-						if (!configuration?.schema) return;
-						// @ts-ignore
-						const schema = configuration?.schema();
-						const schemaArray = Array.isArray(schema) ? schema : [schema];
+							metadataArray.forEach((item: any) => {
+								try {
+									const newUrl = new URL(item.vct);
+									let path = null;
+									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
+										path = newUrl.pathname;
 
-						metadataArray.forEach((item: any) => {
-							try {
-								const newUrl = new URL(item.vct);
-								let path = null;
-								if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
-									path = newUrl.pathname;
+									} else {
+										path = "/" + item.vct;
+									}
+									if (!path) return;
+									path = '/type-metadata' + path;
 
-								} else {
-									path = "/" + item.vct;
+									if (registeredPaths.has(path)) {
+										console.warn(`⚠️ Skipping duplicate route: ${path}`);
+										return;
+									}
+									registeredPaths.add(path);
+
+									app.get(path, async (_req, res) => {
+										return res.send({
+											...item
+										})
+									});
+
+									console.log(`✅ Registering route: ${path}`);
+
+								} catch (error) {
+									console.error(`❌ Error processing item.vct (${item.vct}):`, error);
 								}
-								if (!path) return;
-								path = '/type-metadata' + path;
+							});
+						}
 
-								app.get(path, async (_req, res) => {
-									return res.send({
-										...item
-									})
-								});
+						// @ts-ignore
+						if (configuration?.schema) {
+							// @ts-ignore
+							const schema = configuration?.schema();
+							const schemaArray = Array.isArray(schema) ? schema : [schema];
 
-								console.log(`✅ Registering route: ${path}`);
+							schemaArray.forEach((item: any) => {
+								try {
+									if (!('$id' in item)) return;
+									const newUrl = new URL(item["$id"]);
 
-							} catch (error) {
-								console.error(`❌ Error processing item.vct (${item.vct}):`, error);
-							}
-						});
+									let path = null;
+									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
+										path = newUrl.pathname;
 
-						schemaArray.forEach((item: any) => {
-							try {
-								if (!('$id' in item)) return;
-								const newUrl = new URL(item["$id"]);
+									} else {
+										path = "/" + item['$id'];
+									}
+									if (!path) return;
+									path = '/schema' + path;
 
-								let path = null;
-								if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
-									path = newUrl.pathname;
+									if (registeredPaths.has(path)) {
+										console.warn(`⚠️ Skipping duplicate route: ${path}`);
+										return;
+									}
+									registeredPaths.add(path);
 
-								} else {
-									path = "/" + item['$id'];
+									app.get(path, async (_req, res) => {
+										return res.send({
+											...item
+										})
+									});
+
+									console.log(`✅ Registering route: ${path}`);
+
+								} catch (error) {
+									console.error(`❌ Error processing item.id (${item?.id}):`, error);
 								}
-								if (!path) return;
-								path = '/schema' + path;
-
-								app.get(path, async (_req, res) => {
-									return res.send({
-										...item
-									})
-								});
-
-								console.log(`✅ Registering route: ${path}`);
-
-							} catch (error) {
-								console.error(`❌ Error processing item.id (${item?.id}):`, error);
-							}
-						});
+							});
+						}
 					})
 					resolve(null);
 				})
