@@ -81,7 +81,7 @@ export const issuerSigner: CredentialSigner = {
 			throw new Error("Could not generate signature");
 		}
 
-    payload.iat = Math.floor(issuanceDate.getTime() / 1000);
+		payload.iat = Math.floor(issuanceDate.getTime() / 1000);
 		payload.exp = Math.floor(expirationDate.getTime() / 1000);
 		payload.sub = await calculateJwkThumbprint(payload.cnf.jwk);
 		payload.iss = config.url;
@@ -94,7 +94,8 @@ export const issuerSigner: CredentialSigner = {
 			saltGenerator: this.saltGenerator,
 		});
 
-		function transform(obj: any) {
+		// Helper function to convert df to work with newer lib
+		function disclosureFrameConvert(obj: any) {
 			const result: any = {};
 			const sd = [];
 
@@ -102,7 +103,7 @@ export const issuerSigner: CredentialSigner = {
 				if (value === true) {
 					sd.push(key);
 				} else if (typeof value === 'object' && value !== null) {
-					result[key] = transform(value);
+					result[key] = disclosureFrameConvert(value);
 				}
 			}
 
@@ -113,7 +114,7 @@ export const issuerSigner: CredentialSigner = {
 			return result;
 		}
 
-		const credential = await sdjwt.issue(payload, transform(disclosureFrame), { header: headers});
+		const credential = await sdjwt.issue(payload, disclosureFrameConvert(disclosureFrame), { header: headers });
 		return { credential };
 	},
 	getPublicKeyJwk: async function () {
