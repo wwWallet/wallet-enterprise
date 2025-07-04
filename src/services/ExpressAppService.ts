@@ -237,7 +237,6 @@ export class ExpressAppService {
 								try {
 									if (!('$id' in item)) return;
 									const newUrl = new URL(item["$id"]);
-									console.log('item["$id"]', item["$id"])
 									let path = null;
 									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
 										path = newUrl.pathname;
@@ -263,7 +262,6 @@ export class ExpressAppService {
 
 					app.get('/type-metadata', async (req, res) => {
 						const vct = req.query.vct;
-						console.log('!vct', vct)
 						if (!dynamicVctMap.has(vct)) {
 							return res.status(500).send({});
 						}
