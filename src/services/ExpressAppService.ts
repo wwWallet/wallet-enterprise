@@ -193,60 +193,83 @@ export class ExpressAppService {
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
 			});
 
+			const dynamicVctMap = new Map();
 
 			await new Promise((resolve) => {
 				credentialConfigurationRegistryServiceEmitter.on('initialized', () => {
 					this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((configuration) => {
 						// @ts-ignore
-						if (!configuration?.metadata) return;
-						// @ts-ignore
-						const metadata = configuration?.metadata();
-						const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
+						if (configuration?.metadata) {
+							// @ts-ignore
+							const metadata = configuration?.metadata();
+							const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
+
+							metadataArray.forEach((item: any) => {
+								try {
+									const newUrl = new URL(item.vct);
+									let path = null;
+									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
+										path = newUrl.pathname;
+
+										console.log(`✅ Registering route: ${path}`);
+										app.get(path, async (_req, res) => {
+											return res.send({
+												...item
+											})
+										});
+
+									} else {
+										dynamicVctMap.set(item.vct, item)
+									}
+								} catch (error) {
+									console.error(`❌ Error processing item.vct (${item.vct}):`, error);
+								}
+							});
+						}
 
 						// @ts-ignore
-						if (!configuration?.schema) return;
-						// @ts-ignore
-						const schema = configuration?.schema();
-						const schemaArray = Array.isArray(schema) ? schema : [schema];
+						if (configuration?.schema) {
+							// @ts-ignore
+							const schema = configuration?.schema();
+							const schemaArray = Array.isArray(schema) ? schema : [schema];
 
-						metadataArray.forEach((item: any) => {
-							try {
-								const newUrl = new URL(item.vct);
-								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+							schemaArray.forEach((item: any) => {
+								try {
+									if (!('$id' in item)) return;
+									const newUrl = new URL(item["$id"]);
+									let path = null;
+									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
+										path = newUrl.pathname;
 
-								const path = newUrl.pathname;
-								console.log(`✅ Registering route: ${path}`);
+										console.log(`✅ Registering route: ${path}`);
 
-								app.get(path, async (_req, res) => {
-									return res.send({
-										...item
-									})
-								});
-							} catch (error) {
-								console.error(`❌ Error processing item.vct (${item.vct}):`, error);
-							}
-						});
+										app.get(path, async (_req, res) => {
+											return res.send({
+												...item
+											})
+										});
 
-						schemaArray.forEach((item: any) => {
-							try {
-								if (!('id' in item)) return;
-								const newUrl = new URL(item.id);
-								if (!newUrl) return;
-								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+									}
 
-								const path = newUrl.pathname;
-								console.log(`✅ Registering route: ${path}`);
-
-								app.get(path, async (_req, res) => {
-									return res.send({
-										...item
-									})
-								});
-							} catch (error) {
-								console.error(`❌ Error processing item.id (${item?.id}):`, error);
-							}
-						});
+								} catch (error) {
+									console.error(`❌ Error processing item.id (${item?.id}):`, error);
+								}
+							});
+						}
 					})
+
+					console.log("✅ Registering route /type-metadata VCTs:", Array.from(dynamicVctMap.keys()));
+
+					app.get('/type-metadata', async (req, res) => {
+						const vct = req.query.vct;
+						if (!dynamicVctMap.has(vct)) {
+							return res.status(500).send({});
+						}
+						return res.send({
+							...dynamicVctMap.get(vct)
+						})
+					});
+
 					resolve(null);
 				})
 

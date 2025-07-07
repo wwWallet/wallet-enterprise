@@ -23,7 +23,6 @@ import { DcqlPresentationResult } from 'dcql';
 import { pemToBase64 } from "../util/pemToBase64";
 
 const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
-const caCert = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString();
 const leafCert = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString();
 
 enum ResponseMode {
@@ -34,7 +33,6 @@ enum ResponseMode {
 
 const x5c = [
 	pemToBase64(leafCert),
-	pemToBase64(caCert)
 ];
 
 const ResponseModeSchema = z.nativeEnum(ResponseMode);
