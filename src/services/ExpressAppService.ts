@@ -78,7 +78,7 @@ export class ExpressAppService {
 			});
 
 			app.post('/openid4vci/credential', async (req, res) => {
-				this.authorizationServerService.credentialRequestHandler({ req, res });
+				return this.authorizationServerService.credentialRequestHandler({ req, res });
 			})
 
 			// @ts-ignore

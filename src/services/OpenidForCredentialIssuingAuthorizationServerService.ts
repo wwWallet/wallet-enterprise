@@ -11,7 +11,7 @@ import { Repository } from "typeorm";
 import { CONSENT_ENTRYPOINT } from "../authorization/constants";
 import base64url from "base64url";
 import { config } from "../../config";
-import { importJWK, importX509, JWK, jwtVerify, SignJWT } from "jose";
+import { importJWK, importX509, JWK, jwtVerify, SignJWT, decodeProtectedHeader } from "jose";
 import { TYPES } from "./types";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
@@ -46,6 +46,8 @@ async function verifyCNonce(c_nonce: string): Promise<boolean> {
 		return false;
 	}
 }
+
+class CredentialIssuanceError extends Error { }
 
 @injectable()
 export class OpenidForCredentialIssuingAuthorizationServerService implements OpenidForCredentialIssuingAuthorizationServerInterface {
@@ -89,7 +91,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			credential_configuration_ids: credentialConfigurationIds,
 			grants: {}
 		};
-
 
 		if (issuerState) { // if issuer state was provided
 			credentialOffer.grants = {
@@ -618,7 +619,6 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 	}
 
-
 	// @ts-ignore
 	private async tokenRequestRefreshTokenGrantHandler(ctx: { req: Request, res: Response }): Promise<void> {
 		if (ctx.res.headersSent) {
@@ -719,7 +719,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			const dpopJwt = ctx.req.headers['dpop'] as string | undefined;
 			if (!dpopJwt) {
 				console.log("CredentialRequest: DPoP header not found");
-				ctx.res.status(400).send({ error: "DPoP header not found" });
+				throw new CredentialIssuanceError('DPoP header not found');
 				return;
 			}
 
@@ -729,8 +729,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			catch (err) {
 				console.log(err)
 				console.log("CredentialRequest: Invalid access token");
-				ctx.res.status(400).send({ error: "Invalid access token" });
-				return;
+				throw new CredentialIssuanceError("Invalid access token");
 			}
 
 
@@ -739,13 +738,13 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			const { htu, htm, jti, ath } = payload;
 			if (!jti || jti === state.dpop_jti) {
 				console.log("CredentialRequest: Missing or re-used dpop jti");
-				ctx.res.status(400).send({ error: "Missing or re-used dpop jti" });
+				throw new CredentialIssuanceError('Missing or re-used dpop jti');
 				return;
 			}
 
 			if (!htu || htu !== `${config.url}/openid4vci/credential`) {
 				console.log("CredentialRequest: Invalid htu");
-				ctx.res.status(400).send({ error: "Invalid htu" });
+				throw new CredentialIssuanceError('Invalid htu');
 				return;
 			}
 
@@ -763,27 +762,24 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				return base64Url;
 			}
 
-
-
 			if (!htm || htm !== `POST`) {
 				console.log("CredentialRequest: Invalid htm");
-				ctx.res.status(400).send({ error: "Invalid htm" });
+				throw new CredentialIssuanceError('Invalid htm');
 				return;
 			}
 
 			if (!ath || ath !== await calculateAth(state.access_token as string)) {
 				console.log("CredentialRequest: Invalid ath");
-				ctx.res.status(400).send({ error: "Invalid ath" });
+				throw new CredentialIssuanceError('Invalid ath');
 				return;
 			}
 		}
-
-		await dpopVerification();
 
 		if (ctx.res.headersSent) {
 			return;
 		}
 
+		// TODO integration testing
 		async function keyAttestationVerificaton() {
 			// @ts-ignore
 			const supportedBatchSize: number = config.issuanceFlow?.batchCredentialIssuance?.batchSize ?? 1;
@@ -829,37 +825,55 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 
 		async function proofJwtVerification() {
+			if (ctx.req.body.proof?.proof_type === 'attestation') {
+				const keyAttestationVerificationResult = await keyAttestationVerificaton();
+				console.log("Key attestation result = ", keyAttestationVerificationResult)
+				if ('error' in keyAttestationVerificationResult) {
+					throw new CredentialIssuanceError(keyAttestationVerificationResult.error);
+				}
+				return keyAttestationVerificationResult.attested_keys.map(jwk => {
+					return { jwk }
+				});
+			}
+
 			// @ts-ignore
 			const supportedBatchSize: number = config.issuanceFlow?.batchCredentialIssuance?.batchSize ?? 1;
 
 			if (ctx.req.body?.proofs?.jwt && ctx.req.body?.proofs?.jwt instanceof Array && ctx.req.body?.proofs?.jwt.length > supportedBatchSize) {
-				return { error: "Proof jwt: Exceeding supported batch size" };
+				throw new CredentialIssuanceError('Proof jwt: Exceeding supported batch size');
 			}
 
-			const proofs: string[] = ctx.req.body.proofs ? ctx.req.body.proofs.jwt : [ctx.req.body.proof.jwt];
+			const proofs: string[] = ctx.req.body.proofs?.jwt || [ctx.req.body.proof?.jwt];
+			if (!proofs || !Array.isArray(proofs) || !proofs.length) {
+				throw new CredentialIssuanceError('Missing proofs from request');
+			}
+
 			const results = await Promise.all(proofs.map(async (proofJwt: string) => {
-				const [header, payload] = proofJwt.split('.').slice(0, 2).map((part: string) => JSON.parse(base64url.decode(part))) as Array<any>;
-				const { jwk, alg } = header;
-				const { nonce } = payload;
-				if (!alg || alg !== 'ES256') {
-					return { error: "Proof jwt: Invalid alg" };
-				}
-
-				if (!nonce) {
-					return { error: "Proof jwt: Invalid nonce" };
-				}
-
-				if (!(await verifyCNonce(nonce))) {
-					return { error: "c_nonce: Invalid signature for c_nonce" };
-				}
-
 				try {
-					await jwtVerify(proofJwt, await importJWK(jwk));
+					const { jwk, alg } = decodeProtectedHeader(proofJwt);
+					const { payload, protectedHeader: header } = await jwtVerify(proofJwt, await importJWK(jwk));
+					const { nonce } = payload;
+					if (!alg || alg !== 'ES256') {
+						throw new CredentialIssuanceError('Proof jwt: Invalid alg');
+					}
+
+					if (!nonce) {
+						throw new CredentialIssuanceError('Proof jwt: Invalid nonce');
+					}
+
+					if (!(await verifyCNonce(nonce))) {
+						throw new CredentialIssuanceError('c_nonce: Invalid signature for c_nonce');
+					}
+
+					return { jwk } as { jwk: JWK };
 				}
 				catch (err) {
-					return { error: "Proof jwt: Invalid signature" }
+					if (err instanceof CredentialIssuanceError) {
+						throw err;
+					} else {
+						throw new CredentialIssuanceError('Proof jwt: Invalid signature');
+					}
 				}
-				return { jwk } as { jwk: JWK };
 			}));
 
 			return results;
@@ -873,31 +887,35 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			}))).filter(r => r != null);
 
 			console.log("Credential Responses to send = ", responses);
-			ctx.res.send({
+			if (!responses.length) {
+				throw new CredentialIssuanceError('No credential match the request');
+			}
+
+			return ctx.res.send({
 				credentials: responses.map((response: any) => ({ credential: response.credential })),
 			});
 		}
 
-		if (ctx.req.body.proof?.proof_type === 'attestation') {
-			const keyAttestationVerificationResult = await keyAttestationVerificaton();
-			console.log("Key attestation result = ", keyAttestationVerificationResult)
-			if ('error' in keyAttestationVerificationResult) {
-				ctx.res.status(400).send({ error: keyAttestationVerificationResult.error });
-				return;
-			}
-			await sendCredentialResponse([...keyAttestationVerificationResult.attested_keys]);
-			return;
-		}
-		else {
+		try {
+			await dpopVerification();
+
 			const results = await proofJwtVerification();
-			if (!('error' in results) && results instanceof Array) {
-				await sendCredentialResponse(results.map((r) => 'jwk' in r ? r.jwk : null).filter(r => r !== null) as JWK[]);
-				return;
+
+			const res = await sendCredentialResponse(results.map((r) => 'jwk' in r ? r.jwk : null).filter(r => r !== null) as JWK[]);
+
+			return res;
+		} catch (err) {
+			if (err instanceof CredentialIssuanceError) {
+				return ctx.res.status(400).send({
+					error: 'invalid_request',
+					error_description: err.message
+				});
+			} else {
+				throw err;
 			}
 		}
 
 		console.log("Failed to generate credential response")
-		ctx.res.status(400).send({ error: "Failed to generate credential response" });
+		return ctx.res.status(400).send({ error: "Failed to generate credential response" });
 	}
-
 }
