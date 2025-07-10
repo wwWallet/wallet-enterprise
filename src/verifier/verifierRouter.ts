@@ -64,7 +64,7 @@ const dcqlQuerySchema = {
 			type: "array",
 			items: {
 				type: "object",
-				required: ["id", "format", "claims"],
+				required: ["id", "format"],
 				properties: {
 					id: { type: "string" },
 					format: { type: "string" },
@@ -87,7 +87,7 @@ const dcqlQuerySchema = {
 						type: "array",
 						items: {
 							type: "object",
-							required: ["path"],
+							required: ["id", "path"],
 							properties: {
 								id: { type: "string" },
 								path: {
