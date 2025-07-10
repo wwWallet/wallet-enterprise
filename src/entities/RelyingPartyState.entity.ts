@@ -59,6 +59,25 @@ export class RelyingPartyState {
 		return null;
 	}
 
+	@Column({ name: "dcql_query", type: "text", nullable: true })
+	// @ts-ignore
+	private _dcql_query?: Buffer;
+
+	set dcql_query(value: any | null) {
+		if (value) {
+			this._dcql_query = Buffer.from(JSON.stringify(value));
+			return;
+		}
+		this._dcql_query = undefined;
+	}
+
+	get dcql_query(): any | null {
+		if (this._dcql_query) {
+			return JSON.parse(this._dcql_query.toString());
+		}
+		return null;
+	}
+
 	@Column({ name: "rp_eph_kid", type: "varchar", nullable: false })
 	rp_eph_kid: string = "";
 
