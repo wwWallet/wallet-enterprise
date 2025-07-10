@@ -109,8 +109,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		exportedEphPub.kid = generateRandomIdentifier(8);
 		exportedEphPriv.kid = exportedEphPub.kid;
 		exportedEphPub.use = 'enc';
-		let transactionDataObject;
-		// TODO handle transaction data on dcql queries
+		let transactionDataObject: any[] = [];
 		if (def.input_descriptors) {
 			transactionDataObject = await Promise.all(def.input_descriptors
 				.filter(((input_desc: any) => input_desc._transaction_data_type !== undefined))
@@ -121,8 +120,18 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					return null;
 				}));
 			console.log("Transaction data = ", transactionDataObject);
+		} else if (def.credentials) {
+			transactionDataObject = await Promise.all(def.credentials
+				.filter((cred: any) => cred._transaction_data_type !== undefined)
+				.map(async (cred: any) => {
+					if (cred._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
+						return await TransactionData().generateTransactionDataRequestObject(cred.id);
+					}
+					return null;
+				}));
 		}
 
+		transactionDataObject = transactionDataObject.filter((td) => td !== null);
 		const signedRequestObject = await new SignJWT({
 			response_uri: responseUri,
 			aud: "https://self-issued.me/v2",
@@ -164,7 +173,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 				}
 			},
-			transaction_data: transactionDataObject ? (transactionDataObject.length > 0 ? transactionDataObject.filter((td) => td !== null) : undefined) : undefined,
+			transaction_data: transactionDataObject.length > 0 ? transactionDataObject : undefined
 		})
 			.setIssuedAt()
 			.setProtectedHeader({
@@ -513,10 +522,30 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				// detect if SD-JWT (has ~) or mdoc (CBOR-encoded)
 				if (typeof vp === 'string' && vp.includes('~')) {
 					// ========== SD-JWT ==========
-					const [kbjwt] = vp.split('~').reverse();
-					const [_header, ] = kbjwt.split('.');
-
-					// TODO handle transaction data on dcql queries
+					try {
+						const [kbjwt] = vp.split('~').reverse();
+						const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
+						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
+						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && descriptor._transaction_data_type !== undefined) {
+							console.log("Parsing transaction data response...");
+							if (descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
+								const validationResult = await TransactionData().validateTransactionDataResponse(descriptor.id, {
+									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
+									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
+								});
+								if (!validationResult) {
+									return { error: new Error("transaction_data validation error") };
+								}
+							}
+							console.log("VALIDATED TRANSACTION DATA");
+						}
+						else if (descriptor._transaction_data_type !== undefined) {
+							return { error: new Error("transaction_data_hashes is missing from transaction data response") };
+						}
+					} catch (e) {
+						console.error(e);
+						return { error: new Error("transaction_data validation error") };
+					}
 					const verificationResult = await ce.sdJwtVerifier.verify({
 						rawCredential: vp,
 						opts: {
