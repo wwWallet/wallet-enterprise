@@ -87,7 +87,7 @@ const dcqlQuerySchema = {
 						type: "array",
 						items: {
 							type: "object",
-							required: ["id", "path"],
+							required: ["path"],
 							properties: {
 								id: { type: "string" },
 								path: {
