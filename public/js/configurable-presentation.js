@@ -98,14 +98,16 @@ document.addEventListener("DOMContentLoaded", () => {
 	updateAttributesContainer(typeDropdown.value);
 
 	document.querySelector("#select-all").addEventListener("click", () => {
-		document.querySelectorAll("#attributes-container input[type=checkbox]").forEach(checkbox => {
+		document.querySelectorAll("#attributes-container input[type=checkbox]:not(:disabled)").forEach(checkbox => {
 			checkbox.checked = true;
 		});
+		updateRequestButtonState();
 	});
 
 	document.querySelector("#select-none").addEventListener("click", () => {
-		document.querySelectorAll("#attributes-container input[type=checkbox]").forEach(checkbox => {
+		document.querySelectorAll("#attributes-container input[type=checkbox]:not(:disabled)").forEach(checkbox => {
 			checkbox.checked = false;
 		});
+		updateRequestButtonState();
 	});
 });
