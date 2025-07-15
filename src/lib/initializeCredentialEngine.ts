@@ -58,7 +58,7 @@ export async function initializeCredentialEngine() {
 	return {
 		credentialParsingEngine,
 		msoMdocVerifier: MsoMdocVerifier({ context: ctx, pkResolverEngine: pkResolverEngine }),
-		sdJwtVerifier: SDJWTVCVerifier({ context: ctx, pkResolverEngine: pkResolverEngine }),
+		sdJwtVerifier: SDJWTVCVerifier({ context: ctx, pkResolverEngine: pkResolverEngine, httpClient: defaultHttpClient }),
 		openid4vcRendering,
 		credentialRendering,
 	};
