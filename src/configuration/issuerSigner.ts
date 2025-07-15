@@ -53,7 +53,7 @@ export const issuerSigner: CredentialSigner = {
 			.sign({
 				issuerPrivateKey: {
 					...issuerPrivateKeyJwk,
-					kid: cborEncode(issuerJwkKid), // only used to avoid undefined value on kid of the IssuerAuth
+					kid: cborEncode(issuerJwkKid) as any, // only used to avoid undefined value on kid of the IssuerAuth
 				},
 				issuerCertificate: issuerCertPem,
 				alg: 'ES256',
