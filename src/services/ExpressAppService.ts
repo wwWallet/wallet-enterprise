@@ -11,15 +11,20 @@ import fs from 'fs';
 import path from 'path';
 import * as IssuerSigner from '../configuration/issuerSigner';
 import { credentialConfigurationRegistryServiceEmitter } from './CredentialConfigurationRegistryService';
+import { pemToBase64 } from '../util/pemToBase64';
 
 var issuerX5C: string[] = [];
 var issuerPrivateKeyPem = "";
 var issuerCertPem = "";
 var rootCaBase64DER = "";
 if (config.appType == "ISSUER") {
-	issuerX5C = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.json"), 'utf-8').toString()) as string[];
+	const caCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString() as string;
 	issuerPrivateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
 	issuerCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString() as string;
+	issuerX5C = [
+		pemToBase64(issuerCertPem),
+		pemToBase64(caCertPem)
+	];
 
 	rootCaBase64DER = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString() as string;
 	rootCaBase64DER = rootCaBase64DER.replace(/-----BEGIN CERTIFICATE-----/g, '')
@@ -65,6 +70,9 @@ export class ExpressAppService {
 				this.authorizationServerService.authorizationRequestHandler({ req, res });
 			});
 
+			app.post('/openid4vci/nonce', async (req, res) => {
+				this.authorizationServerService.nonceRequestHandler({ req, res });
+			});
 			app.post('/openid4vci/token', async (req, res) => {
 				this.authorizationServerService.tokenRequestHandler({ req, res });
 			});
@@ -106,7 +114,6 @@ export class ExpressAppService {
 			}
 			app.get('/.well-known/oauth-authorization-server', async (_req, res) => {
 				const x = await Promise.all(this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations());
-				
 
 				return res.send({
 					issuer: config.url,
@@ -155,6 +162,7 @@ export class ExpressAppService {
 
 				const metadata = {
 					credential_issuer: config.url,
+					nonce_endpoint: config.url + "/openid4vci/nonce",
 					credential_endpoint: config.url + "/openid4vci/credential",
 					batch_credential_issuance: undefined,
 					display: config.display,
@@ -185,60 +193,83 @@ export class ExpressAppService {
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
 			});
 
+			const dynamicVctMap = new Map();
 
 			await new Promise((resolve) => {
 				credentialConfigurationRegistryServiceEmitter.on('initialized', () => {
 					this.credentialConfigurationRegistryService.getAllRegisteredCredentialConfigurations().map((configuration) => {
 						// @ts-ignore
-						if (!configuration?.metadata) return;
-						// @ts-ignore
-						const metadata = configuration?.metadata();
-						const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
+						if (configuration?.metadata) {
+							// @ts-ignore
+							const metadata = configuration?.metadata();
+							const metadataArray = Array.isArray(metadata) ? metadata : [metadata];
+
+							metadataArray.forEach((item: any) => {
+								try {
+									const newUrl = new URL(item.vct);
+									let path = null;
+									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
+										path = newUrl.pathname;
+
+										console.log(`✅ Registering route: ${path}`);
+										app.get(path, async (_req, res) => {
+											return res.send({
+												...item
+											})
+										});
+
+									} else {
+										dynamicVctMap.set(item.vct, item)
+									}
+								} catch (error) {
+									console.error(`❌ Error processing item.vct (${item.vct}):`, error);
+								}
+							});
+						}
 
 						// @ts-ignore
-						if (!configuration?.schema) return;
-						// @ts-ignore
-						const schema = configuration?.schema();
-						const schemaArray = Array.isArray(schema) ? schema : [schema];
+						if (configuration?.schema) {
+							// @ts-ignore
+							const schema = configuration?.schema();
+							const schemaArray = Array.isArray(schema) ? schema : [schema];
 
-						metadataArray.forEach((item: any) => {
-							try {
-								const newUrl = new URL(item.vct);
-								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+							schemaArray.forEach((item: any) => {
+								try {
+									if (!('$id' in item)) return;
+									const newUrl = new URL(item["$id"]);
+									let path = null;
+									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
+										path = newUrl.pathname;
 
-								const path = newUrl.pathname;
-								console.log(`✅ Registering route: ${path}`);
+										console.log(`✅ Registering route: ${path}`);
 
-								app.get(path, async (_req, res) => {
-									return res.send({
-										...item
-									})
-								});
-							} catch (error) {
-								console.error(`❌ Error processing item.vct (${item.vct}):`, error);
-							}
-						});
+										app.get(path, async (_req, res) => {
+											return res.send({
+												...item
+											})
+										});
 
-						schemaArray.forEach((item: any) => {
-							try {
-								if (!('id' in item)) return;
-								const newUrl = new URL(item.id);
-								if (!newUrl) return;
-								if (!(newUrl.protocol === "http:" || newUrl.protocol === "https:")) return;
+									}
 
-								const path = newUrl.pathname;
-								console.log(`✅ Registering route: ${path}`);
-
-								app.get(path, async (_req, res) => {
-									return res.send({
-										...item
-									})
-								});
-							} catch (error) {
-								console.error(`❌ Error processing item.id (${item?.id}):`, error);
-							}
-						});
+								} catch (error) {
+									console.error(`❌ Error processing item.id (${item?.id}):`, error);
+								}
+							});
+						}
 					})
+
+					console.log("✅ Registering route /type-metadata VCTs:", Array.from(dynamicVctMap.keys()));
+
+					app.get('/type-metadata', async (req, res) => {
+						const vct = req.query.vct;
+						if (!dynamicVctMap.has(vct)) {
+							return res.status(500).send({});
+						}
+						return res.send({
+							...dynamicVctMap.get(vct)
+						})
+					});
+
 					resolve(null);
 				})
 

@@ -3,19 +3,22 @@ import { config } from "../../config";
 import { CredentialSigner } from "../services/interfaces";
 import fs from 'fs';
 import path from "path";
-import { Jwt, SDJwt } from "@sd-jwt/core";
-import { Disclosure } from "@sd-jwt/utils";
+import { SDJwtInstance } from "@sd-jwt/core";
 import { digest as hasher } from "@sd-jwt/crypto-nodejs";
 import { sign, randomBytes, KeyObject } from "crypto";
 import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
 import {  base64url, calculateJwkThumbprint, exportJWK, importX509 } from 'jose';
 import { Document } from '@auth0/mdl';
 import { cborEncode } from "@auth0/mdl/lib/cbor";
+import { pemToBase64 } from '../util/pemToBase64';
 
-const issuerX5C: string[] = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.json"), 'utf-8').toString()) as string[];
 const issuerPrivateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
-const issuerCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString() as string;;
+const issuerCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString() as string;
 // const caCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/ca.crt"), 'utf-8').toString() as string;;
+
+const issuerX5C = [
+	pemToBase64(issuerCertPem),
+];
 
 importPrivateKeyPem(issuerPrivateKeyPem, 'ES256') // attempt to import the key
 importX509(issuerCertPem, 'ES256'); // attempt to import the public key
@@ -39,7 +42,6 @@ export const issuerSigner: CredentialSigner = {
 		const validFromDate = new Date();
 		validFromDate.setDate(validFromDate.getDay() - 10);
 		const expirationDate = new Date();
-
 		expirationDate.setFullYear(expirationDate.getFullYear() + 1);
 		const signedDocument = await document
 			.addValidityInfo({
@@ -47,11 +49,11 @@ export const issuerSigner: CredentialSigner = {
 				validUntil: expirationDate,
 				validFrom: validFromDate,
 			})
-			.addDeviceKeyInfo({ deviceKey: holderPublicKeyJwk })
+			.addDeviceKeyInfo({ deviceKey: {...holderPublicKeyJwk, kid: cborEncode(holderPublicKeyJwk.kid) } as any })
 			.sign({
 				issuerPrivateKey: {
 					...issuerPrivateKeyJwk,
-					kid: issuerJwkKid, // only used to avoid undefined value on kid of the IssuerAuth
+					kid: cborEncode(issuerJwkKid) as any, // only used to avoid undefined value on kid of the IssuerAuth
 				},
 				issuerCertificate: issuerCertPem,
 				alg: 'ES256',
@@ -78,41 +80,40 @@ export const issuerSigner: CredentialSigner = {
 			throw new Error("Could not generate signature");
 		}
 
-		const claims: {
-			[key: string]: unknown
-    } = {
-      iat: Math.floor(issuanceDate.getTime() / 1000),
-      // set token expiration to one year
-      expirationDate,
-      exp: Math.floor(expirationDate.getTime() / 1000),
-      iss: config.url,
-      sub: await calculateJwkThumbprint(payload.cnf.jwk),
-      cnf: payload.cnf,
-      vct: payload.vct,
-      'vct#integrity': payload['vct#integrity'],
-      jti: payload.jti
-    };
+		payload.iat = Math.floor(issuanceDate.getTime() / 1000);
+		payload.exp = Math.floor(expirationDate.getTime() / 1000);
+		payload.sub = await calculateJwkThumbprint(payload.cnf.jwk);
+		payload.iss = config.url;
 
-		const disclosures = Object.keys(disclosureFrame)
-			.filter(key => disclosureFrame[key])
-			.map(key => {
-				return new Disclosure([this.saltGenerator(), key, payload[key]])
-			});
+		const sdjwt = new SDJwtInstance({
+			signer: this.signer(),
+			hashAlg: 'sha-256',
+			hasher: this.hasherAndAlgorithm.hasher,
+			signAlg: 'ES256',
+			saltGenerator: this.saltGenerator,
+		});
 
-		const jwt = new Jwt({
-			header: { ...headers, alg: 'ES256' },
-			payload: {
-				_sd: await Promise.all(
-					disclosures.map(disclosure => { return disclosure.digest(this.hasherAndAlgorithm) })
-				),
-				...claims
+		// Helper function to convert df to work with newer lib
+		function disclosureFrameConvert(obj: any) {
+			const result: any = {};
+			const sd = [];
+
+			for (const [key, value] of Object.entries(obj)) {
+				if (value === true) {
+					sd.push(key);
+				} else if (typeof value === 'object' && value !== null) {
+					result[key] = disclosureFrameConvert(value);
+				}
 			}
-		})
-		await jwt.sign(this.signer());
 
-		const sdJwt = new SDJwt({ jwt, disclosures });
-		const credential = await sdJwt.encodeSDJwt();
+			if (sd.length > 0) {
+				result["_sd"] = sd;
+			}
 
+			return result;
+		}
+
+		const credential = await sdjwt.issue(payload, disclosureFrameConvert(disclosureFrame), { header: headers });
 		return { credential };
 	},
 	getPublicKeyJwk: async function () {

@@ -19,15 +19,21 @@ import * as z from 'zod';
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 import { TransactionData } from "../TransactionData/TransactionData";
 import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
+import { DcqlPresentationResult } from 'dcql';
+import { pemToBase64 } from "../util/pemToBase64";
 
-const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.server.key"), 'utf-8').toString();
-const x5c = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../keys/x5c.server.json")).toString()) as Array<string>;
+const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
+const leafCert = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString();
 
 enum ResponseMode {
 	DIRECT_POST = 'direct_post',
 	DIRECT_POST_JWT = 'direct_post.jwt'
 }
 
+
+const x5c = [
+	pemToBase64(leafCert),
+];
 
 const ResponseModeSchema = z.nativeEnum(ResponseMode);
 
@@ -80,7 +86,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return ctx.res.send(rpState.signed_request.toString());
 	}
 
-	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationDefinition: any, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
+	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, def: any, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
 		// create cookie and add it to response
 
 		console.log("Presentation Request: Session id used for authz req ", sessionId);
@@ -92,7 +98,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const client_id = new URL(responseUri).hostname
 
 		const [rsaImportedPrivateKey, rpEphemeralKeypair] = await Promise.all([
-			importPKCS8(privateKeyPem, 'RS256'),
+			importPKCS8(privateKeyPem, 'ES256'),
 			generateKeyPair('ECDH-ES')
 		]);
 		const [exportedEphPub, exportedEphPriv] = await Promise.all([
@@ -103,28 +109,40 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		exportedEphPub.kid = generateRandomIdentifier(8);
 		exportedEphPriv.kid = exportedEphPub.kid;
 		exportedEphPub.use = 'enc';
+		let transactionDataObject: any[] = [];
+		if (def.input_descriptors) {
+			transactionDataObject = await Promise.all(def.input_descriptors
+				.filter(((input_desc: any) => input_desc._transaction_data_type !== undefined))
+				.map(async (input_desc: any) => {
+					if (input_desc._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
+						return await TransactionData().generateTransactionDataRequestObject(input_desc.id)
+					}
+					return null;
+				}));
+			console.log("Transaction data = ", transactionDataObject);
+		} else if (def.credentials) {
+			transactionDataObject = await Promise.all(def.credentials
+				.filter((cred: any) => cred._transaction_data_type !== undefined)
+				.map(async (cred: any) => {
+					if (cred._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
+						return await TransactionData().generateTransactionDataRequestObject(cred.id);
+					}
+					return null;
+				}));
+		}
 
-		const transactionDataObject = await Promise.all(presentationDefinition.input_descriptors
-			.filter(((input_desc: any) => input_desc._transaction_data_type !== undefined))
-			.map(async (input_desc: any) => {
-				if (input_desc._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-					return await TransactionData().generateTransactionDataRequestObject(input_desc.id)
-				}
-				return null;
-			}));
-		console.log("Transaction data = ", transactionDataObject);
-
+		transactionDataObject = transactionDataObject.filter((td) => td !== null);
 		const signedRequestObject = await new SignJWT({
 			response_uri: responseUri,
 			aud: "https://self-issued.me/v2",
 			iss: new URL(responseUri).hostname,
-			client_id_scheme: "x509_san_dns",
-			client_id: client_id,
+			client_id: "x509_san_dns:" + client_id,
 			response_type: "vp_token",
 			response_mode: response_mode,
 			state: state,
 			nonce: nonce,
-			presentation_definition: serializePresentationDefinition(JSON.parse(JSON.stringify(presentationDefinition))),
+			presentation_definition: def.input_descriptors ? serializePresentationDefinition(JSON.parse(JSON.stringify(def))) : null,
+			dcql_query: def.credentials ? serializePresentationDefinition(JSON.parse(JSON.stringify(def))) : null,
 			client_metadata: {
 				"jwks": {
 					"keys": [
@@ -155,11 +173,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 				}
 			},
-			transaction_data: transactionDataObject.length > 0 ? transactionDataObject.filter((td) => td !== null) : undefined,
+			transaction_data: transactionDataObject.length > 0 ? transactionDataObject : undefined
 		})
 			.setIssuedAt()
 			.setProtectedHeader({
-				alg: 'RS256',
+				alg: 'ES256',
 				x5c: x5c,
 				typ: 'oauth-authz-req+jwt',
 			})
@@ -171,16 +189,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 
 		const newRpState = new RelyingPartyState();
-		newRpState.presentation_definition = presentationDefinition;
-		newRpState.presentation_definition_id = presentationDefinition.id;
-
+		newRpState.presentation_definition = def.input_descriptors ? def : null;
+		newRpState.dcql_query = def.credentials ? def : null;
+		newRpState.presentation_definition_id = def.id ? def.id : def.credentials[0].id;
 		newRpState.date_created = new Date();
 		newRpState.nonce = nonce;
 		newRpState.state = state;
 		newRpState.rp_eph_pub = exportedEphPub;
 		newRpState.rp_eph_priv = exportedEphPriv;
 		newRpState.rp_eph_kid = exportedEphPub.kid;
-		newRpState.audience = client_id;
+		newRpState.audience = "x509_san_dns:" + client_id;
 
 		newRpState.session_id = sessionId;
 		newRpState.signed_request = signedRequestObject;
@@ -195,7 +213,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const requestUri = config.url + "/verification/request-object?id=" + state;
 
 		const redirectParameters = {
-			client_id: client_id,
+			client_id: "x509_san_dns:" + client_id,
 			request_uri: requestUri
 		};
 
@@ -264,8 +282,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				throw new Error("Encrypted Response: vp_token is missing");
 			}
 
-			if (!payload.presentation_submission) {
-				throw new Error("Encrypted Response: presentation_submission is missing");
+			if (!payload.presentation_submission && !payload.vp_token) {
+				throw new Error("Encrypted Response: presentation_submission and vp_token are missing");
 			}
 			rpState.response_code = base64url.encode(randomUUID());
 			rpState.encrypted_response = ctx.req.body.response;
@@ -327,7 +345,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return;
 	}
 
-	private async validateVpToken(vp_token_list: string[] | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, error?: Error }> {
+	private async validatePresentationDefinitionVpToken(vp_token_list: string[] | string | Record<string, any> | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, error?: Error }> {
 		let presentationClaims: PresentationClaims = {};
 
 		for (const desc of presentation_submission.descriptor_map) {
@@ -486,6 +504,155 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return { presentationClaims };
 	}
 
+	private async validateDcqlVpToken(
+		vp_token_list: any,
+		dcql_query: any,
+		rpState: RelyingPartyState
+	): Promise<{ presentationClaims?: PresentationClaims, error?: Error }> {
+		const presentationClaims: PresentationClaims = {};
+		const ce = await initializeCredentialEngine();
+
+		for (const descriptor of dcql_query.credentials) {
+			const vp = vp_token_list[descriptor.id];
+			if (!vp) {
+				return { error: new Error(`Missing VP for descriptor ${descriptor.id}`) };
+			}
+
+			try {
+				// detect if SD-JWT (has ~) or mdoc (CBOR-encoded)
+				if (typeof vp === 'string' && vp.includes('~')) {
+					// ========== SD-JWT ==========
+					try {
+						const [kbjwt] = vp.split('~').reverse();
+						const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
+						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
+						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && descriptor._transaction_data_type !== undefined) {
+							console.log("Parsing transaction data response...");
+							if (descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
+								const validationResult = await TransactionData().validateTransactionDataResponse(descriptor.id, {
+									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
+									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
+								});
+								if (!validationResult) {
+									return { error: new Error("transaction_data validation error") };
+								}
+							}
+							console.log("VALIDATED TRANSACTION DATA");
+						}
+						else if (descriptor._transaction_data_type !== undefined) {
+							return { error: new Error("transaction_data_hashes is missing from transaction data response") };
+						}
+					} catch (e) {
+						console.error(e);
+						return { error: new Error("transaction_data validation error") };
+					}
+					const verificationResult = await ce.sdJwtVerifier.verify({
+						rawCredential: vp,
+						opts: {
+							expectedAudience: rpState.audience,
+							expectedNonce: rpState.nonce,
+						},
+					});
+					if (!verificationResult.success) {
+						return { error: new Error(`SD-JWT verification failed for ${descriptor.id}: ${verificationResult.error}`) };
+					}
+
+					const parseResult = await ce.credentialParsingEngine.parse({ rawCredential: vp });
+					if (!parseResult.success) {
+						return { error: new Error(`Parsing SD-JWT failed for ${descriptor.id}: ${parseResult.error}`) };
+					}
+
+					const signedClaims = parseResult.value.signedClaims;
+					const shaped = {
+						vct: signedClaims.vct,
+						credential_format: VerifiableCredentialFormat.DC_SDJWT,
+						claims: signedClaims,
+					};
+
+					const dcqlResult = DcqlPresentationResult.fromDcqlPresentation(
+						{ [descriptor.id]: shaped },
+						{ dcqlQuery: dcql_query }
+					);
+
+					if (!dcqlResult.valid_matches[descriptor.id]?.success) {
+						return { error: new Error(`DCQL validation failed for ${descriptor.id}`) };
+					}
+
+					const output = dcqlResult.valid_matches[descriptor.id].output;
+					if (
+						output.credential_format === VerifiableCredentialFormat.VC_SDJWT ||
+						output.credential_format === VerifiableCredentialFormat.DC_SDJWT
+					) {
+						const claimsObject = output.claims;
+						presentationClaims[descriptor.id] = Object.entries(claimsObject).map(([key, value]) => ({
+							key,
+							name: key,
+							value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+						}));
+					} else {
+						return { error: new Error(`Unexpected credential_format for descriptor ${descriptor.id}`) };
+					}
+				} else {
+					// ========== mdoc ==========
+					const verificationResult = await ce.msoMdocVerifier.verify({
+						rawCredential: vp,
+						opts: {
+							expectedAudience: rpState.audience,
+							expectedNonce: rpState.nonce,
+							holderNonce: rpState.apu_jarm_encrypted_response_header
+								? base64url.decode(rpState.apu_jarm_encrypted_response_header)
+								: undefined,
+							responseUri: this.configurationService.getConfiguration().redirect_uri,
+						},
+					});
+					if (!verificationResult.success) {
+						return { error: new Error(`mDoc verification failed for ${descriptor.id}: ${verificationResult.error}`) };
+					}
+
+					const parseResult = await ce.credentialParsingEngine.parse({ rawCredential: vp });
+					if (!parseResult.success) {
+						return { error: new Error(`Parsing mDoc failed for ${descriptor.id}: ${parseResult.error}`) };
+					}
+					const signedClaims = parseResult.value.signedClaims;
+					const shaped = {
+						credential_format: VerifiableCredentialFormat.MSO_MDOC,
+						doctype: descriptor.meta?.doctype_value,
+						namespaces: {
+							[descriptor.meta?.doctype_value]: signedClaims
+						}
+					};
+
+					const dcqlResult = DcqlPresentationResult.fromDcqlPresentation(
+						{ [descriptor.id]: shaped },
+						{ dcqlQuery: dcql_query }
+					);
+
+					if (!dcqlResult.valid_matches[descriptor.id]?.success) {
+						return { error: new Error(`DCQL validation failed for mdoc descriptor ${descriptor.id}`) };
+					}
+
+					const output = dcqlResult.valid_matches[descriptor.id].output;
+					if (output.credential_format === VerifiableCredentialFormat.MSO_MDOC) {
+						const claimsObject = output.namespaces?.[descriptor.meta?.doctype_value];
+						if (!claimsObject) {
+							return { error: new Error(`No claims found in mdoc for doctype ${descriptor.meta?.doctype_value}`) };
+						}
+						presentationClaims[descriptor.id] = Object.entries(claimsObject).map(([key, value]) => ({
+							key,
+							name: key,
+							value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+						}));
+					} else {
+						return { error: new Error(`Unexpected mdoc credential_format in output for descriptor ${descriptor.id}`) };
+					}
+				}
+			} catch (e) {
+				console.error(`Error processing descriptor ${descriptor.id}:`, e);
+				return { error: new Error(`Internal error verifying or parsing VP for descriptor ${descriptor.id}`) };
+			}
+		}
+		return { presentationClaims };
+	}
 
 	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false, error: Error }> {
 		if (!sessionId && !presentationDuringIssuanceSession) {
@@ -506,15 +673,25 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			return { status: false, error };
 		}
 
-		if (!rpState.presentation_submission || !rpState.vp_token) {
+		if (!rpState.vp_token) {
 			console.error("Presentation has not been sent. session_id " + sessionId);
 			const error = new Error("Presentation has not been sent. session_id " + sessionId);
 			return { status: false, error };
 		}
 
-		const vp_token = JSON.parse(base64url.decode(rpState.vp_token)) as string[] | string;
+		const vp_token = JSON.parse(base64url.decode(rpState.vp_token)) as string[] | string | Record<string, string>;
 
-		const { presentationClaims, error } = await this.validateVpToken(vp_token, rpState.presentation_submission as any, rpState);
+		let presentationClaims;
+		let error: Error | undefined;
+		if (rpState.dcql_query) {
+			const result = await this.validateDcqlVpToken(vp_token as any, rpState.dcql_query, rpState);
+			presentationClaims = result.presentationClaims;
+			error = result.error;
+		} else {
+			const result = await this.validatePresentationDefinitionVpToken(vp_token, rpState.presentation_submission as any, rpState);
+			presentationClaims = result.presentationClaims;
+			error = result.error;
+		}
 
 		if (error) {
 			console.error(error)
@@ -525,7 +702,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			await this.rpStateRepository.save(rpState);
 		}
 		if (rpState) {
-			return { status: true, rpState, presentations: vp_token instanceof Array ? vp_token : [vp_token] };
+			return {
+				status: true,
+				rpState,
+				presentations: Array.isArray(vp_token) ? vp_token : typeof vp_token === 'object' ? Object.values(vp_token) : [vp_token]
+			};
 		}
 		const unkownErr = new Error("Uknown error");
 		return { status: false, error: unkownErr };

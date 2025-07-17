@@ -7,8 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npx tsc",
     "dev": "nodemon --config nodemon.json --exec \"npx tsc && yarn start\"",
-    "dev-docker": "npx nodemon --config nodemon.json --exec \"npx tsc --outdir /app/dist && yarn start\"",
+    "dev-docker": "npx nodemon --inspect=0.0.0.0:9259 --config nodemon.json --exec \"npx tsc --outdir /app/dist && yarn start-debug\"",
     "start": "node -r source-map-support/register dist/src/app.js",
+    "start-debug": "node --inspect=0.0.0.0:9259 -r source-map-support/register dist/src/app.js",
     "build:prod": "rm -rf node_modules && yarn install && yarn build && rm -rf node_modules && yarn install --production",
     "snapshot": "paketo"
   },
@@ -30,6 +31,7 @@
     "client-oauth2": "^4.3.3",
     "connect-redis": "^7.0.1",
     "cookie-parser": "^1.4.6",
+		"dcql": "^0.2.22",
     "wallet-common": "./lib/wallet-common",
     "cors": "^2.8.5",
     "did-resolver": "^4.1.0",
@@ -81,7 +83,7 @@
     "@types/ws": "^8.5.3",
     "nodemon": "^2.0.19",
     "source-map-support": "^0.5.21",
-    "typescript": "^4.8.3"
+    "typescript": "^5.1.6"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
