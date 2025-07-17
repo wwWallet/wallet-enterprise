@@ -43,7 +43,7 @@ export class AuthorizationServerState {
 		}
 		this._credential_configuration_ids = undefined;
 	}
-	
+
 	get credential_configuration_ids(): string[] | null {
 		if (this._credential_configuration_ids) {
 			return JSON.parse(this._credential_configuration_ids.toString()) as string[];
@@ -115,16 +115,16 @@ export class AuthorizationServerState {
 	// 		this._credential_identifiers = value.join(" ");
 	// 		return;
 	// 	}
-	// 	this._authorization_details = undefined; 
+	// 	this._authorization_details = undefined;
 	// }
-	
+
 	// get credential_identifiers(): string[] | null {
 	// 	if (this._credential_identifiers) {
 	// 		return this._credential_identifiers.split(" ");
 	// 	}
 	// 	return null;
 	// }
-	
+
 
 
 	@Column({ name: "authentication_data", type: "blob", nullable: true, default: () => "NULL" })
@@ -177,7 +177,7 @@ export class AuthorizationServerState {
 	/**
 	 * convert source into a format ready to be transmitted
 	 * @param source
-	 * @returns 
+	 * @returns
 	 */
 	static serialize(source: AuthorizationServerState): any {
 		let dest = new AuthorizationServerState();
@@ -192,16 +192,16 @@ export class AuthorizationServerState {
 	}
 
 	/**
-	 * 
-	 * @param source 
-	 * @returns 
+	 *
+	 * @param source
+	 * @returns
 	 */
 	static deserialize(source: any): AuthorizationServerState {
 		let dest = new AuthorizationServerState();
 		dest = { ...source };
 		dest.credential_configuration_ids = source.credential_configuration_ids;
 		// dest.ediplomas_response = source.ediplomas_response;
-		// dest.credential_identifiers = source.credential_identifiers; 
+		// dest.credential_identifiers = source.credential_identifiers;
 		return dest;
 	}
 
@@ -231,5 +231,5 @@ export class AuthorizationServerState {
 // 		.catch((error: any) => {
 // 			console.error("Error saving user session:", error);
 // 		});
-	
+
 // }, 2000)

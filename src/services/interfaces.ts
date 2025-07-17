@@ -65,19 +65,19 @@ export interface CredentialConfigurationRegistry {
 
 	/**
 	 * At the moment, an authorization flow can only return a single credential type.
-	 * 
+	 *
 	 * This function will get an authorization server state as parameter and use every registered credential configuration to
 	 * get the CredentialView. If no credential view is found, the return value will be null
-	 * @param authorizationServerState 
+	 * @param authorizationServerState
 	 */
 	getCredentialView(authorizationServerState: AuthorizationServerState): Promise<CredentialView | null>;
 
 	/**
  * At the moment, an authorization flow can only return a single credential type.
- * 
+ *
  * This function will get an authorization server state as parameter and use every registered credential configuration to
  * get the raw credential response. If the authorizationServerState data is not sufficient the return value will be null
- * @param authorizationServerState 
+ * @param authorizationServerState
  */
 	getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: Request, holderPublicKeyToBind: JWK): Promise<{
 		credential?: unknown;

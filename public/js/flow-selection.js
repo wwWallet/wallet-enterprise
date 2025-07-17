@@ -26,7 +26,7 @@
 
 // device detection
 // if is mobile then hide cross device flow
-if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
- // some code..
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+	// some code..
 	document.getElementById('cross-device').style.display = 'none';
 }

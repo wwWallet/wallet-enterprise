@@ -64,13 +64,13 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 	// 				margin: 1,
 	// 				errorCorrectionLevel: 'L',
 	// 				type: 'image/png'
-	// 			}, 
+	// 			},
 	// 			(err, data) => {
 	// 				if (err) return resolve("NO_QR");
 	// 				return resolve(data);
 	// 			});
 	// 		}) as string;
-	// 		const credViewWithCredentialOffer = { 
+	// 		const credViewWithCredentialOffer = {
 	// 			...credentialView,
 	// 			credentialOfferURL: url.toString(),
 	// 			credentialOfferQR,
@@ -84,7 +84,7 @@ export async function consent(req: Request, res: Response, _next: NextFunction) 
 	return res.render('issuer/consent.pug', {
 		title: 'Consent',
 		wwwalletURL: config.wwwalletURL,
-		redirect_uri: req.authorizationServerState.redirect_uri ? new URL(req.authorizationServerState.redirect_uri).hostname : "", 
+		redirect_uri: req.authorizationServerState.redirect_uri ? new URL(req.authorizationServerState.redirect_uri).hostname : "",
 		credentialViewList: allCredentialViews,
 		grant_type: req.authorizationServerState.grant_type,
 		lang: req.lang,

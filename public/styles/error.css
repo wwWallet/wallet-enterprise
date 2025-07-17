@@ -12,10 +12,10 @@
 	border: none;
 	/* width: 100%; */
 	cursor: pointer;
-  font-family: inherit;
-  font-size: 100%;
-  line-height: 1.15;
-  margin: 0;
+	font-family: inherit;
+	font-size: 100%;
+	line-height: 1.15;
+	margin: 0;
 }
 
 #Error .arrow {
@@ -44,4 +44,3 @@
 #Error .navigation {
 	margin-top: 80px;
 }
-
