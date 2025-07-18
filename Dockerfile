@@ -1,30 +1,51 @@
-FROM node:22-bullseye-slim AS builder
+FROM node:22-bullseye-slim AS wallet-common-builder
+
+WORKDIR /lib/wallet-common
+COPY ./lib/wallet-common/package.json ./lib/wallet-common/yarn.lock ./
+RUN yarn install --pure-lockfile
+
+COPY ./lib/wallet-common/ ./
+RUN yarn build
+
+
+FROM node:22-bullseye-slim AS builder-base
 
 WORKDIR /app
+
+COPY package.json yarn.lock .
+COPY --from=wallet-common-builder /lib/wallet-common/ ./lib/wallet-common/
+RUN yarn install --pure-lockfile
+
+
+FROM builder-base AS development
+
+ENV NODE_ENV=development
+EXPOSE 8003
+CMD ["yarn", "dev-docker"]
+
+# Sources will be mounted from host, but we need some config files in the image for startup
 COPY . .
 
-RUN apt-get update -y && apt-get install -y git && rm -rf /var/lib/apt/lists/* && git clone --branch master --single-branch --depth 1 https://github.com/wwWallet/wallet-common.git ./lib/wallet-common
+# Set user last so everything is readonly by default
+USER node
 
-WORKDIR /app/lib/wallet-common
-RUN yarn install && yarn build
-
-
-WORKDIR /app
+# Don't need the rest of the sources since they'll be mounted from host
 
 
-RUN yarn cache clean && yarn install && yarn build && rm -rf node_modules/ && yarn install --production
+FROM builder-base AS builder
 
-# Production stage
+COPY . .
+RUN yarn build && yarn install --production
+
+
 FROM node:22-bullseye-slim AS production
-WORKDIR /app
 
-COPY --from=builder /app/lib/wallet-common/ ./lib/wallet-common/
-COPY --from=builder /app/node_modules ./node_modules
+WORKDIR /app
+COPY --from=builder /app/node_modules/ ./node_modules/
 COPY --from=builder /app/package.json .
 COPY --from=builder /app/dist/ ./dist/
 COPY --from=builder /app/public/ ./public/
 COPY --from=builder /app/views/ ./views/
-
 
 ENV NODE_ENV=production
 EXPOSE 8003
