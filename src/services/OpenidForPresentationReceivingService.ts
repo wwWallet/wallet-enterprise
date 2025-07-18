@@ -499,6 +499,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 				}
 			}
+			else {
+				return {
+					error: new Error("Unsupported format")
+				}
+			}
 		}
 
 		return { presentationClaims };
