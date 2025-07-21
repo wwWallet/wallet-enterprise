@@ -110,7 +110,7 @@ export class PIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 				if (!dataUri) {
 					throw new Error("Could not render svg");
 				}
-				
+
 				return {
 					credential_id: this.getId(),
 					credential_supported_object: this.exportCredentialSupportedObject(),

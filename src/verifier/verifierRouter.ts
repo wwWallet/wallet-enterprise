@@ -20,40 +20,40 @@ import Ajv from 'ajv';
 const ajv = new Ajv();
 
 const presentationDefinitionSchema = {
-  type: "object",
-  required: ["id", "input_descriptors"],
-  properties: {
-    id: { type: "string" },
-    input_descriptors: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["id", "constraints"],
-        properties: {
-          id: { type: "string" },
-          constraints: {
-            type: "object",
-            required: ["fields"],
-            properties: {
-              fields: {
-                type: "array",
-                items: {
-                  type: "object",
-                  required: ["path"],
-                  properties: {
-                    path: {
-                      type: "array",
-                      items: { type: "string" }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+	type: "object",
+	required: ["id", "input_descriptors"],
+	properties: {
+		id: { type: "string" },
+		input_descriptors: {
+			type: "array",
+			items: {
+				type: "object",
+				required: ["id", "constraints"],
+				properties: {
+					id: { type: "string" },
+					constraints: {
+						type: "object",
+						required: ["fields"],
+						properties: {
+							fields: {
+								type: "array",
+								items: {
+									type: "object",
+									required: ["path"],
+									properties: {
+										path: {
+											type: "array",
+											items: { type: "string" }
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 };
 
 const dcqlQuerySchema = {

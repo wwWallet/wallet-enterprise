@@ -18,9 +18,9 @@ export async function verifyKbJwt(vp_token: string, requirements: { aud?: string
 	try {
 		const sdJwt = vp_token.split('~').slice(0, -1).join('~') + '~';
 		const kbJwt = vp_token.split('~')[vp_token.split('~').length - 1] as string;
-	
+
 		const jwtPayload = (JSON.parse(base64url.decode(sdJwt.split('.')[1])) as any);
-	
+
 		const { alg } = JSON.parse(base64url.decode(kbJwt.split('.')[0])) as { alg: string };
 		const publicKey = await importJWK(jwtPayload.cnf.jwk, alg);
 		const { sd_hash, nonce, aud } = JSON.parse(base64url.decode(kbJwt.split('.')[1])) as any;
@@ -30,7 +30,7 @@ export async function verifyKbJwt(vp_token: string, requirements: { aud?: string
 		if (aud != requirements.aud) {
 			throw new Error("Wrong aud");
 		}
-	
+
 		if (nonce != requirements.nonce) {
 			throw new Error("Wrong nonce");
 		}
@@ -44,4 +44,3 @@ export async function verifyKbJwt(vp_token: string, requirements: { aud?: string
 	}
 
 }
-

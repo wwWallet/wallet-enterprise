@@ -1,22 +1,22 @@
 
 #ProviderSelection .GridLayout {
-  /* width: 100%;
+	/* width: 100%;
 
-  display: grid;
-  grid:
-    "header" auto
-    "main" 1fr
-    "." auto
-    / 1fr;
-  gap: 8px; */
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+	display: grid;
+	grid:
+		"header" auto
+		"main" 1fr
+		"." auto
+		/ 1fr;
+	gap: 8px; */
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 #ProviderSelection .header { grid-area: header; }
-#ProviderSelection .main { 
-	grid-area: main; 
+#ProviderSelection .main {
+	grid-area: main;
 	margin: 0 auto;
 	width: 80%;
 	display: block;
@@ -28,19 +28,19 @@
 
 #ProviderSelection .container {
 
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: flex-start;
-  align-content: flex-start;
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: flex-start;
+	align-content: flex-start;
 }
 
 
 
 #ProviderSelection .item {
-  /* flex: 0 0 auto; */
-  margin: 16px;
+	/* flex: 0 0 auto; */
+	margin: 16px;
 	width: fit-content;
 }
 
@@ -75,18 +75,18 @@
 
 #ProviderSelection .box-interior-container {
 
-  display: flex;
-  flex-wrap: nowrap;
-  flex-direction: column;
-  justify-content: start;
-  align-items: center;
-  align-content: stretch
+	display: flex;
+	flex-wrap: nowrap;
+	flex-direction: column;
+	justify-content: start;
+	align-items: center;
+	align-content: stretch
 
 }
 
 #ProviderSelection .box-interior-item {
-  flex: 0 0 auto;
-  margin: 10px;
+	flex: 0 0 auto;
+	margin: 10px;
 }
 
 
@@ -106,9 +106,9 @@
 
 
 #ProviderSelection .ProvidersGeneralLayout {
-  gap: 16px;
-  flex-wrap: wrap-reverse;
+	gap: 16px;
+	flex-wrap: wrap-reverse;
 
-  justify-content: center;
-  align-items: flex-start;
+	justify-content: center;
+	align-items: flex-start;
 }
