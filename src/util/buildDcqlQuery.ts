@@ -81,7 +81,7 @@ export function buildDcqlQuery(presentationDefinition: any, body?: any): any {
 			id: sanitizedId,
 			format,
 			meta,
-			claims
+			...(claims && Object.keys(claims).length > 0 && { claims }) //claims must be non-empty
 		});
 	}
 
@@ -89,14 +89,11 @@ export function buildDcqlQuery(presentationDefinition: any, body?: any): any {
 		credentials
 	};
 
-	// Omit credential_sets in dcql_queries with multiple credentials to avoid dcql-ts error
-	if (credentials.length === 1) {
-		dcqlQuery.credential_sets = [
-			{
-				options: [descriptorIds],
-				purpose
-			}
-		];
-	}
+	dcqlQuery.credential_sets = [
+		{
+			options: [descriptorIds],
+			purpose
+		}
+	];
 	return dcqlQuery;
 }
