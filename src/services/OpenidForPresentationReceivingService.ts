@@ -567,24 +567,24 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						vct: signedClaims.vct,
 						credential_format: VerifiableCredentialFormat.DC_SDJWT,
 						claims: signedClaims,
+						cryptographic_holder_binding: true
 					};
 
 					const dcqlResult = DcqlPresentationResult.fromDcqlPresentation(
-						{ [descriptor.id]: shaped },
+						{ [descriptor.id]: [shaped] },
 						{ dcqlQuery: dcql_query }
 					);
-
-					if (!dcqlResult.valid_matches[descriptor.id]?.success) {
+					if (!dcqlResult.credential_matches[descriptor.id]?.success) {
 						return { error: new Error(`DCQL validation failed for ${descriptor.id}`) };
 					}
 
-					const output = dcqlResult.valid_matches[descriptor.id].output;
+					const output = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].meta.output as any;
 					if (
 						output.credential_format === VerifiableCredentialFormat.VC_SDJWT ||
 						output.credential_format === VerifiableCredentialFormat.DC_SDJWT
 					) {
-						const claimsObject = output.claims;
-						presentationClaims[descriptor.id] = Object.entries(claimsObject).map(([key, value]) => ({
+						const claimsObject =  dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
+						presentationClaims[descriptor.id] = Object.entries(claimsObject.valid_claim_sets[0].output).map(([key, value]) => ({
 							key,
 							name: key,
 							value: typeof value === 'object' ? JSON.stringify(value) : String(value),
@@ -617,27 +617,27 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const shaped = {
 						credential_format: VerifiableCredentialFormat.MSO_MDOC,
 						doctype: descriptor.meta?.doctype_value,
+						cryptographic_holder_binding: true,
 						namespaces: {
 							[descriptor.meta?.doctype_value]: signedClaims
 						}
 					};
 
 					const dcqlResult = DcqlPresentationResult.fromDcqlPresentation(
-						{ [descriptor.id]: shaped },
+						{ [descriptor.id]: [shaped] },
 						{ dcqlQuery: dcql_query }
 					);
 
-					if (!dcqlResult.valid_matches[descriptor.id]?.success) {
+					if (!dcqlResult.credential_matches[descriptor.id]?.success) {
 						return { error: new Error(`DCQL validation failed for mdoc descriptor ${descriptor.id}`) };
 					}
-
-					const output = dcqlResult.valid_matches[descriptor.id].output;
+					const output = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].meta.output as any;
 					if (output.credential_format === VerifiableCredentialFormat.MSO_MDOC) {
-						const claimsObject = output.namespaces?.[descriptor.meta?.doctype_value];
+						const claimsObject =  dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
 						if (!claimsObject) {
 							return { error: new Error(`No claims found in mdoc for doctype ${descriptor.meta?.doctype_value}`) };
 						}
-						presentationClaims[descriptor.id] = Object.entries(claimsObject).map(([key, value]) => ({
+						presentationClaims[descriptor.id] = Object.entries(claimsObject.valid_claim_sets[0].output[descriptor.meta?.doctype_value]).map(([key, value]) => ({
 							key,
 							name: key,
 							value: typeof value === 'object' ? JSON.stringify(value) : String(value),
