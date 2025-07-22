@@ -196,7 +196,6 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 			"vct": this.getId(),
 			"name": "Diploma Credential",
 			"description": "This is a Bachelor Diploma verifiable credential",
-			"schema": { "type": "object" },
 			"display": [
 				{
 					"lang": "en-US",
