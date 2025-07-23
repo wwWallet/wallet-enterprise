@@ -9,7 +9,7 @@ import { CredentialSigner } from "../../services/interfaces";
 import { JWK } from "jose";
 import base64url from "base64url";
 import { Request } from "express";
-import { issuerSigner } from "../issuerSigner";
+import { issuerSigner } from "../../configuration/issuerSigner";
 import { parsePorData } from "../datasetParser";
 import path from "node:path";
 import fs from 'fs';
@@ -19,6 +19,10 @@ import { GenericAuthenticationMethodSelectionComponent } from "../../authenticat
 import { GenericVIDAuthenticationComponent } from "../../authentication/authenticationComponentTemplates/GenericVIDAuthenticationComponent";
 import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.enum";
 import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine";
+import { createSRI } from "../../lib/sriGenerator";
+import { porMetadata } from "./typeMetadata/porMetadata";
+import { porSchema } from "./schema/porSchema";
+import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
 
 const datasetName = "por-dataset.xlsx";
 parsePorData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse
@@ -32,10 +36,10 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 		return new AuthenticationChainBuilder()
 			.addAuthenticationComponent(new GenericAuthenticationMethodSelectionComponent(this.getScope() + "-auth-method", CONSENT_ENTRYPOINT, [{ code: UserAuthenticationMethod.VID_AUTH, description: "Authentication with PID" }]))
 			.addAuthenticationComponent(new GenericVIDAuthenticationComponent(this.getScope() + "-vid-authentication", CONSENT_ENTRYPOINT, {
-				"family_name": { input_descriptor_constraint_field_name: "Family Name" },
-				"given_name": { input_descriptor_constraint_field_name: "Given Name" },
-				"birth_date": { input_descriptor_constraint_field_name: "Birth Date", parser: (value: string) => new Date(value).toISOString() },
-			}, "PidMinimal", "PID", this.getScope()))
+				"family_name": { input_descriptor_constraint_field_name: "Last Name" },
+				"given_name": { input_descriptor_constraint_field_name: "First Name" },
+				"birth_date": { input_descriptor_constraint_field_name: "Date of Birth", parser: (value: string) => new Date(value).toISOString() },
+			}, "PidMinimal", "PID", this.getDisplay().name))
 			.build();
 	}
 
@@ -59,11 +63,11 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 
 	getDisplay() {
 		return {
-			name: "Power of Representation - SD-JWT VC",
+			name: `Power of Representation (${this.getFormat()})`,
 			description: "Power of Representation - SD-JWT VC",
 			background_image: { uri: config.url + "/images/background-image.png" },
-			background_color: "#1b263b",
-			text_color: "#FFFFFF",
+			background_color: "#c3b25d",
+			text_color: "#363531",
 			locale: 'en-US',
 		}
 	}
@@ -90,17 +94,15 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 		console.log("Por entry = ", porEntry)
 		porEntry = {
 			...porEntry,
-			"effective_from_date": new Date(porEntry.effective_from_date).toISOString(),
-			"effective_until_date": porEntry.effective_until_date && new Date(porEntry.effective_until_date).toISOString(),
+			"effective_from_date": undefined,
+			"effective_until_date": undefined,
 		};
 
 		const credentialView: CredentialView = await (async () => {
 			const rows: CategorizedRawCredentialViewRow[] = [
-				{ name: "Legal Name", value: porEntry.legal_name },
-				{ name: "Legal Person Identifier", value: porEntry.legal_person_identifier },
-				{ name: "Full Powers", value: porEntry.full_powers },
-				{ name: "Effective From", value: porEntry.effective_from_date },
-				{ name: "Effective Until", value: porEntry.effective_until_date },
+				{ name: "Legal entity name", value: porEntry.legal_name },
+				{ name: "Legal entity ID", value: porEntry.legal_person_identifier },
+				{ name: "Full Represent. Powers", value: porEntry.full_powers }
 			];
 			const rowsObject: CategorizedRawCredentialView = { rows };
 
@@ -156,15 +158,18 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 			"cnf": {
 				"jwk": holderPublicKeyJwk
 			},
-			"vct": this.getId(),
+			"vct": this.metadata().vct,
+			"vct#integrity": createSRI(this.metadata()),
 			"jti": `urn:por:${randomUUID()}`,
 			"legal_person_identifier": String(porEntry.legal_person_identifier),
 			"legal_name": String(porEntry.legal_name),
 			"full_powers": String(porEntry.full_powers),
 
-			"effective_from_date": new Date(porEntry.effective_from_date).toISOString(),
-			"effective_until_date": porEntry.effective_until_date && new Date(porEntry.effective_until_date).toISOString(),
+			"effective_from_date": new Date(porEntry.effective_from).toISOString(),
+			"effective_until_date": porEntry.effective_until && new Date(porEntry.effective_until).toISOString(),
 			"eService": porEntry.eService == "" ? null : porEntry.eService,
+			"issuing_authority": porEntry.issuing_authority,
+			"issuing_country": porEntry.issuing_country
 		};
 
 
@@ -175,6 +180,8 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 			effective_until_date: true,
 			effective_from_date: true,
 			eService: true,
+			issuing_authority: true,
+			issuing_country: true
 		};
 
 		const { credential } = await this.getCredentialSigner()
@@ -188,97 +195,17 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 	}
 
 	public metadata(): any {
-		return {
-			"vct": this.getId(),
-			"name": "Power of Representation",
-			"description": "Power of Representation (POR) SD-JWT VC",
-			"display": [
-				{
-					"lang": "en-US",
-					"name": "Power of Representation",
-					"rendering": {
-						"simple": {
-							"logo": {
-								"uri": config.url + "/images/logo.png",
-								"uri#integrity": "sha256-acda3404c2cf46da192cf245ccc6b91edce8869122fa5a6636284f1a60ffcd86",
-								"alt_text": "VID Logo"
-							},
-							"background_color": "#4cc3dd",
-							"text_color": "#FFFFFF"
-						},
-						"svg_templates": [
-							{
-								"uri": config.url + "/images/template-por.svg",
-							}
-						],
-					}
-				}
-			],
-			"claims": [
-				{
-					"path": ["legal_name"],
-					"display": [
-						{
-							"lang": "en-US",
-							"label": "Legal Entity Name",
-							"description": "Name of the legal entity being represented."
-						}
-					],
-					"svg_id": "legal_name"
-				},
-				{
-					"path": ["legal_person_identifier"],
-					"display": [
-						{
-							"lang": "en-US",
-							"label": "Legal entity ID",
-							"description": "Unique identifier of the legal entity being represented."
-						}
-					],
-					"svg_id": "legal_person_identifier"
-				},
-				{
-					"path": ["full_powers"],
-					"display": [
-						{
-							"lang": "en-US",
-							"label": "Full Representation Powers",
-							"description": "Indicates whether the representative is fully authorized to act on behalf of the legal entity."
-						}
-					],
-					"svg_id": "full_powers"
-				},
-				{
-					"path": ["effective_from_date"],
-					"display": [
-						{
-							"lang": "en-US",
-							"label": "Effective from",
-							"description": "Start date of valid representation (inclusive)."
-						}
-					],
-					"svg_id": "effective_from_date"
-				},
-				{
-					"path": ["effective_until_date"],
-					"display": [
-						{
-							"lang": "en-US",
-							"label": "Effective until",
-							"description": "End date of valid representation (inclusive)."
-						}
-					],
-					"svg_id": "effective_until_date"
-				},
-			],
-		}
+		return porMetadata;
+	}
 
+	public schema(): any {
+		return porSchema;
 	}
 
 	exportCredentialSupportedObject(): any {
 		return {
 			scope: this.getScope(),
-			vct: this.getId(),
+			vct: this.metadata().vct,
 			display: [this.getDisplay()],
 			format: this.getFormat(),
 			cryptographic_binding_methods_supported: ["jwk"],
@@ -287,7 +214,8 @@ export class PorSupportedCredentialSdJwt implements VCDMSupportedCredentialProto
 				jwt: {
 					proof_signing_alg_values_supported: ["ES256"]
 				}
-			}
+			},
+			claims:convertSdjwtvcToOpenid4vciClaims(this.metadata().claims, this.schema())
 		}
 	}
 }
