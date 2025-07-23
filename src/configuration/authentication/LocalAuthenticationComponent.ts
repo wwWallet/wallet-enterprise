@@ -5,7 +5,7 @@ import { AuthenticationComponent } from "../../authentication/AuthenticationComp
 import AppDataSource from "../../AppDataSource";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import locale from "../locale";
-import { parsePidData } from "../datasetParser";
+import { parsePidData } from "../../credentials/datasetParser";
 import path from "path";
 import titles from "../titles";
 

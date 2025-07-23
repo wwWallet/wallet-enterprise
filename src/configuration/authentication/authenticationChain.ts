@@ -2,7 +2,7 @@ import { CONSENT_ENTRYPOINT, VERIFIER_PANEL_ENTRYPOINT } from "../../authorizati
 import { AuthenticationChainBuilder } from "../../authentication/AuthenticationComponent";
 import { VerifierAuthenticationComponent } from "./VerifierAuthenticationComponent";
 import { GenericLocalAuthenticationComponent } from "../../authentication/authenticationComponentTemplates/GenericLocalAuthenticationComponent";
-import { parsePidData } from "../datasetParser";
+import { parsePidData } from "../../credentials/datasetParser";
 import path from "path";
 
 
