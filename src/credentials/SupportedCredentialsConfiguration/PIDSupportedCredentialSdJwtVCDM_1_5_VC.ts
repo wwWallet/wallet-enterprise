@@ -126,7 +126,7 @@ export class PIDSupportedCredentialSdJwtVCDM_1_5_VC implements VCDMSupportedCred
 					json: { ...vid,
 						expiry_date: undefined,
 						issuance_date: undefined
-					 },
+					},
 					credentialImageSvgTemplate: svgText,
 					sdJwtVcMetadataClaims: this.metadata().claims,
 				})
@@ -238,7 +238,7 @@ export class PIDSupportedCredentialSdJwtVCDM_1_5_VC implements VCDMSupportedCred
 			age_in_years: true,
 			age_birth_year: true,
 			document_number: true,
-			birth_date: true, 
+			birth_date: true,
 			issuing_authority: false,
 			issuing_country: false,
 			issuing_jurisdiction: false,
