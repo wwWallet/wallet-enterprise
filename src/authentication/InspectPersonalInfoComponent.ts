@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
-import { AuthenticationComponent } from "../../authentication/AuthenticationComponent";
-import locale from "../locale";
+import { AuthenticationComponent } from "./AuthenticationComponent";
+import locale from "../configuration/locale";
 
 export class InspectPersonalInfoComponent extends AuthenticationComponent {
 

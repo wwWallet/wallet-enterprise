@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
-import { AuthenticationComponent } from "../../authentication/AuthenticationComponent";
-import AppDataSource from "../../AppDataSource";
-import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
-import locale from "../locale";
-import { parsePidData } from "../datasetParser";
+import { AuthenticationComponent } from "./AuthenticationComponent";
+import AppDataSource from "../AppDataSource";
+import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
+import locale from "../configuration/locale";
+import { parsePidData } from "../credentials/datasetParser";
 import path from "path";
-import titles from "../titles";
+import titles from "../configuration/titles";
 
 
 
