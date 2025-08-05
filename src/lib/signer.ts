@@ -65,7 +65,7 @@ export const signer: CredentialSigner = {
 		const issuerSigned = prepared.get('issuerSigned');
 		console.log("Issuer signed = ", issuerSigned)
 		const issuedSignedCborEncoded = cborEncode(issuerSigned);
-		const credential = base64url.encode(issuedSignedCborEncoded);
+		const credential = base64url.encode(issuedSignedCborEncoded as any);
 		return { credential: credential };
 
 	},
@@ -133,11 +133,11 @@ export const signer: CredentialSigner = {
 	},
 	signer: function () {
 		return async (input: string) => {
-			const result = sign(null, Buffer.from(input), {
+			const result = sign(null, Buffer.from(input) as any, {
 				dsaEncoding: 'ieee-p1363',
 				key: await this.key() as KeyObject
 			})
-			return Buffer.from(result).toString('base64url')
+			return Buffer.from(result as any).toString('base64url')
 		}
 	},
 	hasherAndAlgorithm: {
