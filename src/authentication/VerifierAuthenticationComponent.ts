@@ -2,9 +2,9 @@ import { NextFunction, Request, Response } from "express";
 import { ParamsDictionary } from "express-serve-static-core";
 import { SignJWT, jwtVerify } from "jose";
 import { ParsedQs } from "qs";
-import { AuthenticationComponent } from "../../authentication/AuthenticationComponent";
-import { config } from "../../../config";
-import locale from "../locale";
+import { AuthenticationComponent } from "./AuthenticationComponent";
+import { config } from "../../config";
+import locale from "../configuration/locale";
 
 
 
