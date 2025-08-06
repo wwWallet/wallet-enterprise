@@ -133,11 +133,11 @@ export const signer: CredentialSigner = {
 	},
 	signer: function () {
 		return async (input: string) => {
-			const result = sign(null, Buffer.from(input) as any, {
+			const result = sign(null, new Uint8Array(Buffer.from(input)), {
 				dsaEncoding: 'ieee-p1363',
 				key: await this.key() as KeyObject
 			})
-			return Buffer.from(result as any).toString('base64url')
+			return result.toString('base64url')
 		}
 	},
 	hasherAndAlgorithm: {
