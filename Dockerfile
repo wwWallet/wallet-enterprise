@@ -3,13 +3,7 @@ FROM node:22-bullseye-slim AS builder
 WORKDIR /app
 COPY . .
 
-RUN yarn install && yarn build
-
-
-WORKDIR /app
-
-
-RUN yarn cache clean && yarn install && yarn build && rm -rf node_modules/ && yarn install --production
+RUN apt-get update -y && apt-get install -y git && rm -rf /var/lib/apt/lists/* && yarn install && yarn build && rm -rf node_modules/ && yarn install --production
 
 # Production stage
 FROM node:22-bullseye-slim AS production
