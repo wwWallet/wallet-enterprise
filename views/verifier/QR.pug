@@ -14,8 +14,10 @@ block layout-content
 
 					.buttons
 						- const modifiedURL = authorizationRequestURL.replace("openid4vp://cb", wwwalletURL)
+						- const customSchemeURL = authorizationRequestURL.replace("openid4vp://cb", 'web+wallet:')
 						button.Btn.Medium.openwithwalletbutton(type="submit" name="action" value=`${modifiedURL}`) Open with wwWallet
 						button.Btn.Medium.openwithwalletbuttonnative(type="submit" name="action" value=`${authorizationRequestURL}`) Open with a native wallet
+						button.Btn.Medium.openwithwalletbuttonweb(type="submit" name="action" value=`${customSchemeURL}`) Open with web+wallet
 
 					input(type='hidden' name='state' id='state' value=state)
 					input(type='hidden' name='authorizationRequestQR' id='authorizationRequestQR' value=authorizationRequestQR)
