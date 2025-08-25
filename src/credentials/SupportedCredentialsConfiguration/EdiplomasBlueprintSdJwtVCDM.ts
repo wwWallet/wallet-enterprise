@@ -19,7 +19,7 @@ import { GenericLocalAuthenticationComponent } from "../../authentication/authen
 import { CONSENT_ENTRYPOINT } from "../../authorization/constants";
 import { GenericAuthenticationMethodSelectionComponent } from "../../authentication/authenticationComponentTemplates/GenericAuthenticationMethodSelectionComponent";
 import { GenericVIDAuthenticationComponent } from "../../authentication/authenticationComponentTemplates/GenericVIDAuthenticationComponent";
-import { InspectPersonalInfoComponent } from "../../configuration/authentication/InspectPersonalInfoComponent";
+import { InspectPersonalInfoComponent } from "../../authentication/InspectPersonalInfoComponent";
 import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.enum";
 import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine";
 import { createSRI } from "../../lib/sriGenerator";
