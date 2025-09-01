@@ -155,7 +155,13 @@ export const pidMetadata1_5 = {
 				"portrait"
 			],
 			"sd": "always",
-			"svg_id": "picture"
+			"svg_id": "picture",
+			"display": [
+				{
+					"lang": "en-US",
+					"label": "Portrait"
+				}
+			]
 		},
 		{
 			"path": [
@@ -688,7 +694,13 @@ export const pidMetadata1_8 = {
 				"picture"
 			],
 			"sd": "always",
-			"svg_id": "picture"
+			"svg_id": "picture",
+			"display": [
+				{
+					"lang": "en-US",
+					"label": "Picture"
+				}
+			]
 		},
 		{
 			"path": [
