@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 
 import { arrayBufferToBase64Url } from '../util/arrayBufferToBase64Url';
 
-export const TransactionData = () => {
+export const ExampleTransactionData = () => {
 	const webcrypto = crypto.subtle;
 
 	const generateTransactionDataRequestObject = async (descriptorId: string) => {
@@ -30,5 +30,14 @@ export const TransactionData = () => {
 			}
 			return false;
 		}
+	}
+}
+
+export const TransactionData = (transactionDataType: 'urn:wwwallet:example_transaction_data_type') => {
+	switch(transactionDataType) {
+		case "urn:wwwallet:example_transaction_data_type":
+			return ExampleTransactionData();
+		default:
+			return null;
 	}
 }

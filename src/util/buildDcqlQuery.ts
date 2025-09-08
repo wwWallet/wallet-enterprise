@@ -81,6 +81,7 @@ export function buildDcqlQuery(presentationDefinition: any, body?: any): any {
 			id: sanitizedId,
 			format,
 			meta,
+			_transaction_data_type: descriptor._transaction_data_type,
 			...(claims && Object.keys(claims).length > 0 && { claims }) //claims must be non-empty
 		});
 	}

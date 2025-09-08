@@ -113,21 +113,30 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		if (def.input_descriptors) {
 			transactionDataObject = await Promise.all(def.input_descriptors
 				.filter(((input_desc: any) => input_desc._transaction_data_type !== undefined))
-				.map(async (input_desc: any) => {
-					if (input_desc._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-						return await TransactionData().generateTransactionDataRequestObject(input_desc.id)
+				.map(async (cred: any) => {
+					if (!cred._transaction_data_type) {
+						return null;
 					}
-					return null;
+					const txData = TransactionData(cred._transaction_data_type);
+					if (!txData) {
+						return null;
+					}
+					return await txData
+						.generateTransactionDataRequestObject(cred.id);
 				}));
-			console.log("Transaction data = ", transactionDataObject);
 		} else if (def.credentials) {
 			transactionDataObject = await Promise.all(def.credentials
 				.filter((cred: any) => cred._transaction_data_type !== undefined)
 				.map(async (cred: any) => {
-					if (cred._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-						return await TransactionData().generateTransactionDataRequestObject(cred.id);
+					if (!cred._transaction_data_type) {
+						return null;
 					}
-					return null;
+					const txData = TransactionData(cred._transaction_data_type);
+					if (!txData) {
+						return null;
+					}
+					return await txData
+						.generateTransactionDataRequestObject(cred.id);
 				}));
 		}
 
@@ -388,14 +397,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
 						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && input_descriptor._transaction_data_type !== undefined) {
 							console.log("Parsing transaction data response...");
-							if (input_descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-								const validationResult = await TransactionData().validateTransactionDataResponse(input_descriptor.id, {
-									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
-									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
-								});
-								if (!validationResult) {
-									return { error: new Error("transaction_data validation error") };
-								}
+							const txData = TransactionData(input_descriptor._transaction_data_type);
+							if (!txData) {
+								return { error: new Error("specific transaction_data not supported error") };
+							}
+							const validationResult = await txData.validateTransactionDataResponse(input_descriptor.id, {
+								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
+								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
+							});
+							if (!validationResult) {
+								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
 						}
@@ -527,15 +538,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
 						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
 						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && descriptor._transaction_data_type !== undefined) {
-							console.log("Parsing transaction data response...");
-							if (descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-								const validationResult = await TransactionData().validateTransactionDataResponse(descriptor.id, {
-									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
-									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
-								});
-								if (!validationResult) {
-									return { error: new Error("transaction_data validation error") };
-								}
+							const txData = TransactionData(descriptor._transaction_data_type);
+							if (!txData) {
+								return { error: new Error("specific transaction_data not supported error") };
+							}
+							const validationResult = await txData.validateTransactionDataResponse(descriptor.id, {
+								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
+								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
+							});
+							if (!validationResult) {
+								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
 						}
@@ -583,7 +595,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						output.credential_format === VerifiableCredentialFormat.VC_SDJWT ||
 						output.credential_format === VerifiableCredentialFormat.DC_SDJWT
 					) {
-						const claimsObject =  dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
+						const claimsObject = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
 						presentationClaims[descriptor.id] = Object.entries(claimsObject.valid_claim_sets[0].output).map(([key, value]) => ({
 							key,
 							name: key,
@@ -631,7 +643,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 					const output = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].meta.output as any;
 					if (output.credential_format === VerifiableCredentialFormat.MSO_MDOC) {
-						const claimsObject =  dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
+						const claimsObject = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
 						if (!claimsObject) {
 							return { error: new Error(`No claims found in mdoc for doctype ${descriptor.meta?.doctype_value}`) };
 						}
