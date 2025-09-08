@@ -618,9 +618,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						credential_format: VerifiableCredentialFormat.MSO_MDOC,
 						doctype: descriptor.meta?.doctype_value,
 						cryptographic_holder_binding: true,
-						namespaces: {
-							[descriptor.meta?.doctype_value]: signedClaims
-						}
+						namespaces: signedClaims
 					};
 
 					const dcqlResult = DcqlPresentationResult.fromDcqlPresentation(
