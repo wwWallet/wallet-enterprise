@@ -30,6 +30,6 @@ export function createSRI(
 		throw new Error('Unsupported input type for createSRI');
 	}
 
-	const hash = crypto.createHash(algorithm).update(buffer).digest('base64');
+	const hash = crypto.createHash(algorithm).update(buffer as any).digest('base64');
 	return `${algorithm}-${hash}`;
 }

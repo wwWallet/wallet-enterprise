@@ -256,7 +256,14 @@ verifierRouter.post('/callback', async (req, res) => {
 		const { credentialParsingEngine } = await initializeCredentialEngine();
 		const result = await credentialParsingEngine.parse({ rawCredential: p });
 		if (result.success) {
-			credentialImages.push(result.value.metadata.credential.image.dataUri);
+			let imageUri = undefined;
+			try {
+				const dataUriFn = result.value.metadata.credential.image?.dataUri;
+				imageUri = dataUriFn ? await dataUriFn() : undefined;
+			} catch (err) {
+				console.warn('Failed to load credential image:', err);
+			}
+			credentialImages.push(imageUri);
 			credentialPayloads.push(result.value.signedClaims);
 		}
 	}

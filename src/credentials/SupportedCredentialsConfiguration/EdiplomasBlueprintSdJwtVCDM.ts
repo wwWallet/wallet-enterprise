@@ -5,7 +5,7 @@ import { VCDMSupportedCredentialProtocol } from "../../lib/CredentialIssuerConfi
 import { formatDateDDMMYYYY } from "../../lib/formatDate";
 import { AuthorizationServerState } from "../../entities/AuthorizationServerState.entity";
 import { CredentialView } from "../../authorization/types";
-import { issuerSigner } from "../issuerSigner";
+import { issuerSigner } from "../../configuration/issuerSigner";
 import { CredentialSigner } from "../../services/interfaces";
 import { JWK } from "jose";
 import { parseDiplomaData } from "../datasetParser";
@@ -19,10 +19,10 @@ import { GenericLocalAuthenticationComponent } from "../../authentication/authen
 import { CONSENT_ENTRYPOINT } from "../../authorization/constants";
 import { GenericAuthenticationMethodSelectionComponent } from "../../authentication/authenticationComponentTemplates/GenericAuthenticationMethodSelectionComponent";
 import { GenericVIDAuthenticationComponent } from "../../authentication/authenticationComponentTemplates/GenericVIDAuthenticationComponent";
-import { InspectPersonalInfoComponent } from "../authentication/InspectPersonalInfoComponent";
+import { InspectPersonalInfoComponent } from "../../authentication/InspectPersonalInfoComponent";
 import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.enum";
 import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine";
-
+import { createSRI } from "../../lib/sriGenerator";
 
 const datasetName = "diploma-dataset.xlsx";
 
@@ -71,11 +71,11 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 	}
 	getDisplay() {
 		return {
-			name: "Bachelor Diploma - SD-JWT VC",
-			description: "Bachelor Diploma - SD-JWT VC",
+			name: `Bachelor Diploma (${this.getFormat()})`,
 			background_image: { uri: config.url + "/images/background-image.png" },
-			background_color: "#003476",
-			text_color: "#FFFFFF",
+			logo: { uri: config.url + "/images/diploma-logo.png" },
+			background_color: "#b1d3ff",
+			text_color: "#ffffff",
 			locale: 'en-US',
 		}
 	}
@@ -117,10 +117,14 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 
 		const { credentialRendering } = await initializeCredentialEngine();
 		const dataUri = await credentialRendering.renderSvgTemplate({
-			json: { ...diplomaEntry },
+			json: {
+				...diplomaEntry,
+				expiry_date: undefined,
+			},
 			credentialImageSvgTemplate: svgText,
 			sdJwtVcMetadataClaims: this.metadata().claims,
 		});
+
 		if (!dataUri) {
 			throw new Error("Could not render svg");
 		}
@@ -160,15 +164,16 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 			"cnf": {
 				"jwk": holderPublicKeyJwk
 			},
-			"vct": this.getId(),
+			"vct": this.metadata().vct,
+			"vct#integrity": createSRI(this.metadata()),
 			"jti": `urn:credential:diploma:${randomUUID()}`,
 			"family_name": diplomaEntry.family_name,
 			"given_name": diplomaEntry.given_name,
 			"title": diplomaEntry.title,
 			"grade": String(diplomaEntry.grade),
 			"eqf_level": String(diplomaEntry.eqf_level),
-			"graduation_date": new Date(diplomaEntry.graduation_date).toISOString(),
-			"expiry_date": new Date(diplomaEntry.expiry_date).toISOString(),
+			"graduation_date": new Date(diplomaEntry.graduation_date).toISOString().split('T')[0],
+			"expiry_date": new Date(diplomaEntry.expiry_date).toISOString().split('T')[0],
 		};
 
 		const disclosureFrame = {
@@ -176,7 +181,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 			given_name: true,
 			title: true,
 			grade: true,
-			eqf_level: true,
+			eqf_level: false, // no ability to hide
 			graduation_date: true,
 		}
 
@@ -193,7 +198,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 
 	public metadata(): any {
 		return {
-			"vct": this.getId(),
+			"vct": 'urn:credential:diploma',
 			"name": "Diploma Credential",
 			"description": "This is a Bachelor Diploma verifiable credential",
 			"display": [
@@ -301,7 +306,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 	exportCredentialSupportedObject(): any {
 		return {
 			scope: this.getScope(),
-			vct: this.getId(),
+			vct: this.metadata().vct,
 			format: this.getFormat(),
 			display: [this.getDisplay()],
 			cryptographic_binding_methods_supported: ["jwk"],
