@@ -26,6 +26,7 @@ export const config = {
 	},
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
+	vctRegistryUri: "VCT_REGISTRY_URI",
 	clockTolerance: 60,
 	siteConfig: {
 		"name": "wwWallet Verifier",

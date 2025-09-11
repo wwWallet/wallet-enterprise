@@ -27,6 +27,7 @@ export const config = {
 	appType: 'ISSUER', //ISSUER,VERIFIER
 	wwwalletURL: "WWWALLET_URL",
 	trustedRootCertificates: [],
+	vctRegistryUri: "VCT_REGISTRY_URI",
 	clockTolerance: 60,
 	siteConfig: {
 		"name": "wwWallet Verifier",
