@@ -1405,10 +1405,10 @@ date-fns@^2.29.3:
   resolved "https://registry.npmjs.org/date-fns/-/date-fns-2.29.3.tgz"
   integrity sha512-dDCnyH2WnnKusqvZZ6+jA1O51Ibt8ZMRNkDZdyAyK4YfbDwa/cEmuztzG5pk6hqlp9aSBPYcjOlktquahGwGeA==
 
-dcql@^0.2.22:
-  version "0.2.22"
-  resolved "https://registry.yarnpkg.com/dcql/-/dcql-0.2.22.tgz#aeae2f7f47b8bce5fe2c4a8857df8406feb91230"
-  integrity sha512-4CfuUoJ1/dfj4aOMwCGF3HEHsPpRUyALbst5Dx3qcNkIXNFpVqebKVYd58X9/ZlKN/wWJxPS34S7uQ0fcbzS5A==
+dcql@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/dcql/-/dcql-0.4.2.tgz#eb0ae62be3332567ac32f149b9920c298e3048a8"
+  integrity sha512-vp7/Z97pBMIxI5zEnuYlztdTC/JCxzHVZun0a7+al2zaw3caZNgPUvdesdpmrLkDmAD6CosiipkpUs+DGKRS8g==
   dependencies:
     valibot "1.0.0-beta.8"
 
@@ -3200,8 +3200,9 @@ void-elements@^3.1.0:
   resolved "https://registry.npmjs.org/void-elements/-/void-elements-3.1.0.tgz"
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
-wallet-common@./lib/wallet-common:
+"wallet-common@git+https://github.com/wwwallet/wallet-common.git#4ab0808b84a0aeb590600cfd21dc9c16abcbb5f5":
   version "0.0.1"
+  resolved "git+https://github.com/wwwallet/wallet-common.git#4ab0808b84a0aeb590600cfd21dc9c16abcbb5f5"
   dependencies:
     "@auth0/mdl" "^2.2.0"
     "@noble/curves" "^1.9.4"
