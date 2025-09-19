@@ -75,15 +75,15 @@ export class AuthorizationServerState {
 	user_pin?: string;
 
 	@Column({ name: "user_pin_required", type: "boolean", nullable: true })
-	user_pin_required?:  boolean;
+	user_pin_required?: boolean;
 
 	@Column({ name: "credential_issuer_identifier", type: "varchar", nullable: true })
 	credential_issuer_identifier?: string;
 
-	@Column({ name: "request_uri", type: "varchar", nullable: true})
+	@Column({ name: "request_uri", type: "varchar", nullable: true })
 	request_uri?: string;
 
-	@Column({ name: "request_uri_expiration_timestamp", type: "int", nullable: true})
+	@Column({ name: "request_uri_expiration_timestamp", type: "int", nullable: true })
 	request_uri_expiration_timestamp?: number;
 
 	@Column({ name: "dpop_jwk", type: "varchar", nullable: true })
@@ -173,6 +173,20 @@ export class AuthorizationServerState {
 
 	@Column({ name: "authentication_method", type: "enum", enum: UserAuthenticationMethod, nullable: true })
 	authenticationMethod?: UserAuthenticationMethod;
+
+	@Column({ name: "holder_jwks", type: "blob", nullable: true, default: () => "NULL" })
+	private _holder_jwks?: string;
+	get holder_jwks(): any | null {
+		if (this._holder_jwks) {
+			return JSON.parse(this._holder_jwks.toString()) as any;
+		}
+		else {
+			return null;
+		}
+	}
+	set holder_jwks(d: any) {
+		this._holder_jwks = JSON.stringify(d);
+	}
 
 	/**
 	 * convert source into a format ready to be transmitted

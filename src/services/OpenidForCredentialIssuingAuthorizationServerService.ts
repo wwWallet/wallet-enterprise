@@ -648,6 +648,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 	}
 
 	async tokenRequestHandler(ctx: { req: Request, res: Response }): Promise<void> {
+		console.log("===BEGIN TOKEN ENDPOINT===");
 		await this.tokenRequestGrantTypeHandler(ctx);
 		await this.tokenRequestAuthorizationCodeHandler(ctx);  // updates ctx.req.authorizationServerState based on received code in case of authorization_code grant type
 		await this.tokenRequestRefreshTokenGrantHandler(ctx); // updates ctx.req.authorizationServerState based on received refresh_token in case of refresh_token grant type
@@ -708,7 +709,12 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return;
 		}
 
-		async function dpopVerification() {
+		if (ctx.req.path.endsWith('/credential') && ctx.req.body.credential_configuration_id && typeof ctx.req.body.credential_configuration_id === 'string') {
+			state.credential_configuration_ids = [ ctx.req.body.credential_configuration_id ];
+			await this.authorizationServerStateRepository.save(state);
+		}
+
+		async function dpopVerification(forDeferredFlow: boolean = false) {
 			if (!state) {
 				const msg = "CredentialRequest: Invalid access_token";
 				console.log(msg);
@@ -743,11 +749,21 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 				return;
 			}
 
-			if (!htu || htu !== `${config.url}/openid4vci/credential`) {
-				console.log("CredentialRequest: Invalid htu");
-				ctx.res.status(400).send({ error: "Invalid htu" });
-				return;
+			if (!forDeferredFlow) {
+				if (!htu || (htu !== `${config.url}/openid4vci/credential`)) {
+					console.log("CredentialRequest: Invalid htu");
+					ctx.res.status(400).send({ error: "Invalid htu" });
+					return;
+				}
 			}
+			else {
+				if (!htu || (htu !== `${config.url}/openid4vci/credential/deferred`)) {
+					console.log("DeferredCredentialRequest: Invalid htu");
+					ctx.res.status(400).send({ error: "Invalid htu" });
+					return;
+				}
+			}
+
 
 			async function calculateAth(accessToken: string) {
 				// Encode the access token as a Uint8Array
@@ -778,7 +794,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			}
 		}
 
-		await dpopVerification();
+		await dpopVerification(ctx.req.body.transaction_id && ctx.req.path.endsWith('/credential/deferred'));
 
 		if (ctx.res.headersSent) {
 			return;
@@ -865,39 +881,86 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			return results;
 		}
 
-		const credentialConfigurationRegistryService = this.credentialConfigurationRegistryService;
-
-		async function sendCredentialResponse(holderJwks: JWK[]) {
-			const responses = (await Promise.all(holderJwks.map(async (jwk) => {
-				return credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, jwk);
-			}))).filter(r => r != null);
-
-			console.log("Credential Responses to send = ", responses);
-			ctx.res.send({
-				credentials: responses.map((response: any) => ({ credential: response.credential })),
-			});
+		if (ctx.req.body.transaction_id && ctx.req.path.endsWith('/credential/deferred')) {
+			await this.deferredCredentialRequestHandler(ctx);
+			return;
 		}
-
-		if (ctx.req.body.proof?.proof_type === 'attestation') {
+		else if (ctx.req.body.proof?.proof_type === 'attestation') {
 			const keyAttestationVerificationResult = await keyAttestationVerificaton();
 			console.log("Key attestation result = ", keyAttestationVerificationResult)
 			if ('error' in keyAttestationVerificationResult) {
 				ctx.res.status(400).send({ error: keyAttestationVerificationResult.error });
 				return;
 			}
-			await sendCredentialResponse([...keyAttestationVerificationResult.attested_keys]);
+			await this.sendCredentialResponse(ctx, [...keyAttestationVerificationResult.attested_keys]);
 			return;
 		}
 		else {
 			const results = await proofJwtVerification();
 			if (!('error' in results) && results instanceof Array) {
-				await sendCredentialResponse(results.map((r) => 'jwk' in r ? r.jwk : null).filter(r => r !== null) as JWK[]);
+				await this.sendCredentialResponse(ctx, results.map((r) => 'jwk' in r ? r.jwk : null).filter(r => r !== null) as JWK[]);
 				return;
 			}
 		}
 
 		console.log("Failed to generate credential response")
 		ctx.res.status(400).send({ error: "Failed to generate credential response" });
+	}
+
+	private async sendCredentialResponse(ctx: { req: Request, res: Response }, holderJwks?: JWK[]) {
+		let keys: JWK[] = [];
+		if (holderJwks) {
+			ctx.req.authorizationServerState.holder_jwks = holderJwks;
+			await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState);
+			keys = holderJwks;
+		}
+		else {
+			keys = ctx.req.authorizationServerState.holder_jwks;
+		}
+
+		const responses = (await Promise.all(keys.map(async (jwk) => {
+			return this.credentialConfigurationRegistryService.getCredentialResponse(ctx.req.authorizationServerState, ctx.req, jwk);
+		}))).filter(r => r != null);
+
+		if (responses.filter((r) => !r.credential).length > 0 && ctx.req.path.endsWith('/credential')) { // if at least one credential is not ready, then respond with transaction_id
+			ctx.res.send({
+				transaction_id: ctx.req.authorizationServerState.session_id,
+			});
+			return;
+		}
+		else if (responses.filter((r) => !r.credential).length > 0 && responses.filter((r) => r.error?.message === 'issuance_pending').length > 0 && ctx.req.body.transaction_id && ctx.req.path.endsWith('/credential/deferred')) {  // Deferred endpoint: if at least one credential is not ready, then respond with 404 issuance_pending
+			ctx.res.status(400).send({
+				error: "issuance_pending",
+			});
+			return;
+		}
+		else if ((responses.filter((r) => !r.credential).length > 0 && responses.filter((r) => r.error?.message === 'invalid_transaction_id').length > 0) && ctx.req.body.transaction_id && ctx.req.path.endsWith('/credential/deferred')) {  // Deferred endpoint: if at least one credential is not ready, then respond with 404 issuance_pending
+			ctx.res.status(400).send({
+				error: "invalid_transaction_id",
+			});
+			return;
+		}
+		else if (responses.length === 0 && ctx.req.body.transaction_id && ctx.req.path.endsWith('/credential/deferred')) {
+			ctx.res.status(400).send({
+				error: "invalid_transaction_id",
+			});
+			return;
+		}
+
+		if (ctx.req.body.transaction_id && ctx.req.path.endsWith('/credential/deferred')) { // invalidate transaction
+			ctx.req.authorizationServerState.session_id = undefined;
+			ctx.req.authorizationServerState.holder_jwks = [];
+			await this.authorizationServerStateRepository.save(ctx.req.authorizationServerState);
+		}
+		console.log("Credential Responses to send = ", responses);
+		ctx.res.send({
+			credentials: responses.map((response: any) => ({ credential: response.credential })),
+		});
+	}
+
+	private async deferredCredentialRequestHandler(ctx: { req: Request, res: Response }) {
+		await this.sendCredentialResponse(ctx); // send credentials without holderjwks parameter
+		return;
 	}
 
 }

@@ -47,16 +47,23 @@ export class CredentialConfigurationRegistryService implements CredentialConfigu
 		console.log("Authorization server state before credential response: ", authorizationServerState);
 		console.log("Authorized for scopes: ", authorizationServerState.scope);
 		for (const conf of this.credentialConfigurations) {
-			if (
-				!credentialRequest.body.credential_configuration_id || // credential request body must include "credential_configuration_id" param
-				!authorizationServerState.scope?.split(',').includes(conf.getScope()) || // filter out the non authorized scopes
-				credentialRequest.body.credential_configuration_id !== conf.getId()) { // filter out if it not requested on this Credential Request
+			if (credentialRequest.path.endsWith('/credential') &&
+				(!credentialRequest.body.credential_configuration_id || // credential request body must include "credential_configuration_id" param
+					!authorizationServerState.scope?.split(',').includes(conf.getScope()) || // filter out the non authorized scopes
+					credentialRequest.body.credential_configuration_id !== conf.getId())) { // filter out if it not requested on this Credential Request
+				continue;
+			}
+			if (credentialRequest.path.endsWith('/credential/deferred') &&
+				(!credentialRequest.body.transaction_id ||
+					!authorizationServerState.scope?.split(',').includes(conf.getScope()) || // filter out the non authorized scopes
+					!authorizationServerState.credential_configuration_ids || authorizationServerState.credential_configuration_ids[0] !== conf.getId())) {
 				continue;
 			}
 			const result = await conf.generateCredentialResponse(authorizationServerState, credentialRequest, holderPublicKeyToBind).catch((err) => {
-				console.log(err)
+				console.log("ERR: ", err)
 				return null;
 			});
+			console.log("Result = ", result);
 			if (result != null) {
 				return result;
 			}

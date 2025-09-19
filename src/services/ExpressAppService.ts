@@ -81,6 +81,10 @@ export class ExpressAppService {
 				this.authorizationServerService.credentialRequestHandler({ req, res });
 			})
 
+			app.post('/openid4vci/credential/deferred', async (req, res) => {
+				this.authorizationServerService.credentialRequestHandler({ req, res });
+			})
+
 			// @ts-ignore
 			if (config.appType == "ISSUER" && IssuerSigner.issuerSigner) {
 				app.get('/.well-known/jwks', async (_req, res) => {
@@ -164,6 +168,7 @@ export class ExpressAppService {
 					credential_issuer: config.url,
 					nonce_endpoint: config.url + "/openid4vci/nonce",
 					credential_endpoint: config.url + "/openid4vci/credential",
+					deferred_credential_endpoint: config.url + "/openid4vci/credential/deferred",
 					batch_credential_issuance: undefined,
 					display: config.display,
 					credential_configurations_supported: credential_configurations_supported,
