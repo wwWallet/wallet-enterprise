@@ -30,6 +30,10 @@ enum ResponseMode {
 	DIRECT_POST_JWT = 'direct_post.jwt'
 }
 
+const RESERVED_SDJWT_TOPLEVEL = new Set([
+	'iss','sub','aud','nbf','exp','iat','jti','vct','cnf',
+	'transaction_data_hashes','transaction_data_hashes_alg', 'vct#integrity'
+]);
 
 const x5c = [
 	pemToBase64(leafCert),
@@ -595,11 +599,25 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						output.credential_format === VerifiableCredentialFormat.VC_SDJWT ||
 						output.credential_format === VerifiableCredentialFormat.DC_SDJWT
 					) {
-						const claimsObject = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
-						presentationClaims[descriptor.id] = Object.entries(claimsObject.valid_claim_sets[0].output).map(([key, value]) => ({
-							key,
-							name: key,
-							value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+							const claims = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0]?.claims as any;
+							const dcqlOut = claims?.valid_claim_sets?.[0]?.output as Record<string, unknown> | undefined;
+							const signedClaims = parseResult.value.signedClaims as Record<string, unknown>;
+
+							const requestedAll = descriptor?.claims == null;
+
+							// Get all claims if no specific claims were requested
+							const source: Record<string, unknown> =
+								requestedAll
+									? signedClaims
+									: (dcqlOut && Object.keys(dcqlOut).length > 0 ? dcqlOut : signedClaims);
+
+							const filteredSource = Object.fromEntries(
+								Object.entries(source).filter(([k]) => !RESERVED_SDJWT_TOPLEVEL.has(k) && !k.startsWith('_'))
+							);
+							presentationClaims[descriptor.id] = Object.entries(filteredSource).map(([key, value]) => ({
+								key,
+								name: key,
+								value: typeof value === 'object' ? JSON.stringify(value) : String(value),
 						}));
 					} else {
 						return { error: new Error(`Unexpected credential_format for descriptor ${descriptor.id}`) };
