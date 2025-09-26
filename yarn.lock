@@ -3200,9 +3200,9 @@ void-elements@^3.1.0:
   resolved "https://registry.npmjs.org/void-elements/-/void-elements-3.1.0.tgz"
   integrity sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==
 
-"wallet-common@git+https://github.com/wwwallet/wallet-common.git#0e00b2516161919123c3f6a35d1a1ab95c46c3e6":
+"wallet-common@git+https://github.com/wwwallet/wallet-common.git#17a427b198bec16c484ed15e7e3ee0fb87574a7f":
   version "0.0.1"
-  resolved "git+https://github.com/wwwallet/wallet-common.git#0e00b2516161919123c3f6a35d1a1ab95c46c3e6"
+  resolved "git+https://github.com/wwwallet/wallet-common.git#17a427b198bec16c484ed15e7e3ee0fb87574a7f"
   dependencies:
     "@auth0/mdl" "^2.2.0"
     "@noble/curves" "^1.9.4"
