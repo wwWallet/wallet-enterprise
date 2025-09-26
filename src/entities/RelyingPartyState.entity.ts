@@ -156,6 +156,9 @@ export class RelyingPartyState {
 		return null;
 	}
 
+	@Column({ name: "completed", type: "boolean", nullable: true, default: () => "NULL" })
+	completed: boolean | null = null;
+
 	@Column({ name: "presentation_during_issuance_session", type: "varchar", nullable: true, default: () => "NULL" })
 	presentation_during_issuance_session: string | null = null;
 
