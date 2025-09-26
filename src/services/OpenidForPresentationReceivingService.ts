@@ -660,7 +660,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 						const signedJptClaims = parseResult.value.signedJptClaims;
 						const shaped = {
-							vct: issuerHeader.vct.endsWith(':dc:jpt') ? issuerHeader.vct.substring(0, issuerHeader.vct.length - 7) : issuerHeader.vct, // TODO: Unhack this
+							vct: issuerHeader.vct?.endsWith(':dc:jpt') ? issuerHeader.vct.substring(0, issuerHeader.vct.length - 7) : issuerHeader.vct, // TODO: Unhack this
 							credential_format: VerifiableCredentialFormat.DC_SDJWT, // TODO: Unhack this
 							claims: signedJptClaims.simple,
 							cryptographic_holder_binding: true,
