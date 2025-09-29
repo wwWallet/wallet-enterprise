@@ -32,7 +32,7 @@
     "connect-redis": "^7.0.1",
     "cookie-parser": "^1.4.6",
     "dcql": "^0.4.2",
-    "wallet-common": "git+https://github.com/wwWallet/wallet-common.git#886a6f1c4dbb4992d82b9ba10feab01d59fc0644",
+    "wallet-common": "git+https://github.com/wwWallet/wallet-common.git#ce020cd8a18c80a8c7803eb37f62336802578f70",
     "cors": "^2.8.5",
     "did-resolver": "^4.1.0",
     "express": "^4.18.1",
