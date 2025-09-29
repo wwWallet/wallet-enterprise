@@ -696,7 +696,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return { presentationClaims };
 	}
 
-	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false, error: Error }> {
+	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string, cleanupSession: boolean = false): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false, error: Error }> {
 		if (!sessionId && !presentationDuringIssuanceSession) {
 			console.error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given");
 			const error = new Error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given")
@@ -739,11 +739,14 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			console.error(error)
 			return { status: false, error };
 		}
-		if (!rpState.claims && presentationClaims) {
-			rpState.claims = presentationClaims;
+		if (cleanupSession) {
 			rpState.state = "";
 			rpState.session_id = ""; // invalidate session id
 			rpState.response_code = "";
+			await this.rpStateRepository.save(rpState);
+		}
+		if (!rpState.claims && presentationClaims) {
+			rpState.claims = presentationClaims;
 			await this.rpStateRepository.save(rpState);
 		}
 		if (rpState) {
