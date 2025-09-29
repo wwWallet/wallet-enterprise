@@ -105,7 +105,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 		console.log("Result = ", result)
 		const authorizationServerState = await AppDataSource.getRepository(AuthorizationServerState)
 			.createQueryBuilder("authz_state")
-			.where("authz_state.session_id = :session_id", { session_id: result.rpState.session_id })
+			.where("authz_state.session_id = :session_id", { session_id: req.cookies['session_id'] })
 			.getOne();
 
 		console.log("Authorization server state = ", authorizationServerState)
