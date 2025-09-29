@@ -83,7 +83,7 @@ export interface CredentialConfigurationRegistry {
  */
 	getCredentialResponse(authorizationServerState: AuthorizationServerState, credentialRequest: Request, holderPublicKeyToBind: JWK): Promise<{
 		credential?: unknown;
-		acceptance_token?: string;
+		error?: Error;
 	} | null>;
 }
 

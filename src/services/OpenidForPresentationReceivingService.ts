@@ -31,6 +31,10 @@ enum ResponseMode {
 	DIRECT_POST_JWT = 'direct_post.jwt'
 }
 
+const RESERVED_SDJWT_TOPLEVEL = new Set([
+	'iss','sub','aud','nbf','exp','iat','jti','vct','cnf',
+	'transaction_data_hashes','transaction_data_hashes_alg', 'vct#integrity'
+]);
 
 const x5c = [
 	pemToBase64(leafCert),
@@ -114,21 +118,30 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		if (def.input_descriptors) {
 			transactionDataObject = await Promise.all(def.input_descriptors
 				.filter(((input_desc: any) => input_desc._transaction_data_type !== undefined))
-				.map(async (input_desc: any) => {
-					if (input_desc._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-						return await TransactionData().generateTransactionDataRequestObject(input_desc.id)
+				.map(async (cred: any) => {
+					if (!cred._transaction_data_type) {
+						return null;
 					}
-					return null;
+					const txData = TransactionData(cred._transaction_data_type);
+					if (!txData) {
+						return null;
+					}
+					return await txData
+						.generateTransactionDataRequestObject(cred.id);
 				}));
-			console.log("Transaction data = ", transactionDataObject);
 		} else if (def.credentials) {
 			transactionDataObject = await Promise.all(def.credentials
 				.filter((cred: any) => cred._transaction_data_type !== undefined)
 				.map(async (cred: any) => {
-					if (cred._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-						return await TransactionData().generateTransactionDataRequestObject(cred.id);
+					if (!cred._transaction_data_type) {
+						return null;
 					}
-					return null;
+					const txData = TransactionData(cred._transaction_data_type);
+					if (!txData) {
+						return null;
+					}
+					return await txData
+						.generateTransactionDataRequestObject(cred.id);
 				}));
 		}
 
@@ -389,14 +402,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
 						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && input_descriptor._transaction_data_type !== undefined) {
 							console.log("Parsing transaction data response...");
-							if (input_descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-								const validationResult = await TransactionData().validateTransactionDataResponse(input_descriptor.id, {
-									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
-									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
-								});
-								if (!validationResult) {
-									return { error: new Error("transaction_data validation error") };
-								}
+							const txData = TransactionData(input_descriptor._transaction_data_type);
+							if (!txData) {
+								return { error: new Error("specific transaction_data not supported error") };
+							}
+							const validationResult = await txData.validateTransactionDataResponse(input_descriptor.id, {
+								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
+								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
+							});
+							if (!validationResult) {
+								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
 						}
@@ -471,14 +486,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					try {
 						if (Object.keys(presentationHeader).includes('transaction_data_hashes') && input_descriptor._transaction_data_type !== undefined) {
 							console.log("Parsing transaction data response...");
-							if (input_descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-								const validationResult = await TransactionData().validateTransactionDataResponse(input_descriptor.id, {
-									transaction_data_hashes: (presentationHeader as any).transaction_data_hashes as string[],
-									transaction_data_hashes_alg: (presentationHeader as any).transaction_data_hashes_alg as string[] | undefined
-								});
-								if (!validationResult) {
-									return { error: new Error("transaction_data validation error") };
-								}
+							const txData = TransactionData(input_descriptor._transaction_data_type);
+							if (!txData) {
+								return { error: new Error("specific transaction_data not supported error") };
+							}
+							const validationResult = await txData.validateTransactionDataResponse(input_descriptor.id, {
+								transaction_data_hashes: presentationHeader.transaction_data_hashes as string[],
+								transaction_data_hashes_alg: presentationHeader.transaction_data_hashes_alg as string[] | undefined
+							});
+							if (!validationResult) {
+								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
 						}
@@ -620,15 +637,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 						try {
 							if (Object.keys(presentationHeader).includes('transaction_data_hashes') && descriptor._transaction_data_type !== undefined) {
-								console.log("Parsing transaction data response...");
-								if (descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-									const validationResult = await TransactionData().validateTransactionDataResponse(descriptor.id, {
-										transaction_data_hashes: presentationHeader.transaction_data_hashes as string[],
-										transaction_data_hashes_alg: presentationHeader.transaction_data_hashes_alg as string[] | undefined
-									});
-									if (!validationResult) {
-										return { error: new Error("transaction_data validation error") };
-									}
+								const txData = TransactionData(descriptor._transaction_data_type);
+								if (!txData) {
+									return { error: new Error("specific transaction_data not supported error") };
+								}
+								const validationResult = await txData.validateTransactionDataResponse(descriptor.id, {
+									transaction_data_hashes: presentationHeader.transaction_data_hashes as string[],
+									transaction_data_hashes_alg: presentationHeader.transaction_data_hashes_alg as string[] | undefined
+								});
+								if (!validationResult) {
+									return { error: new Error("transaction_data validation error") };
 								}
 								console.log("VALIDATED TRANSACTION DATA");
 							}
@@ -703,15 +721,16 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
 						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
 						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && descriptor._transaction_data_type !== undefined) {
-							console.log("Parsing transaction data response...");
-							if (descriptor._transaction_data_type === "urn:wwwallet:example_transaction_data_type") {
-								const validationResult = await TransactionData().validateTransactionDataResponse(descriptor.id, {
-									transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
-									transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
-								});
-								if (!validationResult) {
-									return { error: new Error("transaction_data validation error") };
-								}
+							const txData = TransactionData(descriptor._transaction_data_type);
+							if (!txData) {
+								return { error: new Error("specific transaction_data not supported error") };
+							}
+							const validationResult = await txData.validateTransactionDataResponse(descriptor.id, {
+								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
+								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
+							});
+							if (!validationResult) {
+								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
 						}
@@ -762,11 +781,25 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						output.credential_format === VerifiableCredentialFormat.VC_SDJWT ||
 						output.credential_format === VerifiableCredentialFormat.DC_SDJWT
 					) {
-						const claimsObject =  dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
-						presentationClaims[descriptor.id] = Object.entries(claimsObject.valid_claim_sets[0].output).map(([key, value]) => ({
-							key,
-							name: key,
-							value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+							const claims = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0]?.claims as any;
+							const dcqlOut = claims?.valid_claim_sets?.[0]?.output as Record<string, unknown> | undefined;
+							const signedClaims = parseResult.value.signedClaims as Record<string, unknown>;
+
+							const requestedAll = descriptor?.claims == null;
+
+							// Get all claims if no specific claims were requested
+							const source: Record<string, unknown> =
+								requestedAll
+									? signedClaims
+									: (dcqlOut && Object.keys(dcqlOut).length > 0 ? dcqlOut : signedClaims);
+
+							const filteredSource = Object.fromEntries(
+								Object.entries(source).filter(([k]) => !RESERVED_SDJWT_TOPLEVEL.has(k) && !k.startsWith('_'))
+							);
+							presentationClaims[descriptor.id] = Object.entries(filteredSource).map(([key, value]) => ({
+								key,
+								name: key,
+								value: typeof value === 'object' ? JSON.stringify(value) : String(value),
 						}));
 					} else {
 						return { error: new Error(`Unexpected credential_format for descriptor ${descriptor.id}`) };
@@ -800,9 +833,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						credential_format: VerifiableCredentialFormat.MSO_MDOC,
 						doctype: descriptor.meta?.doctype_value,
 						cryptographic_holder_binding: true,
-						namespaces: {
-							[descriptor.meta?.doctype_value]: signedClaims
-						}
+						namespaces: signedClaims
 					};
 
 					const dcqlResult = DcqlPresentationResult.fromDcqlPresentation(
@@ -815,7 +846,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 					const output = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].meta.output as any;
 					if (output.credential_format === VerifiableCredentialFormat.MSO_MDOC) {
-						const claimsObject =  dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
+						const claimsObject = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
 						if (!claimsObject) {
 							return { error: new Error(`No claims found in mdoc for doctype ${descriptor.meta?.doctype_value}`) };
 						}
