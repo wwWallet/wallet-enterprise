@@ -301,7 +301,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 		}
 
 		if (ctx.req.body.auth_session && ctx.req.body.presentation_during_issuance_session) {
-			const result = await this.presentationReceivingService.getPresentationBySessionIdOrPresentationDuringIssuanceSession(undefined, ctx.req.body.presentation_during_issuance_session);
+			const result = await this.presentationReceivingService.getPresentationBySessionIdOrPresentationDuringIssuanceSession(undefined, ctx.req.body.presentation_during_issuance_session, false);
 			if (result.status == true) {
 				const authorization_code = crypto.randomBytes(60).toString('base64url');
 				ctx.req.authorizationServerState.authorization_code = authorization_code;

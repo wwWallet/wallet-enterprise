@@ -41,7 +41,8 @@
 	color: black;
 	overflow: auto;
 	/* resize: vertical; */
-	width: 500px;
+	width: -webkit-fill-available;
+	max-width: 600px;
 	height: 110px;
 }
 

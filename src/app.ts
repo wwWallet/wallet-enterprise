@@ -35,6 +35,15 @@ async function main() {
 
 
 	app.use(cors({ credentials: true, origin: true }));
+
+	app.use(
+		'/images',
+		express.static(path.join(__dirname, '../../public/images'), {
+			maxAge: '30d',
+			immutable: true,
+		})
+	);
+
 	// __dirname is "/path/to/dist/src"
 	app.use(express.static(path.join(__dirname, '../../public')));
 
@@ -136,7 +145,7 @@ async function main() {
 	});
 
 
-		app.get('/metadata/:filename', (req, res) => {
+	app.get('/metadata/:filename', (req, res) => {
 		if (req.params.filename !== 'site.webmanifest') {
 			return res.status(404).send();
 		}
