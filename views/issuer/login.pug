@@ -11,9 +11,9 @@ block layout-content
 						input#csrf-token(type="hidden" name="csrf-token" value="")
 
 						.input-wrap.item
-							input.input-field#username(type='text' name='username' placeholder='Username')
+							input.input-field#username(type='text' name='username' placeholder='Username' value=defaultUsers[0].username)
 						.input-wrap.item
-							input.input-field#password(type='password' name='password' placeholder='Password')
+							input.input-field#password(type='password' name='password' placeholder='Password' value=defaultUsers[0].password)
 
 						p.invalid-feedback#invalid-username #{locale.login.error.emptyUsername}
 						p.invalid-feedback#invalid-password #{locale.login.error.emptyPassword}
@@ -28,19 +28,13 @@ block layout-content
 						if defaultUsers
 							.or-container
 								.line
-								span OR
-								.line
 
 							// Dropdown list of credentials
 							.login-flex
 								.login-select-flex
-									.select-container(style="flex-grow: 1;")
-										select#credential-list(style="width: 100%")
-											option(value="") Select credentials
-											for user of defaultUsers
-												option(value=`{"username": "${user.username}", "password": "${user.password}"}`) #{user.username}
-									button.Btn.Small#use-credential(disabled style="flex-shrink: 0;")
-										span Login
+									a#switch-user(href="#")
+										| Use alternative user: 
+										span#alternative-user
 
 	link(rel="stylesheet" href="/styles/login.css")
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -49,7 +43,27 @@ block layout-content
 	script(src="/js/alert.js")
 	script(src="/js/login.js")
 	script.
+		function updateUsers() {
+				$('#alternative-user').text(window.toggleAbleUsers[(window.selectedUser + 1) % 2].username); // get the other one
+				$('#username').val(window.toggleAbleUsers[window.selectedUser].username)
+				$('#password').val(window.toggleAbleUsers[window.selectedUser].password)
+		}
 		$(document).ready(function() {
+			const defaultUsers = !{JSON.stringify(defaultUsers)};
+			window.toggleAbleUsers = null;
+			if (defaultUsers.length >= 2) {
+				window.selectedUser = 0;
+				window.toggleAbleUsers = defaultUsers.slice(0, 2);
+				updateUsers();
+			} else {
+				$('#switch-user').hide();
+			}
+
+			$('#switch-user').on('click', function() {
+				window.selectedUser = (window.selectedUser+1) % 2; // toggle
+				updateUsers();
+			})
+
 			$('#credential-list').select2({
 				placeholder: "Select credentials",
 				allowClear: true,

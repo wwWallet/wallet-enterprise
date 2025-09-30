@@ -79,6 +79,7 @@
 	flex-direction: row;
 	align-items: center;
 	gap: 10px;
+	padding-top: 15px;
 }
 
 .select2-container {
@@ -100,4 +101,8 @@ button[disabled] {
 
 .select2-container--default .select2-selection--single .select2-selection__arrow {
 	height: 35px!important;
+}
+
+#Login a, #Login a:visited {
+	color: var(--link-light-blue);
 }
