@@ -268,6 +268,7 @@ verifierRouter.post('/callback', async (req, res) => {
 		}
 	}
 
+	console.log("Presentation messages: ", result.presentationInfo);
 	return res.render('verifier/success.pug', {
 		lang: req.lang,
 		locale: locale[req.lang],
@@ -275,7 +276,7 @@ verifierRouter.post('/callback', async (req, res) => {
 		verificationTimestamp: date_created.toISOString(),
 		presentationClaims: claims,
 		credentialPayloads: credentialPayloads,
-		presentationMessages: result.presentationMessages,
+		presentationInfo: result.presentationInfo,
 		credentialImages: credentialImages,
 	})
 })

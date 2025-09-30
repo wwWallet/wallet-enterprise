@@ -31,8 +31,6 @@ block layout-content
 				.claims-tables
 					each descriptorId in Object.keys(presentationClaims)
 						h4= descriptorId
-						each message in presentationMessages[descriptorId]
-							p #{message}
 						.table-container(style="overflow-x: auto;")
 							table
 								thead
@@ -44,7 +42,10 @@ block layout-content
 										tr
 											td= claim.name
 											td.claim-value(data-raw-value=String(claim.value))= claim.value
-
+						if presentationInfo[descriptorId]
+							h5 Additional info
+							each message in presentationInfo[descriptorId]
+								p #{message}
 				h3 Credentials
 
 				// Text area to display credentials JSON format

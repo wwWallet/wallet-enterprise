@@ -11,9 +11,6 @@ export type PresentationClaims = {
 	[descriptor_id: string]: Array<ClaimRecord>;
 }
 
-export type PresentationMessages = {
-	[descriptor_id: string]: Array<string>;
-}
 
 @Entity({ name: "relying_party_state" })
 export class RelyingPartyState {
