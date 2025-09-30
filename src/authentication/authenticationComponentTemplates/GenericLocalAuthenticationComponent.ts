@@ -83,6 +83,7 @@ export class GenericLocalAuthenticationComponent extends AuthenticationComponent
 	private async renderFailedLogin(req: Request, res: Response): Promise<any> {
 		res.render('issuer/login', {
 			title: titles.index,
+			defaultUsers: this.defaultUsers,
 			lang: req.lang,
 			locale: locale[req.lang],
 			failed: true

@@ -11,9 +11,9 @@ block layout-content
 						input#csrf-token(type="hidden" name="csrf-token" value="")
 
 						.input-wrap.item
-							input.input-field#username(type='text' name='username' placeholder='Username' value=defaultUsers[0].username)
+							input.input-field#username(type='text' name='username' placeholder='Username')
 						.input-wrap.item
-							input.input-field#password(type='password' name='password' placeholder='Password' value=defaultUsers[0].password)
+							input.input-field#password(type='password' name='password' placeholder='Password')
 
 						p.invalid-feedback#invalid-username #{locale.login.error.emptyUsername}
 						p.invalid-feedback#invalid-password #{locale.login.error.emptyPassword}
@@ -25,16 +25,15 @@ block layout-content
 							button.Btn.Large
 								| #{locale.login.btnText}
 
-						if defaultUsers
-							.or-container
+							.or-container#or
 								.line
 
-							// Dropdown list of credentials
-							.login-flex
-								.login-select-flex
-									a#switch-user(href="#")
-										| Use alternative user:
-										span#alternative-user
+								.login-flex
+									.login-select-flex
+										span
+											| Use alternative user:
+										a#switch-user(href="#")
+											span#alternative-user
 
 	link(rel="stylesheet" href="/styles/login.css")
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -49,7 +48,8 @@ block layout-content
 				$('#password').val(window.toggleAbleUsers[window.selectedUser].password)
 		}
 		$(document).ready(function() {
-			const defaultUsers = !{JSON.stringify(defaultUsers)};
+			let defaultUsers = [];
+			defaultUsers = !{JSON.stringify(defaultUsers)};
 			window.toggleAbleUsers = null;
 			if (defaultUsers.length >= 2) {
 				window.selectedUser = 0;
@@ -57,6 +57,7 @@ block layout-content
 				updateUsers();
 			} else {
 				$('#switch-user').hide();
+				$('#or').hide();
 			}
 
 			$('#switch-user').on('click', function() {
