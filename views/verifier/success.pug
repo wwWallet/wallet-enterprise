@@ -29,8 +29,10 @@ block layout-content
 				h3 Requested claims extracted from credentials
 
 				.claims-tables
-					each claimType in Object.keys(presentationClaims)
-						h4= claimType
+					each descriptorId in Object.keys(presentationClaims)
+						h4= descriptorId
+						each message in presentationMessages[descriptorId]
+							p #{message}
 						.table-container(style="overflow-x: auto;")
 							table
 								thead
@@ -38,7 +40,7 @@ block layout-content
 										th Name
 										th Value
 								tbody
-									each claim in presentationClaims[claimType]
+									each claim in presentationClaims[descriptorId]
 										tr
 											td= claim.name
 											td.claim-value(data-raw-value=String(claim.value))= claim.value

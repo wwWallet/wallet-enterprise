@@ -7,7 +7,7 @@ import 'reflect-metadata';
 import { SupportedCredentialProtocol } from "../lib/CredentialIssuerConfig/SupportedCredentialProtocol";
 import { CredentialView } from "../authorization/types";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
-import { PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
+import { PresentationClaims, PresentationMessages, RelyingPartyState } from "../entities/RelyingPartyState.entity";
 
 export interface CredentialSigner {
 	signSdJwtVc(payload: any, headers?: any, disclosureFrame?: any): Promise<{ credential: string }>;
@@ -40,7 +40,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 	getSignedRequestObject(ctx: { req: Request, res: Response }): Promise<any>;
 	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationDefinition: object, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }>;
-	getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string, cleanupSession?: boolean): Promise<{ status: true, rpState: RelyingPartyState, presentations: unknown[] } | { status: false, error: Error }>;
+	getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string, cleanupSession?: boolean): Promise<{ status: true, rpState: RelyingPartyState, presentations: unknown[], presentationMessages: PresentationMessages } | { status: false, error: Error }>;
 	getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, presentations?: unknown[] }>;
 	responseHandler(ctx: { req: Request, res: Response }): Promise<void>;
 }

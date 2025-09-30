@@ -13,7 +13,7 @@ import AppDataSource from "../AppDataSource";
 import { config } from "../../config";
 import fs from 'fs';
 import path from "path";
-import { ClaimRecord, PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
+import { ClaimRecord, PresentationClaims, PresentationMessages, RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import * as z from 'zod';
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
@@ -372,9 +372,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return;
 	}
 
-	private async validatePresentationDefinitionVpToken(vp_token_list: string[] | string | Record<string, any> | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, error?: Error }> {
+	private async validatePresentationDefinitionVpToken(vp_token_list: string[] | string | Record<string, any> | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, messages?: PresentationMessages, error?: Error }> {
 		let presentationClaims: PresentationClaims = {};
-
+		const messages: PresentationMessages = {};
 		for (const desc of presentation_submission.descriptor_map) {
 			if (!presentationClaims[desc.id]) {
 				presentationClaims[desc.id] = [];
@@ -419,11 +419,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 							if (!txData) {
 								return { error: new Error("specific transaction_data not supported error") };
 							}
-							const validationResult = await txData.validateTransactionDataResponse(input_descriptor.id, {
+							const { status, message } = await txData.validateTransactionDataResponse(input_descriptor.id, {
 								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
 								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
 							});
-							if (!validationResult) {
+							messages[desc.id] = [ message ];
+							if (!status) {
 								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
@@ -530,16 +531,17 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			}
 		}
 
-		return { presentationClaims };
+		return { presentationClaims, messages };
 	}
 
 	private async validateDcqlVpToken(
 		vp_token_list: any,
 		dcql_query: any,
 		rpState: RelyingPartyState
-	): Promise<{ presentationClaims?: PresentationClaims, error?: Error }> {
+	): Promise<{ presentationClaims?: PresentationClaims, messages?: PresentationMessages, error?: Error }> {
 		const presentationClaims: PresentationClaims = {};
 		const ce = await initializeCredentialEngine();
+		const messages: PresentationMessages = {};
 
 		for (const descriptor of dcql_query.credentials) {
 			const vp = vp_token_list[descriptor.id];
@@ -560,11 +562,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 							if (!txData) {
 								return { error: new Error("specific transaction_data not supported error") };
 							}
-							const validationResult = await txData.validateTransactionDataResponse(descriptor.id, {
+							const { status, message } = await txData.validateTransactionDataResponse(descriptor.id, {
 								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
 								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
 							});
-							if (!validationResult) {
+							messages[descriptor.id] = [ message ];
+							if (!status) {
 								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
@@ -696,7 +699,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return { presentationClaims };
 	}
 
-	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string, cleanupSession: boolean = false): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false, error: Error }> {
+	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string, cleanupSession: boolean = false): Promise<{ status: true, presentations: unknown[], presentationMessages: PresentationMessages, rpState: RelyingPartyState } | { status: false, error: Error }> {
 		if (!sessionId && !presentationDuringIssuanceSession) {
 			console.error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given");
 			const error = new Error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given")
@@ -724,14 +727,17 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const vp_token = JSON.parse(base64url.decode(rpState.vp_token)) as string[] | string | Record<string, string>;
 
 		let presentationClaims;
+		let presentationMessages: PresentationMessages = {};
 		let error: Error | undefined;
 		if (rpState.dcql_query) {
 			const result = await this.validateDcqlVpToken(vp_token as any, rpState.dcql_query, rpState);
 			presentationClaims = result.presentationClaims;
+			presentationMessages = result.messages ? result.messages : {};
 			error = result.error;
 		} else {
 			const result = await this.validatePresentationDefinitionVpToken(vp_token, rpState.presentation_submission as any, rpState);
 			presentationClaims = result.presentationClaims;
+			presentationMessages = result.messages ? result.messages : {};
 			error = result.error;
 		}
 
@@ -753,6 +759,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			return {
 				status: true,
 				rpState: rpState,
+				presentationMessages,
 				presentations: Array.isArray(vp_token) ? vp_token : typeof vp_token === 'object' ? Object.values(vp_token) : [vp_token]
 			};
 		}

@@ -275,6 +275,7 @@ verifierRouter.post('/callback', async (req, res) => {
 		verificationTimestamp: date_created.toISOString(),
 		presentationClaims: claims,
 		credentialPayloads: credentialPayloads,
+		presentationMessages: result.presentationMessages,
 		credentialImages: credentialImages,
 	})
 })
