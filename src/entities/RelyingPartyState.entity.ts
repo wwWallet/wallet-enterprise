@@ -11,6 +11,7 @@ export type PresentationClaims = {
 	[descriptor_id: string]: Array<ClaimRecord>;
 }
 
+
 @Entity({ name: "relying_party_state" })
 export class RelyingPartyState {
 	@PrimaryGeneratedColumn()
