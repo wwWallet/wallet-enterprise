@@ -26,11 +26,11 @@ export const ExampleTransactionData = () => {
 					console.log("calculatedHash = ", calculatedHashOfExpectedObject);
 					console.log("hashB64U = ", hashB64U);
 					if (calculatedHashOfExpectedObject === hashB64U) {
-						return true;
+						return { status: true, message: "User attested the example transaction data" };
 					}
 				}
 			}
-			return false;
+			return { status: false, message: "Transacton data verification failed" };
 		}
 	}
 }

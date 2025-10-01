@@ -9,6 +9,10 @@ import { CredentialView } from "../authorization/types";
 import { AuthorizationServerState } from "../entities/AuthorizationServerState.entity";
 import { PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
 
+export type PresentationInfo = {
+	[descriptor_id: string]: Array<string>;
+}
+
 export type ClaimMetadata = { path: (string | null | number)[] };
 export interface CredentialSigner {
 	signJptVc(header: any, dpk: JWK, claims: { [key: string]: any }, metadata: { claims: ClaimMetadata[] }): Promise<{ jpt: string }>;
@@ -42,7 +46,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 	getSignedRequestObject(ctx: { req: Request, res: Response }): Promise<any>;
 	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationDefinition: object, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }>;
-	getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string): Promise<{ status: true, rpState: RelyingPartyState, presentations: unknown[] } | { status: false, error: Error }>;
+	getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string, cleanupSession?: boolean): Promise<{ status: true, rpState: RelyingPartyState, presentations: unknown[], presentationInfo: PresentationInfo } | { status: false, error: Error }>;
 	getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, presentations?: unknown[] }>;
 	responseHandler(ctx: { req: Request, res: Response }): Promise<void>;
 }

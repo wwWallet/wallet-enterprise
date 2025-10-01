@@ -36,11 +36,12 @@ block layout-content
 						//- form.diplomas(name='selectDiplomas' method="post")
 						for credential, index in credentialViewList
 							.credential-card
-								input(type="hidden" name="selected_credential_id_list[]" id=`${credential.credential_id}_${index}` value=`${credential.credential_id}` disabled)
-								a.credential.toggle-card(id=`${credential.credential_id}_${index}` style=`position:relative; background-image: url(${credential.credential_image});`)
+								input(type="hidden" name="selected_credential_id_list[]" id=`${credential.credential_id}_${index}` value=`${credential.credential_id}`)
+								a.credential.toggle-card.selected(id=`${credential.credential_id}_${index}`)
 									if grant_type == "authorization_code"
-										i.is-selected.fa.fa-check-circle-o(aria-hidden="true" style="display: none;")
-										i.is-not-selected.fa.fa-circle-o(aria-hidden="true")
+										i.is-selected.fa.fa-check-square-o(aria-hidden="true")
+										i.is-not-selected.fa.fa-square-o(aria-hidden="true" style="display: none;")
+									img(src=credential.credential_image alt="Credential image" loading="lazy")
 								a.toggle-details(id=`${credential.credential_id}_${index}` style="display:inline;")
 									span.show-text
 										| Show Details
@@ -66,7 +67,7 @@ block layout-content
 				.GetMultiBtnArea
 					p.Errors.Hidden#NoCredentialSelectedError Please select at least one Credential to be issued
 					if grant_type == "authorization_code"
-						button.Btn.Small.GetMultiBtn(type="submit" disabled) Get credentials
+						button.Btn.Small.GetMultiBtn(type="submit") Get credentials
 				if grant_type == "authorization_code"
 					.DetailsArea
 						section.DetailsLayout
@@ -84,7 +85,7 @@ block layout-content
 										td
 											div 1 year
 	.BarBtnContainer
-		button#BarBtn.Btn.Large.GetMultiBtn(type="submit" disabled) Get credentials
+		button#BarBtn.Btn.Large.GetMultiBtn(type="submit") Get credentials
 	input(id='wwwalletURL' type='hidden' value=wwwalletURL)
 
 	link(rel="stylesheet" href="/styles/verifier/spinner.css")

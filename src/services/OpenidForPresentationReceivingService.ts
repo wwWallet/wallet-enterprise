@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Request, Response } from 'express'
-import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "./interfaces";
+import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface, PresentationInfo } from "./interfaces";
 import { VerifiableCredentialFormat } from "wallet-common/dist/types";
 import { TYPES } from "./types";
 import { compactDecrypt, CompactDecryptResult, exportJWK, generateKeyPair, importJWK, importPKCS8, SignJWT } from "jose";
@@ -32,8 +32,8 @@ enum ResponseMode {
 }
 
 const RESERVED_SDJWT_TOPLEVEL = new Set([
-	'iss','sub','aud','nbf','exp','iat','jti','vct','cnf',
-	'transaction_data_hashes','transaction_data_hashes_alg', 'vct#integrity'
+	'iss', 'sub', 'aud', 'nbf', 'exp', 'iat', 'jti', 'vct', 'cnf',
+	'transaction_data_hashes', 'transaction_data_hashes_alg', 'vct#integrity'
 ]);
 
 const x5c = [
@@ -88,7 +88,13 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		if (!rpState) {
 			return ctx.res.status(500).send({ error: "rpState state could not be fetched with this id" });
 		}
-		return ctx.res.send(rpState.signed_request.toString());
+		if (rpState.signed_request === "") {
+			return ctx.res.status(500).send({ error: "rpState state signed request object has been invalidated" });
+		}
+		const signedRequest = rpState.signed_request;
+		rpState.signed_request = "";
+		await this.rpStateRepository.save(rpState);
+		return ctx.res.send(signedRequest.toString());
 	}
 
 	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, def: any, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
@@ -291,6 +297,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			if (!rpState) {
 				throw new Error("Couldn't get rp state with state");
 			}
+			if (rpState.completed) {
+				throw new Error("Presentation flow already completed");
+			}
 
 			if (!payload.vp_token) {
 				throw new Error("Encrypted Response: vp_token is missing");
@@ -307,6 +316,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			rpState.date_created = new Date();
 			rpState.apv_jarm_encrypted_response_header = protectedHeader.apv && typeof protectedHeader.apv == 'string' ? protectedHeader.apv as string : null;
 			rpState.apu_jarm_encrypted_response_header = protectedHeader.apu && typeof protectedHeader.apu == 'string' ? protectedHeader.apu as string : null;
+			rpState.completed = true;
 
 			console.log("Stored rp state = ", rpState)
 			if (rpState.session_id.startsWith("auth_session:")) { // is presentation during issuance
@@ -344,10 +354,14 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		if (!rpState) {
 			throw new Error("Couldn't get rp state with state");
 		}
+		if (rpState.completed) {
+			throw new Error("Presentation flow already completed");
+		}
 		rpState.response_code = base64url.encode(randomUUID());
 		rpState.presentation_submission = presentation_submission;
 		rpState.vp_token = base64url.encode(JSON.stringify(vp_token));
 		rpState.date_created = new Date();
+		rpState.completed = true;
 
 		console.log("Session id = ", rpState.session_id)
 		if (rpState.session_id.startsWith("auth_session:")) { // is presentation during issuance
@@ -359,9 +373,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return;
 	}
 
-	private async validatePresentationDefinitionVpToken(vp_token_list: string[] | string | Record<string, any> | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, error?: Error }> {
+	private async validatePresentationDefinitionVpToken(vp_token_list: string[] | string | Record<string, any> | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, messages?: PresentationInfo, error?: Error }> {
 		let presentationClaims: PresentationClaims = {};
-
+		const messages: PresentationInfo = {};
 		for (const desc of presentation_submission.descriptor_map) {
 			if (!presentationClaims[desc.id]) {
 				presentationClaims[desc.id] = [];
@@ -406,11 +420,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 							if (!txData) {
 								return { error: new Error("specific transaction_data not supported error") };
 							}
-							const validationResult = await txData.validateTransactionDataResponse(input_descriptor.id, {
+							const { status, message } = await txData.validateTransactionDataResponse(input_descriptor.id, {
 								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
 								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
 							});
-							if (!validationResult) {
+							messages[desc.id] = [ message ];
+							if (!status) {
 								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
@@ -490,11 +505,12 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 							if (!txData) {
 								return { error: new Error("specific transaction_data not supported error") };
 							}
-							const validationResult = await txData.validateTransactionDataResponse(input_descriptor.id, {
+							const { status, message } = await txData.validateTransactionDataResponse(input_descriptor.id, {
 								transaction_data_hashes: presentationHeader.transaction_data_hashes as string[],
 								transaction_data_hashes_alg: presentationHeader.transaction_data_hashes_alg as string[] | undefined
 							});
-							if (!validationResult) {
+							messages[desc.id] = [ message ];
+							if (!status) {
 								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
@@ -607,16 +623,17 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			}
 		}
 
-		return { presentationClaims };
+		return { presentationClaims, messages };
 	}
 
 	private async validateDcqlVpToken(
 		vp_token_list: any,
 		dcql_query: any,
 		rpState: RelyingPartyState
-	): Promise<{ presentationClaims?: PresentationClaims, error?: Error }> {
+	): Promise<{ presentationClaims?: PresentationClaims, messages?: PresentationInfo, error?: Error }> {
 		const presentationClaims: PresentationClaims = {};
 		const ce = await initializeCredentialEngine();
+		const messages: PresentationInfo = {};
 
 		for (const descriptor of dcql_query.credentials) {
 			const vp = vp_token_list[descriptor.id];
@@ -641,11 +658,13 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 								if (!txData) {
 									return { error: new Error("specific transaction_data not supported error") };
 								}
-								const validationResult = await txData.validateTransactionDataResponse(descriptor.id, {
+								const { status, message } = await txData.validateTransactionDataResponse(descriptor.id, {
 									transaction_data_hashes: presentationHeader.transaction_data_hashes as string[],
 									transaction_data_hashes_alg: presentationHeader.transaction_data_hashes_alg as string[] | undefined
 								});
-								if (!validationResult) {
+								console.log("Message: ", message)
+								messages[descriptor.id] = [ message ];
+								if (!status) {
 									return { error: new Error("transaction_data validation error") };
 								}
 								console.log("VALIDATED TRANSACTION DATA");
@@ -725,11 +744,13 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 							if (!txData) {
 								return { error: new Error("specific transaction_data not supported error") };
 							}
-							const validationResult = await txData.validateTransactionDataResponse(descriptor.id, {
+							const { status, message } = await txData.validateTransactionDataResponse(descriptor.id, {
 								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
 								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
 							});
-							if (!validationResult) {
+							console.log("Message: ", message)
+							messages[descriptor.id] = [ message ];
+							if (!status) {
 								return { error: new Error("transaction_data validation error") };
 							}
 							console.log("VALIDATED TRANSACTION DATA");
@@ -781,25 +802,25 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 						output.credential_format === VerifiableCredentialFormat.VC_SDJWT ||
 						output.credential_format === VerifiableCredentialFormat.DC_SDJWT
 					) {
-							const claims = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0]?.claims as any;
-							const dcqlOut = claims?.valid_claim_sets?.[0]?.output as Record<string, unknown> | undefined;
-							const signedClaims = parseResult.value.signedClaims as Record<string, unknown>;
+						const claims = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0]?.claims as any;
+						const dcqlOut = claims?.valid_claim_sets?.[0]?.output as Record<string, unknown> | undefined;
+						const signedClaims = parseResult.value.signedClaims as Record<string, unknown>;
 
-							const requestedAll = descriptor?.claims == null;
+						const requestedAll = descriptor?.claims == null;
 
-							// Get all claims if no specific claims were requested
-							const source: Record<string, unknown> =
-								requestedAll
-									? signedClaims
-									: (dcqlOut && Object.keys(dcqlOut).length > 0 ? dcqlOut : signedClaims);
+						// Get all claims if no specific claims were requested
+						const source: Record<string, unknown> =
+							requestedAll
+								? signedClaims
+								: (dcqlOut && Object.keys(dcqlOut).length > 0 ? dcqlOut : signedClaims);
 
-							const filteredSource = Object.fromEntries(
-								Object.entries(source).filter(([k]) => !RESERVED_SDJWT_TOPLEVEL.has(k) && !k.startsWith('_'))
-							);
-							presentationClaims[descriptor.id] = Object.entries(filteredSource).map(([key, value]) => ({
-								key,
-								name: key,
-								value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+						const filteredSource = Object.fromEntries(
+							Object.entries(source).filter(([k]) => !RESERVED_SDJWT_TOPLEVEL.has(k) && !k.startsWith('_'))
+						);
+						presentationClaims[descriptor.id] = Object.entries(filteredSource).map(([key, value]) => ({
+							key,
+							name: key,
+							value: typeof value === 'object' ? JSON.stringify(value) : String(value),
 						}));
 					} else {
 						return { error: new Error(`Unexpected credential_format for descriptor ${descriptor.id}`) };
@@ -864,10 +885,10 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 				return { error: new Error(`Internal error verifying or parsing VP for descriptor ${descriptor.id}`) };
 			}
 		}
-		return { presentationClaims };
+		return { presentationClaims, messages };
 	}
 
-	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string): Promise<{ status: true, presentations: unknown[], rpState: RelyingPartyState } | { status: false, error: Error }> {
+	public async getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string, cleanupSession: boolean = false): Promise<{ status: true, presentations: unknown[], presentationInfo: PresentationInfo, rpState: RelyingPartyState } | { status: false, error: Error }> {
 		if (!sessionId && !presentationDuringIssuanceSession) {
 			console.error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given");
 			const error = new Error("getPresentationBySessionIdOrPresentationDuringIssuanceSession: Nor sessionId nor presentationDuringIssuanceSession was given")
@@ -895,20 +916,29 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		const vp_token = JSON.parse(base64url.decode(rpState.vp_token)) as string[] | string | Record<string, string>;
 
 		let presentationClaims;
+		let presentationInfo: PresentationInfo = {};
 		let error: Error | undefined;
 		if (rpState.dcql_query) {
 			const result = await this.validateDcqlVpToken(vp_token as any, rpState.dcql_query, rpState);
 			presentationClaims = result.presentationClaims;
+			presentationInfo = result.messages ? result.messages : {};
 			error = result.error;
 		} else {
 			const result = await this.validatePresentationDefinitionVpToken(vp_token, rpState.presentation_submission as any, rpState);
 			presentationClaims = result.presentationClaims;
+			presentationInfo = result.messages ? result.messages : {};
 			error = result.error;
 		}
 
 		if (error) {
 			console.error(error)
 			return { status: false, error };
+		}
+		if (cleanupSession) {
+			rpState.state = "";
+			rpState.session_id = ""; // invalidate session id
+			rpState.response_code = "";
+			await this.rpStateRepository.save(rpState);
 		}
 		if (!rpState.claims && presentationClaims) {
 			rpState.claims = presentationClaims;
@@ -917,7 +947,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		if (rpState) {
 			return {
 				status: true,
-				rpState,
+				rpState: rpState,
+				presentationInfo,
 				presentations: Array.isArray(vp_token) ? vp_token : typeof vp_token === 'object' ? Object.values(vp_token) : [vp_token]
 			};
 		}

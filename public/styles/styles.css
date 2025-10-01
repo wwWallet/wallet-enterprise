@@ -6,7 +6,8 @@
 	--main-fonts: Helvetica, sans-serif;
 }
 
-html, body {
+html,
+body {
 	font-family: var(--main-font);
 	max-width: 100%;
 	overflow-x: hidden;
@@ -15,13 +16,22 @@ html, body {
 	background-color: var(--layout-bg-color);
 }
 
-h1, h2, h3, h4, h5 {
+h1,
+h2,
+h3,
+h4,
+h5 {
 	opacity: 0.6;
 	color: #000;
 }
 
 @media only screen and (max-width: 600px) {
-	h1, h2, h3, h4, h5 {
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5 {
 		text-align: center;
 	}
 }
@@ -37,11 +47,8 @@ p {
 
 .main-container {
 	min-height: 70vh;
-	width: 80%;
 	display: block;
-	margin: 0 auto;
-	margin-top: 60px;
-	margin-bottom: 100px;
+	padding: 2rem 5%;
 }
 
 .Btn {
@@ -89,6 +96,7 @@ p {
 	border-radius: 6px;
 	max-width: 220px;
 }
+
 .Btn.Dialog {
 	margin: 20px 0 20px;
 	padding: 10px 20px;
@@ -177,6 +185,7 @@ a.link:hover {
 		opacity: 0;
 	}
 }
+
 @-webkit-keyframes cssAnimation {
 	to {
 		opacity: 0;
@@ -199,9 +208,11 @@ section.layout {
 		flex-direction: column;
 		align-items: center;
 		display: flex;
-		gap:16px;
+		gap: 16px;
 	}
-	.Btn.Medium, .Btn.Large {
+
+	.Btn.Medium,
+	.Btn.Large {
 		width: 100%;
 		max-width: none;
 	}
@@ -245,20 +256,34 @@ section.layout {
 .card-container {
 	display: flex;
 	flex-wrap: wrap;
-	flex-direction: column;
 	gap: 1rem;
+	/* space between cards instead of margin-bottom */
+}
+
+/* Default: small screens → full width */
+.card {
+	flex: 1 1 100%;
+	max-width: 100%;
+}
+
+/* Large screens: max 2 columns */
+@media (min-width: 768px) {
+	.card {
+		flex: 1 1 calc(50% - 5rem);
+		/* 2 columns */
+		max-width: calc(50% - 2.5rem);
+	}
 }
 
 .card {
-	display: block;
-	width: 80%;
 	border: 1px solid #ccc;
 	border-radius: 6px;
 	padding: 1.25rem;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	margin-bottom: 10px;
 	background-color: #fff;
-	text-decoration: none;
 	color: inherit;
+	text-decoration: none;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 	transition: box-shadow 0.2s ease, transform 0.2s ease;
 	cursor: pointer;
 }
@@ -294,15 +319,6 @@ section.layout {
 	color: #fff;
 }
 
-/* Media query for small screens (center and same width) */
-@media (max-width: 768px) {
-
-	.card {
-		flex: 0 1 calc(80% - 20px); /* Adjust the width as needed */
-	}
-}
-
-
 .container {
 	margin: 2% 5%;
 }
@@ -313,11 +329,11 @@ section.layout {
 	align-items: center;
 	justify-content: space-around;
 	flex-wrap: wrap;
-	background-color: #000!important;
+	background-color: #000 !important;
 }
 
 .option-card {
-	background-color: red!important;
+	background-color: red !important;
 	padding: 20px;
 	border-radius: 8px;
 	box-shadow: 0px 0px 5px 0px #0000001a;
@@ -332,16 +348,19 @@ section.layout {
 }
 
 @media (max-width: 768px) {
-	.option-card, .or {
+
+	.option-card,
+	.or {
 		width: 100%;
 	}
+
 	.or {
 		margin: 20px 0;
 		text-align: center;
 	}
 }
 
-#qrDialog{
+#qrDialog {
 	padding: 0px;
 }
 
@@ -351,21 +370,22 @@ section.layout {
 	font-size: 18px;
 }
 
-.dialog-header{
-	display: flex!important;
+.dialog-header {
+	display: flex !important;
 	background: var(--primary-color);
 	flex-direction: row;
 	justify-content: center;
 }
-.dialog-header h4{
-	margin-top:15px;
+
+.dialog-header h4 {
+	margin-top: 15px;
 	margin-bottom: 15px;
 	padding-left: 30px;
 	padding-right: 30px;
-	color:white;
+	color: white;
 	opacity: 1;
 }
 
-.dialog-body{
+.dialog-body {
 	padding: 30px;
 }

@@ -72,35 +72,24 @@ function checkCardSelection() {
 }
 
 document.addEventListener('click', (e) => {
-	let targetElement = e.target;
+	const button = e.target.closest('.toggle-card');
+	if (!button) return;
 
-	if (targetElement.matches('.is-selected, .is-not-selected')) {
-		targetElement = targetElement.closest('.toggle-card');
-	} else if (!targetElement.matches('.toggle-card')) {
-		return;
-	}
-
-	const button = targetElement;
 	const thisId = button.id;
+	const isSelectedIcon = button.querySelector('.is-selected');
+	const isNotSelectedIcon = button.querySelector('.is-not-selected');
 
-	if (button) {
-		const isSelectedIcon = button.querySelector('.is-selected');
-		const isNotSelectedIcon = button.querySelector('.is-not-selected');
-		button.classList.toggle('selected');
+	button.classList.toggle('selected');
 
-		if(layout.classList.contains('multi')) {
-				toggleInput(thisId);
-		}
-
-		isSelectedIcon.style.display = isSelectedIcon.style.display === 'none' ? 'inline' : 'none';
-		isNotSelectedIcon.style.display = isNotSelectedIcon.style.display === 'none' ? 'inline' : 'none';
-
-		checkCardSelection();
+	if (layout.classList.contains('multi')) {
+		toggleInput(thisId);
 	}
+
+	isSelectedIcon.style.display = isSelectedIcon.style.display === 'none' ? 'inline' : 'none';
+	isNotSelectedIcon.style.display = isNotSelectedIcon.style.display === 'none' ? 'inline' : 'none';
+
+	checkCardSelection();
 });
-
-
-
 
 toggleButtons.forEach(toggleButton => {
 	toggleButton.addEventListener('click', (e) => {
