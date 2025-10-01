@@ -20,6 +20,8 @@ import { GenericLocalAuthenticationComponent } from "../../authentication/authen
 import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine";
 import { pidMetadata1_8 } from "./typeMetadata/pidMetadata";
 import { pidSchema_1_8 } from "./schema/pidSchema";
+import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
+
 
 const datasetName = "vid-dataset.xlsx";
 parsePidData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse
@@ -259,6 +261,7 @@ export class PIDSupportedCredentialJptVCDM implements VCDMSupportedCredentialPro
 					proof_signing_alg_values_supported: ["experimental/SplitBBSv2.1"]
 				},
 			},
+			claims: convertSdjwtvcToOpenid4vciClaims(this.metadata().claims, this.schema())
 		}
 	}
 }
