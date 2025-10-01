@@ -101,7 +101,7 @@
 
 /* Flex container for the layout */
 .flex-container {
-	padding: 5%;
+	padding: 4% 5%;
 	display: flex;
 	align-items: center;
 	/* Vertically center items within the flex container */
@@ -125,7 +125,7 @@
 
 /* Styling for the image */
 .image-column img {
-	max-width: 70%;
+	max-width: 90%;
 	/* Ensure the image doesn't exceed its container */
 }
 
@@ -137,7 +137,10 @@
 		/* Stretch items vertically to occupy full width */
 	}
 
-	.image-column,
+	.image-column {
+		display: none;
+	}
+
 	.content-column {
 		width: 100%;
 		padding: 0;
@@ -155,7 +158,7 @@
 .content-column h1 {
 	font-size: 35px;
 	/* Adjust the font size as needed */
-	margin-bottom: 15px;
+	margin: 10px 0;
 	/* Add spacing below the title */
 }
 
