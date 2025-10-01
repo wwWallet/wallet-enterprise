@@ -81,6 +81,7 @@
 }
 
 #Index .IssuerSection {
+	padding: 2rem 5%;
 	display: flex;
 	align-items: center;
 	/* float: left; */
@@ -101,7 +102,7 @@
 
 /* Flex container for the layout */
 .flex-container {
-	padding: 4% 5%;
+	padding: 2rem 5%;
 	display: flex;
 	align-items: center;
 	/* Vertically center items within the flex container */
@@ -190,7 +191,7 @@
 }
 
 .container-positions {
-	padding: 2% 5%;
+	padding: 2rem 5%;
 }
 
 .left-layout {
