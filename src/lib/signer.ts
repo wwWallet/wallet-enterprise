@@ -7,13 +7,19 @@ import { SDJwtInstance } from "@sd-jwt/core";
 import { digest as hasher } from "@sd-jwt/crypto-nodejs";
 import { sign, randomBytes, KeyObject } from "crypto";
 import { importPrivateKeyPem } from '../lib/importPrivateKeyPem';
-import { base64url, calculateJwkThumbprint, exportJWK, importX509 } from 'jose';
+import { base64url, calculateJwkThumbprint, exportJWK, importX509, JWK } from 'jose';
 import { Document } from '@auth0/mdl';
 import { cborEncode } from "@auth0/mdl/lib/cbor";
 import { pemToBase64 } from '../util/pemToBase64';
+import { issueSplitBbs } from 'wallet-common/dist/jwp';
+import { extractPayloadsFromClaims } from 'wallet-common/dist/jpt';
+import { getBbsPublicKeyOrFail, getOrGenerateBbsPrivateKey } from '../keys';
 
 const issuerPrivateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
 const issuerCertPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString() as string;;
+
+
+const issuerBbsPublicKeyJwk: JWK = getBbsPublicKeyOrFail();
 
 const issuerX5C = [
 	pemToBase64(issuerCertPem),
@@ -69,6 +75,7 @@ export const signer: CredentialSigner = {
 		return { credential: credential };
 
 	},
+
 	signSdJwtVc: async function (payload, headers, disclosureFrame) {
 		const issuanceDate = new Date();
 		const expirationDate = new Date();
@@ -116,6 +123,37 @@ export const signer: CredentialSigner = {
 		const credential = await sdjwt.issue(payload, disclosureFrameConvert(disclosureFrame), { header: headers });
 		return { credential };
 	},
+
+	signJptVc: async function (header, dpk, claims, metadata) {
+		const issuanceDate = new Date();
+		const expirationDate = new Date();
+		expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
+		header = {
+			...header,
+			alg: 'experimental/SplitBBSv2.1',
+			iss: config.url,
+			jwk: issuerBbsPublicKeyJwk,
+		};
+
+		if (!dpk || !claims) {
+			throw new Error("Could not generate signature");
+		}
+
+		const payloads = extractPayloadsFromClaims(
+			{
+				...claims,
+				iat: Math.floor(issuanceDate.getTime() / 1000),
+				exp: Math.floor(expirationDate.getTime() / 1000),
+			},
+			metadata,
+		);
+
+		console.log("before issueSplitBbs", dpk);
+		const jpt = await issueSplitBbs(getOrGenerateBbsPrivateKey() as any, header, dpk as any, payloads);
+		return { jpt };
+	},
+
 	getPublicKeyJwk: async function () {
 		const publicKey = await importX509(issuerCertPem, 'ES256');
 		if (!publicKey) {

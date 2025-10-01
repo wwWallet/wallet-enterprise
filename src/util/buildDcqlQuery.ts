@@ -44,7 +44,7 @@ export function buildDcqlQuery(presentationDefinition: any, body?: any): any {
 			if (selectedPaths.size > 0 && !selectedPaths.has(rawPath)) continue;
 
 			if (selectedType === 'sd-jwt') {
-				if (format === 'vc+sd-jwt' || format === 'dc+sd-jwt') {
+				if (['vc+sd-jwt', 'dc+sd-jwt', 'dc+jpt'].includes(format)) {
 					const pathSegments = parseSdJwtPath(rawPath);
 					const topKey = pathSegments[0];
 					if (topKey === 'vct' && field.filter?.const) {

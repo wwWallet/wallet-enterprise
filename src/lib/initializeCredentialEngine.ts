@@ -1,10 +1,12 @@
-import { MsoMdocParser, MsoMdocVerifier, ParsingEngine, PublicKeyResolverEngine, SDJWTVCParser, SDJWTVCVerifier } from 'wallet-common';
+import { JptDcParser, MsoMdocParser, MsoMdocVerifier, ParsingEngine, PublicKeyResolverEngine, SDJWTVCParser, SDJWTVCVerifier } from 'wallet-common';
 import { config } from '../../config';
 import { webcrypto } from "node:crypto";
 import { OpenID4VCICredentialRendering } from 'wallet-common/dist/functions/openID4VCICredentialRendering';
 import { CredentialRenderingService } from 'wallet-common/dist/rendering';
 import { defaultHttpClient } from 'wallet-common/dist/defaultHttpClient';
 import axios from 'axios';
+import { JptDcVerifier } from 'wallet-common/dist/credential-verifiers/JptDcVerifier';
+import { getBbsPublicKeyOrFail } from '../keys';
 
 // @ts-ignore
 const trustedCredentialIssuerIdentifiers = config.trustedIssuers as string[] | undefined;
@@ -47,6 +49,8 @@ export async function initializeCredentialEngine() {
 	}
 
 	const credentialParsingEngine = ParsingEngine();
+	credentialParsingEngine.register(JptDcParser({ context: ctx, httpClient: defaultHttpClient }));
+	console.log("Registered JptDcParser...");
 	credentialParsingEngine.register(SDJWTVCParser({ context: ctx, httpClient: defaultHttpClient }));
 	console.log("Registered SDJWTVCParser...");
 	credentialParsingEngine.register(MsoMdocParser({ context: ctx, httpClient: defaultHttpClient }));
@@ -55,10 +59,13 @@ export async function initializeCredentialEngine() {
 	const pkResolverEngine = PublicKeyResolverEngine();
 	const openid4vcRendering = OpenID4VCICredentialRendering({ httpClient: defaultHttpClient });
 	const credentialRendering = CredentialRenderingService();
+	const issuerBbsPublicKey = getBbsPublicKeyOrFail();
+	const args = { context: ctx, pkResolverEngine: pkResolverEngine };
 	return {
 		credentialParsingEngine,
-		msoMdocVerifier: MsoMdocVerifier({ context: ctx, pkResolverEngine: pkResolverEngine }),
-		sdJwtVerifier: SDJWTVCVerifier({ context: ctx, pkResolverEngine: pkResolverEngine, httpClient: defaultHttpClient }),
+		msoMdocVerifier: MsoMdocVerifier(args),
+		sdJwtVerifier: SDJWTVCVerifier({ ...args, httpClient: defaultHttpClient }),
+		jptVerifier: JptDcVerifier({ ...args, httpClient: defaultHttpClient, issuerPublicKeys: [issuerBbsPublicKey] }),
 		openid4vcRendering,
 		credentialRendering,
 	};
