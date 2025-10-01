@@ -28,17 +28,7 @@ const datasetName = "vid-dataset.xlsx";
 parsePidData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse
 
 
-const splitBbsPidMetadata = {
-	...pidMetadata1_8,
-	claims: [
-		// First payload is always the holder binding private key, which is never disclosed
-		{
-			"path": ["dpk"],
-			"sd": "always",
-		},
-		...pidMetadata1_8.claims,
-	],
-};
+const splitBbsPidMetadata = pidMetadata1_8;
 
 export class PIDSupportedCredentialJptVCDM implements VCDMSupportedCredentialProtocol {
 	constructor() {}
