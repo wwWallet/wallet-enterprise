@@ -21,6 +21,7 @@ import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine
 import { pidMetadata1_8 } from "./typeMetadata/pidMetadata";
 import { pidSchema_1_8 } from "./schema/pidSchema";
 import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
+import { createSRI } from "../../lib/sriGenerator";
 
 
 const datasetName = "vid-dataset.xlsx";
@@ -225,7 +226,8 @@ export class PIDSupportedCredentialJptVCDM implements VCDMSupportedCredentialPro
 			.signJptVc(
 				{
 					typ: VerifiableCredentialFormat.DC_JPT,
-					vct: this.getId(),
+					vct: this.metadata().vct,
+					"vct#integrity": createSRI(this.metadata()),
 					vctm: [base64url.encode(JSON.stringify(this.metadata()))],
 				},
 				dpk,
