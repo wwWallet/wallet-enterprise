@@ -13,6 +13,7 @@
 	border-radius: 3.18mm;
 	border-width: 1px;
 	border-color: lightgray;
+	width: min-content;
 }
 
 section.MainLayout {
@@ -42,7 +43,7 @@ section.MainLayout {
 	/* width: 85.6mm;
 	width: 100%;
 	height: 53.98mm; */
-	height: clamp(75.6px, 53.98mm, calc(0.630 * 80vw));
+	/* height: clamp(75.6px, 53.98mm, calc(0.630 * 80vw)); */
 	border-radius: 3.18mm;
 	background-color: lightgray;
 	margin-bottom: 5px;
