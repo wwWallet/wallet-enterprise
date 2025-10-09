@@ -27,6 +27,9 @@ import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpen
 const datasetName = "por-dataset.xlsx";
 parsePorData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse
 
+// @ts-ignore
+const batchSize = config.issuanceFlow?.batchCredentialIssuance?.batchSize ?? 1;
+
 export class PorSupportedCredentialSdJwtDeferred implements VCDMSupportedCredentialProtocol {
 
 	porEntryMap = new Map<string, unknown[]>();
@@ -131,7 +134,16 @@ export class PorSupportedCredentialSdJwtDeferred implements VCDMSupportedCredent
 		return credentialView;
 	}
 
+
 	async getPorData(userSession: AuthorizationServerState, request: Request) {
+		function getFirstAvailableCred(creds: Array<unknown>): [number | null, unknown | null] {
+			for (let i = 0; i < creds.length; i++) {
+				if (creds[i] !== null) {
+					return [i, creds[i]];
+				}
+			}
+			return [null, null];
+		}
 		const { session_id } = userSession;
 		const { transaction_id } = request.body;
 		if (!session_id) {
@@ -143,17 +155,22 @@ export class PorSupportedCredentialSdJwtDeferred implements VCDMSupportedCredent
 			return [null, new Error("invalid_transaction_id")];
 		}
 		const creds = this.porEntryMap.get(session_id);
+		const [index, first] = creds ? getFirstAvailableCred(creds) : [null, null]
+
 		if (!creds) { // if no por entries exist in the map, then store empty array
 			this.porEntryMap.set(session_id, []);
 		}
-		else if (creds.length > 0) {
-			const first = creds.pop();
+		else if (transaction_id && creds.length !== batchSize) {
+			return [null, new Error("issuance_pending")];
+		}
+		else if (transaction_id && first !== null && index !== null) {
+			creds[index] = null;
 			this.porEntryMap.set(session_id, [...creds]);
 			return [first, null];
 		}
-		else if (transaction_id && creds.length === 0) {
-			console.log("Creds length = 0");
-			return [null, new Error("issuance_pending")];
+		else if (transaction_id) {
+			return [null, new Error("invalid_transaction_id")];
+
 		}
 
 		const users = parsePorData(path.join(__dirname, "../../../../dataset/por-dataset.xlsx"));
@@ -167,7 +184,7 @@ export class PorSupportedCredentialSdJwtDeferred implements VCDMSupportedCredent
 			new Date(por.birth_date).toISOString() == new Date(userSession.birth_date as string).toISOString()
 		)[0];
 		setTimeout(() => { // fill the data after 5 seconds
-			const credentials = creds ?? [];
+			const credentials = this.porEntryMap.get(session_id) ?? [];
 			this.porEntryMap.set(`${session_id}`, [...credentials as any, porEntry]);
 		}, 5000);
 		return [null, new Error("not ready")];
