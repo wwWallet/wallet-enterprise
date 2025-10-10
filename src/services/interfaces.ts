@@ -13,7 +13,9 @@ export type PresentationInfo = {
 	[descriptor_id: string]: Array<string>;
 }
 
+export type ClaimMetadata = { path: (string | null | number)[] };
 export interface CredentialSigner {
+	signJptVc(header: any, dpk: JWK, claims: { [key: string]: any }, metadata: { claims: ClaimMetadata[] }): Promise<{ jpt: string }>;
 	signSdJwtVc(payload: any, headers?: any, disclosureFrame?: any): Promise<{ credential: string }>;
 	signMsoMdoc(doctype: string, namespaces: Map<string, Record<string, unknown>>, holderPublicKeyJwk: JWK): Promise<{ credential: string }>;
 	getPublicKeyJwk(): Promise<{ jwk: JWK }>;

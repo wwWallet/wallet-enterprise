@@ -263,8 +263,15 @@ verifierRouter.post('/callback', async (req, res) => {
 			} catch (err) {
 				console.warn('Failed to load credential image:', err);
 			}
-			credentialImages.push(imageUri);
-			credentialPayloads.push(result.value.signedClaims);
+			if ("signedClaims" in result.value) {
+				credentialImages.push(imageUri);
+				credentialPayloads.push(result.value.signedClaims);
+			} else if ("signedJptClaims" in result.value) {
+				credentialImages.push(imageUri);
+				credentialPayloads.push(result.value.signedJptClaims);
+			} else {
+				throw new Error(`Missing signedClaims or signedJptClaims: ${result.value}`);
+			}
 		}
 	}
 
@@ -464,20 +471,35 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			const selectedType = req.body.type // Default to sd-jwt if type is not provided
 			if (selectedType === "sd-jwt") {
 				const selectedFormat = req.body.format;
-				if (selectedFormat && selectedFormat === "vc+sd-jwt") {
-					presentationDefinition.input_descriptors[0].format = {
-						"vc+sd-jwt": {
-							"sd-jwt_alg_values": ["ES256"],
-							"kb-jwt_alg_values": ["ES256"]
-						},
-					};
-				} else {
-					presentationDefinition.input_descriptors[0].format = {
-						"dc+sd-jwt": {
-							"sd-jwt_alg_values": ["ES256"],
-							"kb-jwt_alg_values": ["ES256"]
-						},
-					};
+				switch (selectedFormat) {
+					case "vc+sd-jwt":
+						presentationDefinition.input_descriptors[0].format = {
+							"vc+sd-jwt": {
+								"sd-jwt_alg_values": ["ES256"],
+								"kb-jwt_alg_values": ["ES256"]
+							},
+						};
+						break;
+
+					case "dc+sd-jwt":
+						presentationDefinition.input_descriptors[0].format = {
+							"dc+sd-jwt": {
+								"sd-jwt_alg_values": ["ES256"],
+								"kb-jwt_alg_values": ["ES256"]
+							},
+						};
+						break;
+
+					case "dc+jpt":
+						presentationDefinition.input_descriptors[0].format = {
+							"dc+jpt": {
+								proof_signing_alg_values_supported: ["experimental/SplitBBSv2.1"],
+							},
+						};
+						break;
+
+					default:
+						throw new Error("Unimplemented credential format: " + selectedFormat);
 				}
 
 			} else if (selectedType === "mdoc") {

@@ -21,6 +21,7 @@ import { TransactionData } from "../TransactionData/TransactionData";
 import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
 import { DcqlPresentationResult } from 'dcql';
 import { pemToBase64 } from "../util/pemToBase64";
+import { parseJpt } from "wallet-common/dist/jpt";
 
 const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
 const leafCert = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString();
@@ -398,7 +399,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const { credentialParsingEngine, sdJwtVerifier } = await initializeCredentialEngine();
 					const verificationResultR = await sdJwtVerifier.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
 					const parseResult = await credentialParsingEngine.parse({ rawCredential: vp_token })
-					const prettyClaims = parseResult.success === true ? parseResult.value.signedClaims : null;
+					const prettyClaims = parseResult.success === true && "signedClaims" in parseResult.value ? parseResult.value.signedClaims : null;
 
 					if (verificationResultR.success === false) {
 						const error = new Error(`Verification result ${JSON.stringify(verificationResultR.error)}`);
@@ -466,6 +467,92 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 				}
 			}
+
+			if (desc.format == VerifiableCredentialFormat.DC_JPT) {
+				// const sdJwt = vp_token.split('~').slice(0, -1).join('~') + '~';
+				const input_descriptor = rpState!.presentation_definition!.input_descriptors.filter((input_desc: any) => input_desc.id == desc.id)[0];
+				if (!input_descriptor) {
+					return { error: new Error("Input descriptor not found") };
+				}
+
+				try {
+					const { credentialParsingEngine, jptVerifier } = await initializeCredentialEngine();
+					const verificationResultR = await jptVerifier.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
+					const parseResult = await credentialParsingEngine.parse({ rawCredential: vp_token })
+					const [prettyClaims, presentationHeader] = (
+						parseResult.success === true
+							&& "presentationHeader" in parseResult.value
+							&& "signedJptClaims" in parseResult.value
+							? [parseResult.value.signedJptClaims, parseResult.value.presentationHeader]
+							: [null, null]
+					);
+
+					if (verificationResultR.success === false) {
+						const error = new Error(`Verification result ${JSON.stringify(verificationResultR.error)}`);
+						error.name = JSON.stringify(verificationResultR.error);
+						return { error: error };
+					}
+					if (!prettyClaims) {
+						return { error: new Error(JSON.stringify(parseResult.success === false && parseResult.error)) };
+					}
+					if (!presentationHeader) {
+						return { error: new Error(JSON.stringify(parseResult.success === false && parseResult.error)) };
+					}
+					try {
+						if (Object.keys(presentationHeader).includes('transaction_data_hashes') && input_descriptor._transaction_data_type !== undefined) {
+							console.log("Parsing transaction data response...");
+							const txData = TransactionData(input_descriptor._transaction_data_type);
+							if (!txData) {
+								return { error: new Error("specific transaction_data not supported error") };
+							}
+							const { status, message } = await txData.validateTransactionDataResponse(input_descriptor.id, {
+								transaction_data_hashes: presentationHeader.transaction_data_hashes as string[],
+								transaction_data_hashes_alg: presentationHeader.transaction_data_hashes_alg as string[] | undefined
+							});
+							messages[desc.id] = [ message ];
+							if (!status) {
+								return { error: new Error("transaction_data validation error") };
+							}
+							console.log("VALIDATED TRANSACTION DATA");
+						}
+						else if (input_descriptor._transaction_data_type !== undefined) {
+							return { error: new Error("transaction_data_hashes is missing from transaction data response") };
+						}
+					}
+					catch (e) {
+						console.error(e);
+						return { error: new Error("transaction_data validation error") };
+
+					}
+
+					input_descriptor.constraints.fields.map((field: any) => {
+						if (!presentationClaims[desc.id]) {
+							presentationClaims[desc.id] = []; // initialize
+						}
+						const fieldPath = field.path[0]; // get first path
+						const fieldName = (field as any).name;
+						const value = String(JSONPath({ path: fieldPath, json: prettyClaims })[0]);
+						if (!value) {
+							const error = new Error(`Verification result: Not all values are present as requested from the presentation_definition`);
+							error.name = "VALUE_NOT_FOUND";
+							return { error: new Error("VALUE_NOT_FOUND") };
+						}
+
+						const splittedPath = fieldPath.split('.');
+						const claimName = fieldName ? fieldName : splittedPath[splittedPath.length - 1];
+						presentationClaims[desc.id].push({ key: fieldPath.split('.')[fieldPath.split('.').length - 1], name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
+					});
+
+
+				}
+				catch (err) {
+					console.error("Verification error: ", err);
+					if (err instanceof Error) {
+						return { error: err };
+					}
+				}
+			}
+
 			else if (desc.format == VerifiableCredentialFormat.MSO_MDOC && rpState.apu_jarm_encrypted_response_header) {
 				const receivedMdocNonce = base64url.decode(rpState.apu_jarm_encrypted_response_header);
 				console.log("Received mdoc nonce = ", receivedMdocNonce);
@@ -529,6 +616,11 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					}
 				}
 			}
+			else {
+				return {
+					error: new Error("Unsupported format")
+				}
+			}
 		}
 
 		return { presentationClaims, messages };
@@ -552,6 +644,96 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			try {
 				// detect if SD-JWT (has ~) or mdoc (CBOR-encoded)
 				if (typeof vp === 'string' && vp.includes('~')) {
+					// =========== JPT ============
+					try {
+						const jpt = parseJpt(vp);
+						if (!("presentationHeader" in jpt)) {
+							return { error: new Error("Missing presentation header in JPT") };
+						}
+						const { issuerHeader, presentationHeader } = jpt;
+
+						try {
+							if (Object.keys(presentationHeader).includes('transaction_data_hashes') && descriptor._transaction_data_type !== undefined) {
+								const txData = TransactionData(descriptor._transaction_data_type);
+								if (!txData) {
+									return { error: new Error("specific transaction_data not supported error") };
+								}
+								const { status, message } = await txData.validateTransactionDataResponse(descriptor.id, {
+									transaction_data_hashes: presentationHeader.transaction_data_hashes as string[],
+									transaction_data_hashes_alg: presentationHeader.transaction_data_hashes_alg as string[] | undefined
+								});
+								console.log("Message: ", message)
+								messages[descriptor.id] = [ message ];
+								if (!status) {
+									return { error: new Error("transaction_data validation error") };
+								}
+								console.log("VALIDATED TRANSACTION DATA");
+							}
+							else if (descriptor._transaction_data_type !== undefined) {
+								return { error: new Error("transaction_data_hashes is missing from transaction data response") };
+							}
+						} catch (e) {
+							console.error(e);
+							return { error: new Error("transaction_data validation error") };
+						}
+						const verificationResult = await ce.jptVerifier.verify({
+							rawCredential: vp,
+							opts: {
+								expectedAudience: rpState.audience,
+								expectedNonce: rpState.nonce,
+							},
+						});
+						if (!verificationResult.success) {
+							return { error: new Error(`JPT verification failed for ${descriptor.id}: ${verificationResult.error}`) };
+						}
+
+						const parseResult = await ce.credentialParsingEngine.parse({ rawCredential: vp });
+						if (!parseResult.success) {
+							return { error: new Error(`Parsing JPT failed for ${descriptor.id}: ${parseResult.error}`) };
+						}
+						if (!("signedJptClaims" in parseResult.value)) {
+							return { error: new Error(`Parsing JPT failed for ${descriptor.id}: missing signedJptClaims: ${parseResult.value}`) };
+						}
+
+						const signedJptClaims = parseResult.value.signedJptClaims;
+						const shaped = {
+							vct: issuerHeader.vct?.endsWith(':dc:jpt') ? issuerHeader.vct.substring(0, issuerHeader.vct.length - 7) : issuerHeader.vct, // TODO: Unhack this
+							credential_format: VerifiableCredentialFormat.DC_SDJWT, // TODO: Unhack this
+							claims: signedJptClaims.simple,
+							cryptographic_holder_binding: true,
+						};
+
+						const q = {
+							...dcql_query,
+							credentials: dcql_query.credentials.map((c: any) => ({
+								...c,
+								format: c.format === VerifiableCredentialFormat.DC_JPT ? VerifiableCredentialFormat.DC_SDJWT : c.format, // TODO: Unhack this
+							})),
+						};
+						const dcqlResult = DcqlPresentationResult.fromDcqlPresentation(
+							{ [descriptor.id]: [shaped] },
+							{ dcqlQuery: q }
+						);
+
+						if (!dcqlResult.credential_matches[descriptor.id]?.success) {
+							return { error: new Error(`DCQL validation failed for ${descriptor.id}`) };
+						}
+
+						const output = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].meta.output as any;
+						if (output.credential_format === VerifiableCredentialFormat.DC_SDJWT) {
+							const claimsObject = dcqlResult.credential_matches[descriptor.id].valid_credentials?.[0].claims as any;
+							presentationClaims[descriptor.id] = Object.entries(claimsObject.valid_claim_sets[0].output).map(([key, value]) => ({
+								key,
+								name: key,
+								value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+							}));
+							return { presentationClaims };
+						} else {
+							return { error: new Error(`Unexpected credential_format for descriptor ${descriptor.id}`) };
+						}
+					} catch (e) {
+					}
+
 					// ========== SD-JWT ==========
 					try {
 						const [kbjwt] = vp.split('~').reverse();
@@ -594,6 +776,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const parseResult = await ce.credentialParsingEngine.parse({ rawCredential: vp });
 					if (!parseResult.success) {
 						return { error: new Error(`Parsing SD-JWT failed for ${descriptor.id}: ${parseResult.error}`) };
+					}
+					if (!("signedClaims" in parseResult.value)) {
+						return { error: new Error(`Parsing SD-JWT failed for ${descriptor.id}: missing signedClaims: ${parseResult.value}`) };
 					}
 
 					const signedClaims = parseResult.value.signedClaims;
@@ -660,6 +845,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 					const parseResult = await ce.credentialParsingEngine.parse({ rawCredential: vp });
 					if (!parseResult.success) {
 						return { error: new Error(`Parsing mDoc failed for ${descriptor.id}: ${parseResult.error}`) };
+					}
+					if (!("signedClaims" in parseResult.value)) {
+						return { error: new Error(`Parsing mDoc failed for ${descriptor.id}: missing signedClaims: ${parseResult.value}`) };
 					}
 					const signedClaims = parseResult.value.signedClaims;
 					const shaped = {
