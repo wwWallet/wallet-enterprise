@@ -1,6 +1,5 @@
 import { config } from "../../../../config";
 import { createSRI } from "../../../lib/sriGenerator";
-import { pidSchema_1_5, pidSchema_1_8 } from "../schema/pidSchema";
 
 export const pidMetadata1_5 = {
 	"vct": "urn:eu.europa.ec.eudi:pid:1",
@@ -495,9 +494,7 @@ export const pidMetadata1_5 = {
 			],
 			"sd": "never"
 		}
-	],
-	"schema_uri": config.url + "/pid-1-5-schema",
-	"schema_uri#integrity": createSRI(pidSchema_1_5)
+	]
 };
 
 export const pidMetadata1_8 = {
@@ -1072,7 +1069,5 @@ export const pidMetadata1_8 = {
 			],
 			"sd": "never"
 		},
-	],
-	"schema_uri": config.url + "/pid-1-8-schema",
-	"schema_uri#integrity": createSRI(pidSchema_1_8)
+	]
 }
