@@ -67,7 +67,7 @@ export class PorSupportedCredentialSdJwtDeferred implements VCDMSupportedCredent
 
 	getDisplay() {
 		return {
-			name: `Power of Representation (${this.getFormat()}) - Deferred`,
+			name: "Power of Representation - Deferred",
 			description: "Power of Representation - SD-JWT VC",
 			background_image: { uri: config.url + "/images/background-image.png" },
 			background_color: "#c3b25d",

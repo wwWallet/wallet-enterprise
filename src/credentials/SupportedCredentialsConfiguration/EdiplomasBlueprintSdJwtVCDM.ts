@@ -71,7 +71,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 	}
 	getDisplay() {
 		return {
-			name: `Bachelor Diploma (${this.getFormat()})`,
+			name: "Bachelor Diploma",
 			background_image: { uri: config.url + "/images/background-image.png" },
 			logo: { uri: config.url + "/images/diploma-logo.png" },
 			background_color: "#b1d3ff",
@@ -320,4 +320,3 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 	}
 
 }
-
