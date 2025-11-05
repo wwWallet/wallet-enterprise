@@ -73,7 +73,7 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 	}
 	getDisplay() {
 		return {
-			name: `EHIC (${this.getFormat()})`,
+			name: "EHIC",
 			description: "European Health Insurance Card",
 			background_image: { uri: config.url + "/images/background-image.png" },
 			background_color: "#1b263b",
