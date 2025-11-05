@@ -43,7 +43,7 @@ block layout-content
 											td= claim.name
 											td.claim-value(data-raw-value=String(claim.value))= claim.value
 						if presentationInfo[descriptorId]
-							h5 Additional info
+							h3 Additional info
 							each message in presentationInfo[descriptorId]
 								p #{message}
 				h3 Credentials
