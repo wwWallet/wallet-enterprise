@@ -1,7 +1,5 @@
 import { createSRI } from "../../../lib/sriGenerator";
 import { config } from "../../../../config";
-import { porSchema } from "./../schema/porSchema";
-
 
 export const porMetadata = {
 	"vct": "urn:eu.europa.ec.eudi:por:1",
@@ -140,7 +138,5 @@ export const porMetadata = {
 				}
 			]
 		}
-	],
-	"schema_uri": config.url + "/por-schema",
-	"schema_uri#integrity": createSRI(porSchema)
+	]
 }

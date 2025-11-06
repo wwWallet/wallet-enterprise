@@ -23,7 +23,6 @@ import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine
 import { formatDateDDMMYYYY } from "../../lib/formatDate";
 import { createSRI } from "../../lib/sriGenerator";
 import { ehicMetadata } from "./typeMetadata/ehicMetadata";
-import { ehicSchema } from "./schema/ehicSchema";
 import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
 
 const datasetName = "ehic-dataset.xlsx";
@@ -241,10 +240,6 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 		return ehicMetadata;
 	}
 
-	public schema(): any {
-		return ehicSchema;
-	}
-
 	exportCredentialSupportedObject(): any {
 		return {
 			scope: this.getScope(),
@@ -258,7 +253,7 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 					proof_signing_alg_values_supported: ["ES256"]
 				}
 			},
-			claims:convertSdjwtvcToOpenid4vciClaims(this.metadata().claims, this.schema())
+			claims:convertSdjwtvcToOpenid4vciClaims(this.metadata().claims)
 		}
 	}
 }

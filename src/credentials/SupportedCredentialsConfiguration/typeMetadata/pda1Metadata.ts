@@ -1,6 +1,5 @@
 import { config } from "../../../../config";
 import { createSRI } from "../../../lib/sriGenerator";
-import { pda1Schema } from "./../schema/pda1Schema";
 
 export const pda1Metadata = {
 	"vct": "urn:eudi:pda1:1",
@@ -395,7 +394,5 @@ export const pda1Metadata = {
 				}
 			]
 		}
-	],
-	"schema_uri": config.url + "/pda1-schema",
-	"schema_uri#integrity": createSRI(pda1Schema)
+	]
 }

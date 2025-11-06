@@ -1,6 +1,5 @@
 import { config } from "../../../../config";
 import { createSRI } from "../../../lib/sriGenerator";
-import { ehicSchema } from "./../schema/ehicSchema";
 
 export const ehicMetadata = {
 	"vct": "urn:eudi:ehic:1",
@@ -215,7 +214,5 @@ export const ehicMetadata = {
 				}
 			]
 		}
-	],
-	"schema_uri": config.url + "/ehic-schema",
-	"schema_uri#integrity": createSRI(ehicSchema)
+	]
 }
