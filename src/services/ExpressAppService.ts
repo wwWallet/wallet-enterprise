@@ -232,35 +232,6 @@ export class ExpressAppService {
 							});
 						}
 
-						// @ts-ignore
-						if (configuration?.schema) {
-							// @ts-ignore
-							const schema = configuration?.schema();
-							const schemaArray = Array.isArray(schema) ? schema : [schema];
-
-							schemaArray.forEach((item: any) => {
-								try {
-									if (!('$id' in item)) return;
-									const newUrl = new URL(item["$id"]);
-									let path = null;
-									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
-										path = newUrl.pathname;
-
-										console.log(`✅ Registering route: ${path}`);
-
-										app.get(path, async (_req, res) => {
-											return res.send({
-												...item
-											})
-										});
-
-									}
-
-								} catch (error) {
-									console.error(`❌ Error processing item.id (${item?.id}):`, error);
-								}
-							});
-						}
 					})
 
 					console.log("✅ Registering route /type-metadata VCTs:", Array.from(dynamicVctMap.keys()));
