@@ -21,7 +21,7 @@ import { GenericLocalAuthenticationComponent } from "../../authentication/authen
 import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine";
 import { createSRI } from "../../lib/sriGenerator";
 import { pidMetadata } from "./typeMetadata/pidMetadata";
-import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
+import { convertSdjwtvcToOpenid4vciClaims } from "wallet-common/dist/functions";
 
 const datasetName = "vid-dataset.xlsx";
 parsePidData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse

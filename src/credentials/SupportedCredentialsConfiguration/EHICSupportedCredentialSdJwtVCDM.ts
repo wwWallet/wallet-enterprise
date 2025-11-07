@@ -23,7 +23,7 @@ import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine
 import { formatDateDDMMYYYY } from "../../lib/formatDate";
 import { createSRI } from "../../lib/sriGenerator";
 import { ehicMetadata } from "./typeMetadata/ehicMetadata";
-import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
+import { convertSdjwtvcToOpenid4vciClaims } from "wallet-common/dist/functions";
 
 const datasetName = "ehic-dataset.xlsx";
 parseEhicData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse

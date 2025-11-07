@@ -21,7 +21,7 @@ import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.e
 import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine";
 import { createSRI } from "../../lib/sriGenerator";
 import { porMetadata } from "./typeMetadata/porMetadata";
-import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
+import { convertSdjwtvcToOpenid4vciClaims } from "wallet-common/dist/functions";
 
 const datasetName = "por-dataset.xlsx";
 parsePorData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse
