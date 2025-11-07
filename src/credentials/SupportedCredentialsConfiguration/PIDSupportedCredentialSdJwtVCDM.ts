@@ -293,7 +293,8 @@ export class PIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 					key_attestations_required: {},
 				}
 			},
-			claims:convertSdjwtvcToOpenid4vciClaims(this.metadata().claims)
+			claims: convertSdjwtvcToOpenid4vciClaims(this.metadata().claims)
+
 		}
 	}
 }
