@@ -29,8 +29,37 @@ export const porMetadata = {
 	"claims": [
 		{
 			"path": [
+				"vct"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iss"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iat"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"cnh"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
 				"legal_person_identifier"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "legal_person_identifier",
 			"display": [
@@ -45,6 +74,7 @@ export const porMetadata = {
 			"path": [
 				"legal_name"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "legal_name",
 			"display": [
@@ -59,6 +89,7 @@ export const porMetadata = {
 			"path": [
 				"full_powers"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "full_powers",
 			"display": [
@@ -87,6 +118,7 @@ export const porMetadata = {
 			"path": [
 				"issuing_authority"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -100,6 +132,7 @@ export const porMetadata = {
 			"path": [
 				"issuing_country"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "issuing_country",
 			"display": [
@@ -128,6 +161,7 @@ export const porMetadata = {
 			"path": [
 				"effective_from_date"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "effective_from_date",
 			"display": [

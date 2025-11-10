@@ -29,8 +29,51 @@ export const pda1Metadata = {
 	"claims": [
 		{
 			"path": [
+				"vct"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"jti"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"sub"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iss"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iat"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"cnf"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
 				"personal_administrative_number"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"display": [
 				{
@@ -44,6 +87,7 @@ export const pda1Metadata = {
 			"path": [
 				"employer"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -100,6 +144,7 @@ export const pda1Metadata = {
 			"path": [
 				"work_address"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -210,6 +255,7 @@ export const pda1Metadata = {
 			"path": [
 				"legislation_country"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -223,6 +269,7 @@ export const pda1Metadata = {
 			"path": [
 				"status_confirmation"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -236,6 +283,7 @@ export const pda1Metadata = {
 			"path": [
 				"issuing_authority"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -276,6 +324,7 @@ export const pda1Metadata = {
 			"path": [
 				"issuing_country"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "issuing_country",
 			"display": [
@@ -304,6 +353,7 @@ export const pda1Metadata = {
 			"path": [
 				"date_of_issuance"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -317,6 +367,7 @@ export const pda1Metadata = {
 			"path": [
 				"authentic_source"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -358,6 +409,7 @@ export const pda1Metadata = {
 			"path": [
 				"ending_date"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -371,6 +423,7 @@ export const pda1Metadata = {
 			"path": [
 				"starting_date"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -384,6 +437,7 @@ export const pda1Metadata = {
 			"path": [
 				"document_number"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"svg_id": "document_number",
 			"display": [

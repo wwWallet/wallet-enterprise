@@ -38,6 +38,13 @@ export const pidMetadata = {
 	"claims": [
 		{
 			"path": [
+				"vct"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
 				"jti"
 			],
 			"sd": "never",
@@ -46,18 +53,28 @@ export const pidMetadata = {
 			"path": [
 				"sub"
 			],
+			"mandatory": true,
 			"sd": "never",
 		},
 		{
 			"path": [
 				"iat"
 			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"cnh"
+			],
+			"mandatory": true,
 			"sd": "never",
 		},
 		{
 			"path": [
 				"family_name"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"svg_id": "family_name",
 			"display": [
@@ -72,6 +89,7 @@ export const pidMetadata = {
 			"path": [
 				"given_name"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"svg_id": "given_name",
 			"display": [
@@ -86,6 +104,7 @@ export const pidMetadata = {
 			"path": [
 				"birthdate"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"svg_id": "birth_date",
 			"display": [
@@ -100,6 +119,7 @@ export const pidMetadata = {
 			"path": [
 				"place_of_birth"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"display": [
 				{
@@ -169,6 +189,7 @@ export const pidMetadata = {
 			"path": [
 				"nationalities"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"display": [
 				{
@@ -493,6 +514,7 @@ export const pidMetadata = {
 			"path": [
 				"issuing_authority"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"display": [
 				{
@@ -506,6 +528,7 @@ export const pidMetadata = {
 			"path": [
 				"issuing_country"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"display": [
 				{
@@ -519,6 +542,7 @@ export const pidMetadata = {
 			"path": [
 				"date_of_expiry"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "expiry_date",
 			"display": [

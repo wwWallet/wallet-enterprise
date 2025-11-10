@@ -33,26 +33,51 @@ export const ehicMetadata = {
 	"claims": [
 		{
 			"path": [
+				"vct"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
 				"jti"
 			],
+			"mandatory": true,
 			"sd": "never",
 		},
 		{
 			"path": [
 				"sub"
 			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iss"
+			],
+			"mandatory": true,
 			"sd": "never",
 		},
 		{
 			"path": [
 				"iat"
 			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"cnf"
+			],
+			"mandatory": true,
 			"sd": "never",
 		},
 		{
 			"path": [
 				"personal_administrative_number"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"svg_id": "personal_administrative_number",
 			"display": [
@@ -67,6 +92,7 @@ export const ehicMetadata = {
 			"path": [
 				"issuing_country"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "issuer_country",
 			"display": [
@@ -81,6 +107,7 @@ export const ehicMetadata = {
 			"path": [
 				"issuing_authority"
 			],
+			"mandatory": true,
 			"sd": "never",
 		},
 		{
@@ -129,6 +156,7 @@ export const ehicMetadata = {
 			"path": [
 				"date_of_issuance"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
@@ -142,6 +170,7 @@ export const ehicMetadata = {
 			"path": [
 				"authentic_source"
 			],
+			"mandatory": true,
 			"sd": "never",
 		},
 		{
@@ -204,6 +233,7 @@ export const ehicMetadata = {
 			"path": [
 				"document_number"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"svg_id": "document_number",
 			"display": [
