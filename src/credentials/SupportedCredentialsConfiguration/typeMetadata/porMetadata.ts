@@ -1,7 +1,5 @@
 import { createSRI } from "../../../lib/sriGenerator";
 import { config } from "../../../../config";
-import { porSchema } from "./../schema/porSchema";
-
 
 export const porMetadata = {
 	"vct": "urn:eu.europa.ec.eudi:por:1",
@@ -10,7 +8,7 @@ export const porMetadata = {
 	"$comment": "Based on the Power Of Representation Rulebook v1.2 of the LSP POTENTIAL UC1.",
 	"display": [
 		{
-			"lang": "en-US",
+			"locale": "en-US",
 			"name": "POR SD-JWT VC",
 			"description": "Power of Representation (POR) SD-JWT VC",
 			"rendering": {
@@ -31,13 +29,42 @@ export const porMetadata = {
 	"claims": [
 		{
 			"path": [
+				"vct"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iss"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iat"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"cnh"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
 				"legal_person_identifier"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "legal_person_identifier",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Legal entity ID",
 					"description": "Unique identifier of the legal entity being represented."
 				}
@@ -47,11 +74,12 @@ export const porMetadata = {
 			"path": [
 				"legal_name"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "legal_name",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Legal entity name",
 					"description": "Name of the legal entity being represented."
 				}
@@ -61,11 +89,12 @@ export const porMetadata = {
 			"path": [
 				"full_powers"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "full_powers",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Full Representation Powers",
 					"description": "Indicates whether the representative is fully authorized to act on behalf of the legal entity."
 				}
@@ -79,7 +108,7 @@ export const porMetadata = {
 			"svg_id": "eService",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Designated eService",
 					"description": "Identifies the eServices in relation to which the natural person is empowered to represent the legal entity."
 				}
@@ -89,10 +118,11 @@ export const porMetadata = {
 			"path": [
 				"issuing_authority"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Issuing authority",
 					"description": "Legal name of the issuing entity."
 				}
@@ -102,11 +132,12 @@ export const porMetadata = {
 			"path": [
 				"issuing_country"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "issuing_country",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Issuing country",
 					"description": "Country code where the document was issued."
 				}
@@ -120,7 +151,7 @@ export const porMetadata = {
 			"svg_id": "effective_until_date",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Effective until",
 					"description": "End date of valid representation (inclusive)."
 				}
@@ -130,17 +161,16 @@ export const porMetadata = {
 			"path": [
 				"effective_from_date"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "effective_from_date",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Effective from",
 					"description": "Start date of valid representation (inclusive)."
 				}
 			]
 		}
-	],
-	"schema_uri": config.url + "/por-schema",
-	"schema_uri#integrity": createSRI(porSchema)
+	]
 }

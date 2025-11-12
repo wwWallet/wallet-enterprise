@@ -20,9 +20,8 @@ import { CONSENT_ENTRYPOINT } from "../../authorization/constants";
 import { GenericLocalAuthenticationComponent } from "../../authentication/authenticationComponentTemplates/GenericLocalAuthenticationComponent";
 import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine";
 import { createSRI } from "../../lib/sriGenerator";
-import { pidMetadata1_8 } from "./typeMetadata/pidMetadata";
-import { pidSchema_1_8 } from "./schema/pidSchema";
-import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
+import { pidMetadata } from "./typeMetadata/pidMetadata";
+import { convertSdjwtvcToOpenid4vciClaims } from "wallet-common/dist/functions";
 
 const datasetName = "vid-dataset.xlsx";
 parsePidData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse
@@ -274,11 +273,7 @@ export class PIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 	}
 
 	public metadata(): any {
-		return pidMetadata1_8;
-	}
-
-	public schema(): any {
-		return pidSchema_1_8;
+		return pidMetadata;
 	}
 
 	exportCredentialSupportedObject(): any {
@@ -298,7 +293,8 @@ export class PIDSupportedCredentialSdJwtVCDM implements VCDMSupportedCredentialP
 					key_attestations_required: {},
 				}
 			},
-			claims:convertSdjwtvcToOpenid4vciClaims(this.metadata().claims, this.schema())
+			claims: convertSdjwtvcToOpenid4vciClaims(this.metadata().claims)
+
 		}
 	}
 }
