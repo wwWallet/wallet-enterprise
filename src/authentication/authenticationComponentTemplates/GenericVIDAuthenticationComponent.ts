@@ -12,6 +12,7 @@ import { appContainer } from "../../services/inversify.config";
 import { OpenidForPresentationsReceivingService } from "../../services/OpenidForPresentationReceivingService";
 import locale from "../../configuration/locale";
 import { RelyingPartyState } from "../../entities/RelyingPartyState.entity";
+import { buildDcqlQuery } from "../../util/buildDcqlQuery";
 
 export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 	private openidForPresentationReceivingService = appContainer.resolve(OpenidForPresentationsReceivingService);
@@ -133,8 +134,9 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 	private async askForPresentation(req: Request, res: Response): Promise<any> {
 		let presentationDefinition = JSON.parse(JSON.stringify(verifierConfigurationService.getPresentationDefinitions().filter(pd => pd.id == this.presentationDefinitionId)[0])) as any;
 		presentationDefinition.input_descriptors[0].purpose = `Present your credential(s) to get your ${this.scopeName}`
+		const queryToSend = buildDcqlQuery(presentationDefinition, req.body);
 		try {
-			const { url, stateId } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, presentationDefinition, req.cookies['session_id'], config.url + CONSENT_ENTRYPOINT + '/callback');
+			const { url, stateId } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, queryToSend, req.cookies['session_id'], config.url + CONSENT_ENTRYPOINT + '/callback');
 			console.log("Authorization request url = ", url)
 			// attach the vid_auth_state with an authorization server state
 			req.authorizationServerState.vid_auth_state = stateId;

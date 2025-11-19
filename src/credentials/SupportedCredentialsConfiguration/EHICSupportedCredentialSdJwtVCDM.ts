@@ -38,9 +38,9 @@ export class EHICSupportedCredentialSdJwtVCDM implements VCDMSupportedCredential
 		return new AuthenticationChainBuilder()
 			.addAuthenticationComponent(new GenericAuthenticationMethodSelectionComponent(this.getScope() + "-auth-method", CONSENT_ENTRYPOINT, [{ code: UserAuthenticationMethod.VID_AUTH, description: "Authentication with PID" }, { code: UserAuthenticationMethod.SSO, description: "Authentication with National Services" }]))
 			.addAuthenticationComponent(new GenericVIDAuthenticationComponent(this.getScope() + "-vid-authentication", CONSENT_ENTRYPOINT, {
-				"family_name": { input_descriptor_constraint_field_name: "Last Name" },
-				"given_name": { input_descriptor_constraint_field_name: "First Name" },
-				"birth_date": { input_descriptor_constraint_field_name: "Date of Birth", parser: (value: string) => new Date(value).toISOString() },
+				"family_name": { input_descriptor_constraint_field_name: "family_name" },
+				"given_name": { input_descriptor_constraint_field_name: "given_name" },
+				"birth_date": { input_descriptor_constraint_field_name: "birthdate", parser: (value: string) => new Date(value).toISOString() },
 			}, "PidMinimal", "PID", this.getDisplay().name))
 			.addAuthenticationComponent(new GenericLocalAuthenticationComponent(this.getScope() + "-1-local", CONSENT_ENTRYPOINT, {
 				"family_name": { datasetColumnName: "family_name" },
