@@ -1,7 +1,4 @@
 import { Router } from "express";
-// import { Repository } from "typeorm";
-// import { VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
-// import AppDataSource from "../AppDataSource";
 import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "../services/interfaces";
 import { appContainer } from "../services/inversify.config";
 import { TYPES } from "../services/types";
@@ -14,7 +11,6 @@ import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 import AppDataSource from "../AppDataSource";
 import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
-// import { buildDcqlQuery } from "../util/buildDcqlQuery";
 
 import Ajv from 'ajv';
 const ajv = new Ajv();
@@ -129,7 +125,6 @@ export const sanitizeInput = (input: string): string =>
 const MAX_CERT_LENGTH = 5000;
 
 const verifierRouter = Router();
-// const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
 const verifierConfiguration = appContainer.get<VerifierConfigurationInterface>(TYPES.VerifierConfigurationServiceInterface);
 const openidForPresentationReceivingService = appContainer.get<OpenidForPresentationsReceivingInterface>(TYPES.OpenidForPresentationsReceivingService);
 
@@ -340,6 +335,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 		return res.redirect(req.body.action);
 	}
 	let def;
+	let presentationRequest = {}
 	try {
 		def = JSON.parse(req.body.presentationDefinition);
 		const combinedSchema = {
@@ -354,6 +350,11 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 				locale: locale[req.lang],
 			});
 		}
+		presentationRequest = {
+			id: "EditableDcqlQuery",
+			title: "Editable DCQL Query",
+			dcql_query: def
+		}
 	} catch (error) {
 		return res.render('error.pug', {
 			msg: "Error while parsing the presentation definition",
@@ -366,7 +367,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId);
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, def, newSessionId, config.url + "/verifier/callback");
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationRequest, newSessionId, config.url + "/verifier/callback");
 	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(modifiedUrl.toString(), {
@@ -384,7 +385,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 		wwwalletURL: config.wwwalletURL,
 		authorizationRequestURL: modifiedUrl,
 		authorizationRequestQR,
-		presentationDefinition: JSON.stringify(JSON.parse(req.body.presentationDefinition)),
+		presentationRequest: JSON.stringify(JSON.parse(req.body.presentationDefinition)),
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],
@@ -436,7 +437,6 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_reque
 
 	// const queryType = req.body.queryType || "dcql";
 	let scheme = "openid4vp://cb";
-	let queryToSend = presentationRequest.dcql_query;
 
 	// If there are selected fields from a POST request, update the constraints accordingly
 	if (req.method === "POST" && req.body.attributes) {
@@ -464,7 +464,6 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_reque
 			presentationRequest.dcql_query.credentials[0].format = "mso_mdoc";
 		}
 		presentationRequest.dcql_query.credentials[0].id = req.body.descriptorId;
-		queryToSend = presentationRequest.dcql_query;
 	}
 	else if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
 		console.log("Cookie = ", req.cookies)
@@ -475,12 +474,9 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_reque
 			.execute();
 		return res.redirect(req.body.action);
 	}
-	else { //combined, non-configurable presentation
-		queryToSend = presentationRequest.dcql_query;
-	}
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId); // start session here
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, queryToSend, newSessionId, config.url + "/verifier/callback");
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationRequest, newSessionId, config.url + "/verifier/callback");
 	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(modifiedUrl.toString(), {
@@ -498,7 +494,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_reque
 		wwwalletURL: config.wwwalletURL,
 		authorizationRequestURL: modifiedUrl,
 		authorizationRequestQR,
-		presentationRequest: JSON.stringify(queryToSend),
+		presentationRequest: JSON.stringify(presentationRequest.dcql_query),
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],

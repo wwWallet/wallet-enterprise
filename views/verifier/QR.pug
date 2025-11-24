@@ -22,8 +22,7 @@ block layout-content
 					input(type='hidden' name='authorizationRequestURL' id='authorizationRequestURL' value=authorizationRequestURL)
 
 		- const parsedDefinition = JSON.parse(presentationRequest)
-		- const hasInputDescriptors = parsedDefinition?.input_descriptors !== undefined
-		- const summaryLabel = hasInputDescriptors ? 'Presentation Definition' : 'DCQL Query'
+		- const summaryLabel = 'DCQL Query'
 
 		.presentation-definition-container
 			details.details-toggle

@@ -14,7 +14,7 @@ block layout-content
 				textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
 
 			.label-wrapper
-				label(for="presentationDefinition") Presentation Definition or DCQL Query
+				label(for="presentationDefinition") DCQL Query
 				p.form-subtitle You can edit this template as needed
 				textarea(id="presentationDefinitionText" name="presentationDefinition" style="display: none")
 			div(id="jsoneditor")
@@ -39,36 +39,56 @@ block layout-content
 		const editor = new JSONEditor(container, options);
 
 		editor.set({
-						"id": "VerifiableId",
-						"title": "PID",
-						"description": "Personal Identification",
-						"input_descriptors": [
+			"credentials": [
+					{
+						"id": "minimalSdJwtPID",
+						"format": "dc+sd-jwt",
+						"meta": {
+							"vct_values": [
+								"urn:eudi:pid:1"
+							]
+						},
+						"claims": [
 							{
-								"name": "Custom PID",
-								"purpose": "wwWallet Verifier requests your credentials",
-								"constraints": {
-									"limit_disclosure": "required",
-									"fields": [
-										{
-											"name": "VC type",
-											"path": ["$.vct"],
-											"filter": {
-												"type": "string",
-												"const": "urn:eudi:pid:1"
-											}
-										}
-									]
-								},
-								"format": {
-									"dc+sd-jwt": {
-										"sd-jwt_alg_values": ["ES256"],
-										"kb-jwt_alg_values": ["ES256"]
-									}
-								},
-								"id": "SdJwtPID"
+								"path": [
+									"given_name"
+								]
+							},
+							{
+								"path": [
+									"family_name"
+								]
+							},
+							{
+								"path": [
+									"birthdate"
+								]
+							},
+							{
+								"path": [
+									"nationalities"
+								]
+							},
+							{
+								"path": [
+									"date_of_expiry"
+								]
+							},
+							{
+								"path": [
+									"issuing_authority"
+								]
+							},
+							{
+								"path": [
+									"issuing_country"
+								]
 							}
 						]
-					});
+					}
+				]
+			}
+		);
 
 		document.querySelector('#edit-presentation-definition').addEventListener('submit', (e) => {
 			e.preventDefault();

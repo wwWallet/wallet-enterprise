@@ -120,8 +120,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		exportedEphPriv.kid = exportedEphPub.kid;
 		exportedEphPub.use = 'enc';
 		let transactionDataObject: any[] = [];
-		if (presentationRequest.credentials) {
-			transactionDataObject = await Promise.all(presentationRequest.credentials
+		if (presentationRequest?.dcql_query?.credentials) {
+			transactionDataObject = await Promise.all(presentationRequest?.dcql_query?.credentials
 				.filter((cred: any) => cred._transaction_data_type !== undefined)
 				.map(async (cred: any) => {
 					if (!cred._transaction_data_type) {
@@ -146,7 +146,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			response_mode: response_mode,
 			state: state,
 			nonce: nonce,
-			dcql_query: presentationRequest.credentials ? serializePresentationDefinition(JSON.parse(JSON.stringify(presentationRequest))) : null,
+			dcql_query: presentationRequest?.dcql_query?.credentials ? serializePresentationDefinition(JSON.parse(JSON.stringify(presentationRequest.dcql_query))) : null,
 			client_metadata: {
 				"jwks": {
 					"keys": [
@@ -193,8 +193,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 
 		const newRpState = new RelyingPartyState();
-		newRpState.dcql_query = presentationRequest ? presentationRequest : null;
-		newRpState.presentation_request_id = presentationRequest.id ? presentationRequest.id : presentationRequest.credentials[0].id;
+		newRpState.dcql_query = presentationRequest?.dcql_query ? presentationRequest.dcql_query : null;
+		newRpState.presentation_request_id = presentationRequest.id ? presentationRequest.id : presentationRequest.dcql_query?.credentials[0].id;
 		newRpState.date_created = new Date();
 		newRpState.nonce = nonce;
 		newRpState.state = state;
