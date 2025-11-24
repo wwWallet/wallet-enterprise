@@ -1,58 +1,26 @@
-
 document.addEventListener("DOMContentLoaded", () => {
 	const typeDropdown = document.getElementById("type");
 	const attributesContainer = document.getElementById("attributes-container");
-	function updateRequestButtonState() {
-		const submitButton = document.querySelector(".request-qr");
-		const attributeCheckboxes = attributesContainer.querySelectorAll('input[type="checkbox"]');
-		const anySelected = Array.from(attributeCheckboxes).some(cb => cb.checked);
-		submitButton.disabled = !anySelected;
+	const dcqlQuery = JSON.parse(document.querySelector('script[src="/js/configurable-presentation.js"]').dataset.dcqlQuery);
+
+	const form = document.querySelector("form");
+	const dcqlQueryInput = document.getElementById("dcql-query-input");
+
+	function getCredentialByType(type) {
+		return dcqlQuery.credentials.find(cred =>
+			(type === "sd-jwt" && cred.format === "dc+sd-jwt") ||
+			(type === "mdoc" && cred.format === "mso_mdoc")
+		);
 	}
-	const selectableFields = JSON.parse(document.querySelector('script[src="/js/configurable-presentation.js"]').dataset.fields);
-	const presentationDefinitionId = document.querySelector('script[src="/js/configurable-presentation.js"]').dataset.presentationId;
-	const presentationDefinitionDescriptorId = document.querySelector('script[src="/js/configurable-presentation.js"]').dataset.presentationDescriptorId;
-	const descriptorIdInput = document.getElementById("descriptorId");
 
-	const calculateDescriptorId = () => {
-		const type = typeDropdown.value;
-		const sdJwtMap = {
-			CustomVerifiableId: "SdJwtPID",
-			POR: "POR",
-			EuropeanHealthInsuranceCard: "EuropeanHealthInsuranceCard",
-			PortableDocumentA1: "PortableDocumentA1",
-			Bachelor: "Bachelor",
-		};
-
-		const mdocMap = {
-			CustomVerifiableId: "eu.europa.ec.eudi.pid.1"
-		};
-
-		if (type === "sd-jwt" && sdJwtMap[presentationDefinitionId]) {
-			return sdJwtMap[presentationDefinitionId];
-		} else if (type === "mdoc" && mdocMap[presentationDefinitionId]) {
-			return mdocMap[presentationDefinitionId];
-		}
-		return "";
-	};
-
-	const updateDescriptorId = () => {
-		if (presentationDefinitionDescriptorId === 'undefined') {
-			descriptorIdInput.value = calculateDescriptorId();
-		} else {
-			descriptorIdInput.value = presentationDefinitionDescriptorId;
-		}
-	};
-	typeDropdown.addEventListener("change", updateDescriptorId);
-	updateDescriptorId();
-
-	const updateAttributesContainer = (type) => {
+	function renderFields(type) {
 		attributesContainer.innerHTML = "";
+		const credential = getCredentialByType(type);
+		if (!credential) return;
 
-		const filteredFields = (type === "mdoc")
-			? selectableFields.filter(([label, value]) => value.includes("eu.europa.ec.eudi"))
-			: selectableFields.filter(([label, value]) => !value.includes("eu.europa.ec.eudi"));
-
-		filteredFields.forEach(([label, value]) => {
+		(credential.claims || []).forEach((claim, idx) => {
+			const label = claim.path.join(".");
+			const value = claim.path.join(".");
 			const fieldWrapper = document.createElement("div");
 			fieldWrapper.classList.add("checkbox-wrapper");
 
@@ -60,34 +28,29 @@ document.addEventListener("DOMContentLoaded", () => {
 			input.type = "checkbox";
 			input.name = "attributes[]";
 			input.value = value;
-			input.id = value;
+			input.id = `attr-${idx}`;
 
 			const labelElement = document.createElement("label");
-			labelElement.htmlFor = value;
+			labelElement.htmlFor = input.id;
 			labelElement.textContent = label;
-
-			if (value === "$.vct" && type === "sd-jwt") {
-				input.checked = true;
-				input.disabled = true;
-
-				const hiddenInput = document.createElement("input");
-				hiddenInput.type = "hidden";
-				hiddenInput.name = "attributes[]";
-				hiddenInput.value = value;
-				fieldWrapper.appendChild(hiddenInput);
-			}
-
 			input.addEventListener("change", updateRequestButtonState);
-
 			fieldWrapper.appendChild(input);
 			fieldWrapper.appendChild(labelElement);
 			attributesContainer.appendChild(fieldWrapper);
 		});
-
 		updateRequestButtonState();
-	};
+	}
 
-	updateAttributesContainer(typeDropdown.value);
+	function updateRequestButtonState() {
+		const submitButton = document.querySelector(".request-qr");
+		const attributeCheckboxes = attributesContainer.querySelectorAll('input[type="checkbox"]');
+		const anySelected = Array.from(attributeCheckboxes).some(cb => cb.checked);
+		submitButton.disabled = !anySelected;
+	}
+
+	typeDropdown.addEventListener("change", (e) => {
+		renderFields(e.target.value);
+	});
 
 	document.querySelector("#select-all").addEventListener("click", () => {
 		document.querySelectorAll("#attributes-container input[type=checkbox]:not(:disabled)").forEach(checkbox => {
@@ -102,4 +65,22 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 		updateRequestButtonState();
 	});
+
+	form.addEventListener("submit", (e) => {
+		e.preventDefault();
+		const selectedType = typeDropdown.value;
+		const credential = getCredentialByType(selectedType);
+		const selectedClaims = Array.from(attributesContainer.querySelectorAll('input[type="checkbox"]:checked'))
+			.map(cb => cb.value);
+
+		const filteredClaims = (credential.claims || []).filter(claim =>
+			selectedClaims.includes(claim.path.join("."))
+		);
+
+		const filteredCredential = { ...credential, claims: filteredClaims };
+		const filteredDcqlQuery = { ...dcqlQuery, credentials: [filteredCredential] };
+		dcqlQueryInput.value = JSON.stringify(filteredDcqlQuery);
+		form.submit();
+	});
+	renderFields(typeDropdown.value);
 });

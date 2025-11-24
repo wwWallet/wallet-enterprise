@@ -287,8 +287,8 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 			locale: locale[req.lang]
 		});
 	}
-	const presentationDefinition = verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_request_id)[0];
-	if (!presentationDefinition) {
+	const presentationRequest = verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_request_id)[0];
+	if (!presentationRequest) {
 		return res.render('error', {
 			msg: "No presentation definition was found",
 			code: 0,
@@ -296,17 +296,15 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 			locale: locale[req.lang]
 		});
 	}
-	if (presentationDefinition.dcql_query.credentials.length > 1) {
-		throw new Error("Selectable presentation definition is not supported for more than one descriptors currently");
-	}
-	const selectableFields = presentationDefinition.dcql_query.credentials[0].claims.map((claim: any) =>{
-		const label = claim.path.join(".");
-		return [label, claim.path[0]];
-	})
-	console.log("Selectable fields = ", selectableFields)
+	const selectableFields = presentationRequest.dcql_query.credentials
+		.flatMap((credential: any) => credential.claims)
+		.map((claim: any) => {
+				const label = claim.path.join(".");
+				return [label, claim.path[0]];
+		});
 	return res.render('verifier/configurable_presentation', {
-		presentationDefinitionId: presentationDefinition.id,
-		presentationDefinitionDescriptorId: presentationDefinition.id,
+		presentationDefinitionId: presentationRequest.id,
+		dcqlQuery: presentationRequest.dcql_query,
 		selectableFields,
 		lang: req.lang,
 		locale: locale[req.lang],
@@ -425,7 +423,13 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_reque
 	}
 
 
-	let presentationRequest = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_request_id)[0])) as any;
+	let presentationRequest;
+	if (req.method === "POST" && req.body.dcql_query) {
+		// Use the filtered query
+		presentationRequest = { dcql_query: JSON.parse(req.body.dcql_query) };
+	} else {
+		presentationRequest = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_request_id)[0])) as any;
+	}
 	if (!presentationRequest) {
 		return res.render('error', {
 			msg: "No presentation request was found",
@@ -435,37 +439,12 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_reque
 		});
 	}
 
-	// const queryType = req.body.queryType || "dcql";
 	let scheme = "openid4vp://cb";
-
-	// If there are selected fields from a POST request, update the constraints accordingly
-	if (req.method === "POST" && req.body.attributes) {
-		let selectedFieldPaths = req.body.attributes;
-		if (!Array.isArray(selectedFieldPaths)) {
-			selectedFieldPaths = [selectedFieldPaths];
-		}
-		const selectedPaths = new Set(selectedFieldPaths);
-		console.log("Selectd paths", selectedPaths);
-		scheme = req.body.scheme
-
-		const availableFields = presentationRequest.dcql_query.credentials[0].claims;
-		console.log("Available fields = ", availableFields)
-		const filteredFields = presentationRequest.dcql_query.credentials[0].claims.filter((claim: any) =>
-			selectedPaths.has(claim.path[0])
-		);
-
-		console.log("filtered fields = ", filteredFields)
-		presentationRequest.dcql_query.credentials[0].claims = filteredFields;
-		// Determine the presentation format based on the 'type' (sd-jwt or mdoc) provided by the form
-		const selectedType = req.body.type // Default to sd-jwt if type is not provided
-		if (selectedType === "sd-jwt") {
-			presentationRequest.dcql_query.credentials[0].format = "dc+sd-jwt";
-		} else if (selectedType === "mdoc") {
-			presentationRequest.dcql_query.credentials[0].format = "mso_mdoc";
-		}
-		presentationRequest.dcql_query.credentials[0].id = req.body.descriptorId;
+	if (req.method === "POST" && req.body.scheme) {
+		scheme = req.body.scheme;
 	}
-	else if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
+
+	if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
 		console.log("Cookie = ", req.cookies)
 		// update is_cross_device --> false since the button was pressed
 		await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder("rp_state")
