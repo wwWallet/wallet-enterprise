@@ -14,7 +14,7 @@ import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 import AppDataSource from "../AppDataSource";
 import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
-import { buildDcqlQuery } from "../util/buildDcqlQuery";
+// import { buildDcqlQuery } from "../util/buildDcqlQuery";
 
 import Ajv from 'ajv';
 const ajv = new Ajv();
@@ -282,9 +282,9 @@ verifierRouter.post('/callback', async (req, res) => {
 })
 
 
-verifierRouter.use('/public/definitions/configurable-presentation-request/:presentation_definition_id', async (req, res) => {
-	const presentation_definition_id = req.params.presentation_definition_id;
-	if (!presentation_definition_id) {
+verifierRouter.use('/public/definitions/configurable-presentation-request/:presentation_request_id', async (req, res) => {
+	const presentation_request_id = req.params.presentation_request_id;
+	if (!presentation_request_id) {
 		return res.render('error', {
 			msg: "No presentation definition was selected",
 			code: 0,
@@ -292,7 +292,7 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 			locale: locale[req.lang]
 		});
 	}
-	const presentationDefinition = verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0];
+	const presentationDefinition = verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_request_id)[0];
 	if (!presentationDefinition) {
 		return res.render('error', {
 			msg: "No presentation definition was found",
@@ -301,17 +301,17 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 			locale: locale[req.lang]
 		});
 	}
-	if (presentationDefinition.input_descriptors.length > 1) {
+	if (presentationDefinition.dcql_query.credentials.length > 1) {
 		throw new Error("Selectable presentation definition is not supported for more than one descriptors currently");
 	}
-	const selectableFields = presentationDefinition.input_descriptors[0].constraints.fields.map((field: any) => {
-		return [field.name, field.path[0]]
-	});
-
+	const selectableFields = presentationDefinition.dcql_query.credentials[0].claims.map((claim: any) =>{
+		const label = claim.path.join(".");
+		return [label, claim.path[0]];
+	})
 	console.log("Selectable fields = ", selectableFields)
 	return res.render('verifier/configurable_presentation', {
 		presentationDefinitionId: presentationDefinition.id,
-		presentationDefinitionDescriptorId: presentationDefinition.input_descriptors[0].id,
+		presentationDefinitionDescriptorId: presentationDefinition.id,
 		selectableFields,
 		lang: req.lang,
 		locale: locale[req.lang],
@@ -392,7 +392,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 })
 
 
-verifierRouter.get('/public/definitions/presentation-request/status/:presentation_definition_id', async (req, res) => {
+verifierRouter.get('/public/definitions/presentation-request/status/:presentation_request_id', async (req, res) => {
 	console.log("session_id : ", req.cookies['session_id'])
 	if (req.cookies['session_id'] && req.method == "GET") {
 		const { status } = await openidForPresentationReceivingService.getPresentationBySessionIdOrPresentationDuringIssuanceSession(req.cookies['session_id'], undefined, false);
@@ -409,14 +409,14 @@ verifierRouter.get('/public/definitions/presentation-request/status/:presentatio
 })
 
 
-verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
+verifierRouter.use('/public/definitions/presentation-request/:presentation_request_id', async (req, res) => {
 
-	const presentation_definition_id = req.params.presentation_definition_id;
+	const presentation_request_id = req.params.presentation_request_id;
 
 
-	if (!presentation_definition_id) {
+	if (!presentation_request_id) {
 		return res.render('error', {
-			msg: "No presentation definition was selected",
+			msg: "No presentation request was selected",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang]
@@ -424,19 +424,19 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 	}
 
 
-	let presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as any;
-	if (!presentationDefinition) {
+	let presentationRequest = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_request_id)[0])) as any;
+	if (!presentationRequest) {
 		return res.render('error', {
-			msg: "No presentation definition was found",
+			msg: "No presentation request was found",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang]
 		});
 	}
 
-	const queryType = req.body.queryType || "dcql";
+	// const queryType = req.body.queryType || "dcql";
 	let scheme = "openid4vp://cb";
-	let queryToSend: any = presentationDefinition;
+	let queryToSend = presentationRequest.dcql_query;
 
 	// If there are selected fields from a POST request, update the constraints accordingly
 	if (req.method === "POST" && req.body.attributes) {
@@ -448,54 +448,26 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		console.log("Selectd paths", selectedPaths);
 		scheme = req.body.scheme
 
-		if (queryType === "dcql") {
-			queryToSend = buildDcqlQuery(presentationDefinition, req.body);
-		} else {
+		const availableFields = presentationRequest.dcql_query.credentials[0].claims;
+		console.log("Available fields = ", availableFields)
+		const filteredFields = presentationRequest.dcql_query.credentials[0].claims.filter((claim: any) =>
+			selectedPaths.has(claim.path[0])
+		);
 
-			const availableFields = presentationDefinition.input_descriptors[0].constraints.fields;
-			console.log("Available fields = ", availableFields)
-			const filteredFields = presentationDefinition.input_descriptors[0].constraints.fields.filter((field: any) =>
-				selectedPaths.has(field.path[0])
-			);
-
-			console.log("filtered fields = ", filteredFields)
-			presentationDefinition.input_descriptors[0].constraints.fields = filteredFields;
-			// Determine the presentation format based on the 'type' (sd-jwt or mdoc) provided by the form
-			const selectedType = req.body.type // Default to sd-jwt if type is not provided
-			if (selectedType === "sd-jwt") {
-				const selectedFormat = req.body.format;
-				if (selectedFormat && selectedFormat === "vc+sd-jwt") {
-					presentationDefinition.input_descriptors[0].format = {
-						"vc+sd-jwt": {
-							"sd-jwt_alg_values": ["ES256"],
-							"kb-jwt_alg_values": ["ES256"]
-						},
-					};
-				} else {
-					presentationDefinition.input_descriptors[0].format = {
-						"dc+sd-jwt": {
-							"sd-jwt_alg_values": ["ES256"],
-							"kb-jwt_alg_values": ["ES256"]
-						},
-					};
-				}
-
-			} else if (selectedType === "mdoc") {
-				presentationDefinition.input_descriptors[0].format = {
-					"mso_mdoc": {
-						"sd-jwt_alg_values": ["ES256"],
-						"kb-jwt_alg_values": ["ES256"]
-					},
-				};
-			}
-			presentationDefinition.input_descriptors[0].purpose = req.body.purpose
-			presentationDefinition.input_descriptors[0].id = req.body.descriptorId
-			queryToSend = presentationDefinition;
+		console.log("filtered fields = ", filteredFields)
+		presentationRequest.dcql_query.credentials[0].claims = filteredFields;
+		// Determine the presentation format based on the 'type' (sd-jwt or mdoc) provided by the form
+		const selectedType = req.body.type // Default to sd-jwt if type is not provided
+		if (selectedType === "sd-jwt") {
+			presentationRequest.dcql_query.credentials[0].format = "dc+sd-jwt";
+		} else if (selectedType === "mdoc") {
+			presentationRequest.dcql_query.credentials[0].format = "mso_mdoc";
 		}
+		presentationRequest.dcql_query.credentials[0].id = req.body.descriptorId;
+		queryToSend = presentationRequest.dcql_query;
 	}
 	else if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
 		console.log("Cookie = ", req.cookies)
-
 		// update is_cross_device --> false since the button was pressed
 		await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder("rp_state")
 			.update({ is_cross_device: false })
@@ -504,9 +476,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		return res.redirect(req.body.action);
 	}
 	else { //combined, non-configurable presentation
-		if (queryType === "dcql") {
-			queryToSend = buildDcqlQuery(presentationDefinition);
-		}
+		queryToSend = presentationRequest.dcql_query;
 	}
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId); // start session here
@@ -528,7 +498,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		wwwalletURL: config.wwwalletURL,
 		authorizationRequestURL: modifiedUrl,
 		authorizationRequestQR,
-		presentationDefinition: JSON.stringify(queryToSend),
+		presentationRequest: JSON.stringify(queryToSend),
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],

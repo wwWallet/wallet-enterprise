@@ -305,7 +305,7 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			if (result.status == true) {
 				const authorization_code = crypto.randomBytes(60).toString('base64url');
 				ctx.req.authorizationServerState.authorization_code = authorization_code;
-				const presentationDefinition = this.verifierConfigurationService.getPresentationDefinitions().filter((pd) => pd.id == result.rpState.presentation_definition_id)[0];
+				const presentationDefinition = this.verifierConfigurationService.getPresentationDefinitions().filter((pd) => pd.id == result.rpState.presentation_request_id)[0];
 
 				// @ts-ignore
 				const claims = result.rpState.claims[presentationDefinition.input_descriptors[0].id];

@@ -96,7 +96,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return ctx.res.send(signedRequest.toString());
 	}
 
-	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, def: any, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
+	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationRequest: any, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
 		// create cookie and add it to response
 
 		console.log("Presentation Request: Session id used for authz req ", sessionId);
@@ -120,22 +120,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		exportedEphPriv.kid = exportedEphPub.kid;
 		exportedEphPub.use = 'enc';
 		let transactionDataObject: any[] = [];
-		if (def.input_descriptors) {
-			transactionDataObject = await Promise.all(def.input_descriptors
-				.filter(((input_desc: any) => input_desc._transaction_data_type !== undefined))
-				.map(async (cred: any) => {
-					if (!cred._transaction_data_type) {
-						return null;
-					}
-					const txData = TransactionData(cred._transaction_data_type);
-					if (!txData) {
-						return null;
-					}
-					return await txData
-						.generateTransactionDataRequestObject(cred.id);
-				}));
-		} else if (def.credentials) {
-			transactionDataObject = await Promise.all(def.credentials
+		if (presentationRequest.credentials) {
+			transactionDataObject = await Promise.all(presentationRequest.credentials
 				.filter((cred: any) => cred._transaction_data_type !== undefined)
 				.map(async (cred: any) => {
 					if (!cred._transaction_data_type) {
@@ -160,8 +146,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			response_mode: response_mode,
 			state: state,
 			nonce: nonce,
-			presentation_definition: def.input_descriptors ? serializePresentationDefinition(JSON.parse(JSON.stringify(def))) : null,
-			dcql_query: def.credentials ? serializePresentationDefinition(JSON.parse(JSON.stringify(def))) : null,
+			dcql_query: presentationRequest.credentials ? serializePresentationDefinition(JSON.parse(JSON.stringify(presentationRequest))) : null,
 			client_metadata: {
 				"jwks": {
 					"keys": [
@@ -208,9 +193,8 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 
 
 		const newRpState = new RelyingPartyState();
-		newRpState.presentation_definition = def.input_descriptors ? def : null;
-		newRpState.dcql_query = def.credentials ? def : null;
-		newRpState.presentation_definition_id = def.id ? def.id : def.credentials[0].id;
+		newRpState.dcql_query = presentationRequest ? presentationRequest : null;
+		newRpState.presentation_request_id = presentationRequest.id ? presentationRequest.id : presentationRequest.credentials[0].id;
 		newRpState.date_created = new Date();
 		newRpState.nonce = nonce;
 		newRpState.state = state;
