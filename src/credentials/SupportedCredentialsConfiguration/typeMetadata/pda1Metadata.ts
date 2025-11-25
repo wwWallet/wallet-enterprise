@@ -1,6 +1,5 @@
 import { config } from "../../../../config";
 import { createSRI } from "../../../lib/sriGenerator";
-import { pda1Schema } from "./../schema/pda1Schema";
 
 export const pda1Metadata = {
 	"vct": "urn:eudi:pda1:1",
@@ -9,7 +8,7 @@ export const pda1Metadata = {
 	"$comment": "Implementation of the DC4EU VCTM may require Member State-specific clarifications to align with national policies governing the display of included claims.",
 	"display": [
 		{
-			"lang": "en-US",
+			"locale": "en-US",
 			"name": "PDA1 SD-JWT VC",
 			"description": "Portable Document A1 (PDA1) SD-JWT VC.",
 			"rendering": {
@@ -30,12 +29,55 @@ export const pda1Metadata = {
 	"claims": [
 		{
 			"path": [
+				"vct"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"jti"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"sub"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iss"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"iat"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
+				"cnf"
+			],
+			"mandatory": true,
+			"sd": "never",
+		},
+		{
+			"path": [
 				"personal_administrative_number"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Social Security PIN",
 					"description": "Unique personal identifier used by social security services."
 				}
@@ -45,10 +87,11 @@ export const pda1Metadata = {
 			"path": [
 				"employer"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Employer"
 				}
 			]
@@ -61,7 +104,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Employer id",
 					"description": "Employer unique identifier in EU or Member State registries."
 				}
@@ -76,7 +119,7 @@ export const pda1Metadata = {
 			"svg_id": "employer_name",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Employer name",
 					"description": "Employer name in EU or Member State registries."
 				}
@@ -91,7 +134,7 @@ export const pda1Metadata = {
 			"svg_id": "employer_country",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Employer country",
 					"description": "Country where the employer is registered."
 				}
@@ -101,10 +144,11 @@ export const pda1Metadata = {
 			"path": [
 				"work_address"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Work address"
 				}
 			]
@@ -117,7 +161,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Full workplace address",
 					"description": "Full formatted address of the workplace."
 				}
@@ -131,7 +175,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Workplace street",
 					"description": "Street name of the workplace."
 				}
@@ -145,7 +189,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Workplace building number",
 					"description": "Street number or building of the workplace."
 				}
@@ -159,7 +203,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Workplace ZIP",
 					"description": "Postal or ZIP code of the workplace."
 				}
@@ -173,7 +217,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Workplace city",
 					"description": "Municipality, city, town, or village of the workplace."
 				}
@@ -187,7 +231,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Workplace state",
 					"description": "State, province, or regional division of the workplace."
 				}
@@ -201,7 +245,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Workplace country",
 					"description": "Country where the workplace is located."
 				}
@@ -211,10 +255,11 @@ export const pda1Metadata = {
 			"path": [
 				"legislation_country"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Applicable legislation",
 					"description": "Country whose legislation is to be applied during the work abroad."
 				}
@@ -224,10 +269,11 @@ export const pda1Metadata = {
 			"path": [
 				"status_confirmation"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Status Confirmation",
 					"description": "Status Confirmation, which defines the exact applicable legal framework for the worker."
 				}
@@ -237,10 +283,11 @@ export const pda1Metadata = {
 			"path": [
 				"issuing_authority"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Issuing authority"
 				}
 			]
@@ -253,7 +300,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Issuing authority id",
 					"description": "PDA1 issuing authority unique identifier."
 				}
@@ -267,7 +314,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Issuing authority name",
 					"description": "PDA1 issuing authority name."
 				}
@@ -277,11 +324,12 @@ export const pda1Metadata = {
 			"path": [
 				"issuing_country"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"svg_id": "issuing_country",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Issuing country",
 					"description": "PDA1 issuing country."
 				}
@@ -295,7 +343,7 @@ export const pda1Metadata = {
 			"svg_id": "date_of_expiry",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Expiry date",
 					"description": "PDA1 expiration date."
 				}
@@ -305,10 +353,11 @@ export const pda1Metadata = {
 			"path": [
 				"date_of_issuance"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Issue date",
 					"description": "PDA1 validity start date."
 				}
@@ -318,10 +367,11 @@ export const pda1Metadata = {
 			"path": [
 				"authentic_source"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Competent institution"
 				}
 			]
@@ -334,7 +384,7 @@ export const pda1Metadata = {
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Competent institution id",
 					"description": "Identifier of the competent insitution as registered in the EESSI Institution Repository."
 				}
@@ -349,7 +399,7 @@ export const pda1Metadata = {
 			"svg_id": "authentic_source_name",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Competent institution name",
 					"description": "Name of the competent insitution as registered in the EESSI Institution Repository."
 				}
@@ -359,10 +409,11 @@ export const pda1Metadata = {
 			"path": [
 				"ending_date"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Ending date",
 					"description": "End date of the business decision validity period of the PDA1."
 				}
@@ -372,10 +423,11 @@ export const pda1Metadata = {
 			"path": [
 				"starting_date"
 			],
+			"mandatory": true,
 			"sd": "never",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Starting date",
 					"description": "Start date of the business decision validity period of the PDA1."
 				}
@@ -385,17 +437,16 @@ export const pda1Metadata = {
 			"path": [
 				"document_number"
 			],
+			"mandatory": true,
 			"sd": "always",
 			"svg_id": "document_number",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"label": "Document number",
 					"description": "PDA1 unique document identifier."
 				}
 			]
 		}
-	],
-	"schema_uri": config.url + "/pda1-schema",
-	"schema_uri#integrity": createSRI(pda1Schema)
+	]
 }

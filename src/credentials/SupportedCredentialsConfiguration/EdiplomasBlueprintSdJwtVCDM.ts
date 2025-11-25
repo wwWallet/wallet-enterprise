@@ -203,7 +203,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 			"description": "This is a Bachelor Diploma verifiable credential",
 			"display": [
 				{
-					"lang": "en-US",
+					"locale": "en-US",
 					"name": "Diploma Credential",
 					"rendering": {
 						"simple": {
@@ -228,7 +228,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 					"path": ["given_name"],
 					"display": [
 						{
-							"lang": "en-US",
+							"locale": "en-US",
 							"label": "Given Name",
 							"description": "The given name of the Diploma Holder"
 						}
@@ -239,7 +239,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 					"path": ["family_name"],
 					"display": [
 						{
-							"lang": "en-US",
+							"locale": "en-US",
 							"label": "Family Name",
 							"description": "The family name of the Diploma Holder"
 						}
@@ -250,7 +250,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 					"path": ["title"],
 					"display": [
 						{
-							"lang": "en-US",
+							"locale": "en-US",
 							"label": "Diploma Title",
 							"description": "The title of the Diploma"
 						}
@@ -261,7 +261,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 					"path": ["grade"],
 					"display": [
 						{
-							"lang": "en-US",
+							"locale": "en-US",
 							"label": "Grade",
 							"description": "Graduate's grade (0-10)"
 						}
@@ -271,7 +271,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 					"path": ["eqf_level"],
 					"display": [
 						{
-							"lang": "en-US",
+							"locale": "en-US",
 							"label": "EQF Level",
 							"description": "The EQF level of the diploma according to https://europass.europa.eu/en/description-eight-eqf-levels"
 						}
@@ -281,7 +281,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 					"path": ["graduation_date"],
 					"display": [
 						{
-							"lang": "en-US",
+							"locale": "en-US",
 							"label": "Graduation Date",
 							"description": "The graduation data"
 						}
@@ -292,7 +292,7 @@ export class EdiplomasBlueprintSdJwtVCDM implements VCDMSupportedCredentialProto
 					"path": ["expiry_date"],
 					"display": [
 						{
-							"lang": "en-US",
+							"locale": "en-US",
 							"label": "Expiry Date",
 							"description": "The date and time expired this credential"
 						}

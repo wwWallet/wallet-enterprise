@@ -21,8 +21,7 @@ import { UserAuthenticationMethod } from "../../types/UserAuthenticationMethod.e
 import { initializeCredentialEngine } from "../../lib/initializeCredentialEngine";
 import { createSRI } from "../../lib/sriGenerator";
 import { porMetadata } from "./typeMetadata/porMetadata";
-import { porSchema } from "./schema/porSchema";
-import { convertSdjwtvcToOpenid4vciClaims } from "../../lib/convertSdjwtvcToOpenid4vciClaims";
+import { convertSdjwtvcToOpenid4vciClaims } from "wallet-common/dist/functions";
 
 const datasetName = "por-dataset.xlsx";
 parsePorData(path.join(__dirname, `../../../../dataset/${datasetName}`)) // test parse
@@ -253,10 +252,6 @@ export class PorSupportedCredentialSdJwtDeferred implements VCDMSupportedCredent
 		return porMetadata;
 	}
 
-	public schema(): any {
-		return porSchema;
-	}
-
 	exportCredentialSupportedObject(): any {
 		return {
 			scope: this.getScope(),
@@ -270,7 +265,7 @@ export class PorSupportedCredentialSdJwtDeferred implements VCDMSupportedCredent
 					proof_signing_alg_values_supported: ["ES256"]
 				}
 			},
-			claims: convertSdjwtvcToOpenid4vciClaims(this.metadata().claims, this.schema())
+			claims: convertSdjwtvcToOpenid4vciClaims(this.metadata().claims)
 		}
 	}
 }
