@@ -52,7 +52,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 export interface VerifierConfigurationInterface {
 	getConfiguration(): OpenidForPresentationsConfiguration;
-	getPresentationDefinitions(): any[];
+	getPresentationRequests(): any[];
 }
 
 

@@ -20,7 +20,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 		override identifier: string,
 		override protectedEndpoint: string,
 		private mapping: { [authorizationServerStateColumnName: string] : { input_descriptor_constraint_field_name: string, parser?: (v: any) => string }},
-		private presentationDefinitionId: string = "vid",
+		private presentationRequestId: string = "vid",
 		private inputDescriptorId: string = "VID",
 		private scopeName: string
 	) { super(identifier, protectedEndpoint) }
@@ -131,7 +131,7 @@ export class GenericVIDAuthenticationComponent extends AuthenticationComponent {
 	}
 
 	private async askForPresentation(req: Request, res: Response): Promise<any> {
-		let dcqlRequest = JSON.parse(JSON.stringify(verifierConfigurationService.getPresentationDefinitions().filter(pd => pd.id == this.presentationDefinitionId)[0])) as any;
+		let dcqlRequest = JSON.parse(JSON.stringify(verifierConfigurationService.getPresentationRequests().filter(pd => pd.id == this.presentationRequestId)[0])) as any;
 		dcqlRequest.description = `Present your credential(s) to get your ${this.scopeName}`
 		try {
 			const { url, stateId } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({req, res}, dcqlRequest, req.cookies['session_id'], config.url + CONSENT_ENTRYPOINT + '/callback');

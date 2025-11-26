@@ -3,14 +3,14 @@
  * @param obj
  * @returns
  */
-export function serializePresentationDefinition(obj: any): any {
+export function serializeDcqlQuery(obj: any): any {
 	if (Array.isArray(obj)) {
-		return obj.map(serializePresentationDefinition);
+		return obj.map(serializeDcqlQuery);
 	} else if (obj !== null && typeof obj === 'object') {
 		return Object.fromEntries(
 			Object.entries(obj)
 				.filter(([key, _]) => !key.startsWith('_'))
-				.map(([key, value]) => [key, serializePresentationDefinition(value)])
+				.map(([key, value]) => [key, serializeDcqlQuery(value)])
 		);
 	}
 	return obj;

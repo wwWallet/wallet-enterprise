@@ -28,7 +28,7 @@ verifierPanelRouter.get('/', async (req, res) => {
 
 	return res.render('verifier/definitions.pug', {
 		lang: req.lang,
-		presentationDefinitions: verifierConfiguration.getPresentationDefinitions(),
+		presentationRequests: verifierConfiguration.getPresentationRequests(),
 		locale: locale[req.lang]
 	})
 })

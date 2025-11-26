@@ -5,7 +5,7 @@ block layout-content
 		.presentation-card
 			.centered-layout
 				form(
-					action=`/verifier/public/definitions/presentation-request/${presentationDefinitionId}`
+					action=`/verifier/public/definitions/presentation-request/${presentationRequestId}`
 					method='POST'
 					class="presentation-form"
 				)
@@ -46,5 +46,5 @@ block layout-content
 	link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css")
 	// Scripts
 	script(src="/js/index.js")
-	script(src="/js/configurable-presentation.js" data-fields=`${JSON.stringify(selectableFields)}` data-dcql-query=`${JSON.stringify(dcqlQuery)}` data-presentation-id=`${presentationDefinitionId}`
+	script(src="/js/configurable-presentation.js" data-fields=`${JSON.stringify(selectableFields)}` data-dcql-query=`${JSON.stringify(dcqlQuery)}` data-presentation-id=`${presentationRequestId}`
 	)

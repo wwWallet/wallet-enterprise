@@ -7,18 +7,17 @@ import { compactDecrypt, CompactDecryptResult, exportJWK, generateKeyPair, impor
 import { randomUUID } from "crypto";
 import base64url from "base64url";
 import 'reflect-metadata';
-import { JSONPath } from "jsonpath-plus";
 import { Repository } from "typeorm";
 import AppDataSource from "../AppDataSource";
 import { config } from "../../config";
 import fs from 'fs';
 import path from "path";
-import { ClaimRecord, PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
+import { PresentationClaims, RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { generateRandomIdentifier } from "../lib/generateRandomIdentifier";
 import * as z from 'zod';
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 import { TransactionData } from "../TransactionData/TransactionData";
-import { serializePresentationDefinition } from "../lib/serializePresentationDefinition";
+import { serializeDcqlQuery } from "../lib/serializeDcqlQuery";
 import { DcqlPresentationResult } from 'dcql';
 import { pemToBase64 } from "../util/pemToBase64";
 
@@ -146,7 +145,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			response_mode: response_mode,
 			state: state,
 			nonce: nonce,
-			dcql_query: presentationRequest?.dcql_query?.credentials ? serializePresentationDefinition(JSON.parse(JSON.stringify(presentationRequest.dcql_query))) : null,
+			dcql_query: presentationRequest?.dcql_query?.credentials ? serializeDcqlQuery(JSON.parse(JSON.stringify(presentationRequest.dcql_query))) : null,
 			client_metadata: {
 				"jwks": {
 					"keys": [
@@ -188,9 +187,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			.sign(rsaImportedPrivateKey);
 		// try to get the redirect uri from the authorization server state in case this is a Dynamic User Authentication during OpenID4VCI authorization code flow
 		const redirectUri = ctx.req?.authorizationServerState?.redirect_uri ?? "openid4vp://cb";
-
-		// verifierStates.set(state, { ephemeralKeyPair: rpEphemeralKeypair, callbackEndpoint, nonce, response_uri: responseUri, client_id: client_id, signedRequestObject, presentation_definition: presentationDefinition });
-
 
 		const newRpState = new RelyingPartyState();
 		newRpState.dcql_query = presentationRequest?.dcql_query ? presentationRequest.dcql_query : null;
@@ -354,168 +350,6 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		await this.rpStateRepository.save(rpState);
 		ctx.res.send({ redirect_uri: rpState.callback_endpoint + '#response_code=' + rpState.response_code })
 		return;
-	}
-
-	private async validatePresentationDefinitionVpToken(vp_token_list: string[] | string | Record<string, any> | string, presentation_submission: any, rpState: RelyingPartyState): Promise<{ presentationClaims?: PresentationClaims, messages?: PresentationInfo, error?: Error }> {
-		let presentationClaims: PresentationClaims = {};
-		const messages: PresentationInfo = {};
-		for (const desc of presentation_submission.descriptor_map) {
-			if (!presentationClaims[desc.id]) {
-				presentationClaims[desc.id] = [];
-			}
-
-			const path = desc.path as string;
-			const jsonPathResult = JSONPath({ json: vp_token_list, path: path });
-			if (!jsonPathResult || !(typeof jsonPathResult[0] == 'string')) {
-				console.log(`Couldn't find vp_token for path ${path}`);
-				throw new Error(`Couldn't find vp_token for path ${path}`);
-			}
-			const vp_token = jsonPathResult[0];
-			if (desc.format == VerifiableCredentialFormat.DC_SDJWT || desc.format == VerifiableCredentialFormat.VC_SDJWT) {
-				// const sdJwt = vp_token.split('~').slice(0, -1).join('~') + '~';
-				const input_descriptor = rpState!.presentation_definition!.input_descriptors.filter((input_desc: any) => input_desc.id == desc.id)[0];
-				if (!input_descriptor) {
-					return { error: new Error("Input descriptor not found") };
-				}
-
-				try {
-					const { credentialParsingEngine, sdJwtVerifier } = await initializeCredentialEngine();
-					const verificationResultR = await sdJwtVerifier.verify({ rawCredential: vp_token, opts: { expectedAudience: rpState.audience, expectedNonce: rpState.nonce } })
-					const parseResult = await credentialParsingEngine.parse({ rawCredential: vp_token })
-					const prettyClaims = parseResult.success === true ? parseResult.value.signedClaims : null;
-
-					if (verificationResultR.success === false) {
-						const error = new Error(`Verification result ${JSON.stringify(verificationResultR.error)}`);
-						error.name = JSON.stringify(verificationResultR.error);
-						return { error: error };
-					}
-					if (!prettyClaims) {
-						return { error: new Error(JSON.stringify(parseResult.success === false && parseResult.error)) };
-					}
-					try {
-						const [kbjwt,] = vp_token.split('~').reverse();
-						const [_kbjwtEncodedHeader, kbjwtEncodedPayload, _kbjwtSig] = kbjwt.split('.');
-
-						const kbjwtPayload = JSON.parse(base64url.decode(kbjwtEncodedPayload)) as Record<string, unknown>;
-						if (Object.keys(kbjwtPayload).includes('transaction_data_hashes') && input_descriptor._transaction_data_type !== undefined) {
-							console.log("Parsing transaction data response...");
-							const txData = TransactionData(input_descriptor._transaction_data_type);
-							if (!txData) {
-								return { error: new Error("specific transaction_data not supported error") };
-							}
-							const { status, message } = await txData.validateTransactionDataResponse(input_descriptor.id, {
-								transaction_data_hashes: (kbjwtPayload as any).transaction_data_hashes as string[],
-								transaction_data_hashes_alg: (kbjwtPayload as any).transaction_data_hashes_alg as string[] | undefined
-							});
-							messages[desc.id] = [ message ];
-							if (!status) {
-								return { error: new Error("transaction_data validation error") };
-							}
-							console.log("VALIDATED TRANSACTION DATA");
-						}
-						else if (input_descriptor._transaction_data_type !== undefined) {
-							return { error: new Error("transaction_data_hashes is missing from transaction data response") };
-						}
-					}
-					catch (e) {
-						console.error(e);
-						return { error: new Error("transaction_data validation error") };
-
-					}
-
-					input_descriptor.constraints.fields.map((field: any) => {
-						if (!presentationClaims[desc.id]) {
-							presentationClaims[desc.id] = []; // initialize
-						}
-						const fieldPath = field.path[0]; // get first path
-						const fieldName = (field as any).name;
-						const value = String(JSONPath({ path: fieldPath, json: prettyClaims.vc as any ?? prettyClaims })[0]);
-						if (!value) {
-							const error = new Error(`Verification result: Not all values are present as requested from the presentation_definition`);
-							error.name = "VALUE_NOT_FOUND";
-							return { error: new Error("VALUE_NOT_FOUND") };
-						}
-
-						const splittedPath = fieldPath.split('.');
-						const claimName = fieldName ? fieldName : splittedPath[splittedPath.length - 1];
-						presentationClaims[desc.id].push({ key: fieldPath.split('.')[fieldPath.split('.').length - 1], name: claimName, value: typeof value == 'object' ? JSON.stringify(value) : value } as ClaimRecord);
-					});
-
-
-				}
-				catch (err) {
-					console.error("Verification error: ", err);
-					if (err instanceof Error) {
-						return { error: err };
-					}
-				}
-			}
-			else if (desc.format == VerifiableCredentialFormat.MSO_MDOC && rpState.apu_jarm_encrypted_response_header) {
-				const receivedMdocNonce = base64url.decode(rpState.apu_jarm_encrypted_response_header);
-				console.log("Received mdoc nonce = ", receivedMdocNonce);
-				console.log("Verifcation Opts = ", {
-					expectedAudience: rpState.audience,
-					expectedNonce: rpState.nonce,
-					holderNonce: receivedMdocNonce,
-					responseUri: this.configurationService.getConfiguration().redirect_uri,
-				});
-
-				const ce = await initializeCredentialEngine();
-				const verificationResult = await ce.msoMdocVerifier.verify({
-					rawCredential: vp_token,
-					opts: {
-						expectedAudience: rpState.audience,
-						expectedNonce: rpState.nonce,
-						holderNonce: receivedMdocNonce,
-						responseUri: this.configurationService.getConfiguration().redirect_uri,
-					}
-				});
-				if (!verificationResult.success) {
-					return {
-						error: new Error(verificationResult.error)
-					}
-				}
-				// const { holderPublicKey } = verificationResult.value;
-
-
-				const parsingResult = await ce.credentialParsingEngine.parse({
-					rawCredential: vp_token
-				});
-
-				if (!parsingResult.success) {
-					return {
-						error: new Error(parsingResult.error)
-					}
-				}
-				const parsedCredential = parsingResult.value;
-				console.log("Parsed credential = ", parsedCredential);
-				const definition = rpState.presentation_definition;
-
-				const fieldNamesWithValues = definition.input_descriptors[0].constraints.fields.map((field: any) => {
-					const key = field.path.map((possiblePath: string) => possiblePath.split('.')[possiblePath.split('.').length - 1]);
-					const signedClaimsWithDoctype = {};
-					// @ts-ignore
-					signedClaimsWithDoctype[definition.input_descriptors[0].id] = { ...parsedCredential.signedClaims };
-					console.log("Signed claims with doctype = ", signedClaimsWithDoctype)
-					const values = field.path.map((possiblePath: string) => JSONPath({ path: possiblePath, json: signedClaimsWithDoctype })[0]);
-					const val = values.filter((v: any) => v != undefined || v != null)[0]; // get first value that is not undefined
-					return val ? { key, name: (field as any).name as string, value: typeof val == 'object' ? JSON.stringify(val) : val as string } : undefined;
-				});
-				console.log("Fieldnames with values = ", fieldNamesWithValues)
-				// if (fieldNamesWithValues.includes(undefined)) {
-				// 	return { error: new Error("INSUFFICIENT_CREDENTIALS"), error_description: new Error("Insufficient credentials") };
-				// }
-
-				for (const item of fieldNamesWithValues as Array<{ key: string, name: string; value: string } | undefined>) {
-					if (item) { // Check if item is not undefined
-						const { key, name, value } = item;
-						presentationClaims[desc.id].push({ key, name, value });
-					}
-				}
-			}
-		}
-
-		return { presentationClaims, messages };
 	}
 
 	private async validateDcqlVpToken(
@@ -719,13 +553,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			presentationClaims = result.presentationClaims;
 			presentationInfo = result.messages ? result.messages : {};
 			error = result.error;
-		} else {
-			const result = await this.validatePresentationDefinitionVpToken(vp_token, rpState.presentation_submission as any, rpState);
-			presentationClaims = result.presentationClaims;
-			presentationInfo = result.messages ? result.messages : {};
-			error = result.error;
 		}
-
 		if (error) {
 			console.error(error)
 			return { status: false, error };

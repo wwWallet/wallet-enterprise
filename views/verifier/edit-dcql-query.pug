@@ -7,16 +7,16 @@ block layout-content
 		if error
 			p= error.errorMessage
 
-		form(id='edit-presentation-definition', method="POST", action="/verifier/public/definitions/edit-presentation-definition")
+		form(id='edit-dcql-query', method="POST", action="/verifier/public/definitions/edit-dcql-query")
 
 			.field
 				h4.title(for="scheme") Scheme
 				textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
 
 			.label-wrapper
-				label(for="presentationDefinition") DCQL Query
+				label(for="dcqlQuery") DCQL Query
 				p.form-subtitle You can edit this template as needed
-				textarea(id="presentationDefinitionText" name="presentationDefinition" style="display: none")
+				textarea(id="dcqlQueryText" name="dcqlQuery" style="display: none")
 			div(id="jsoneditor")
 			button.Btn.Medium.request-button(type="submit" id="submit-btn") Request Credentials
 	script(src="https://cdn.jsdelivr.net/npm/jsoneditor@latest")
@@ -90,12 +90,12 @@ block layout-content
 			}
 		);
 
-		document.querySelector('#edit-presentation-definition').addEventListener('submit', (e) => {
+		document.querySelector('#edit-dcql-query').addEventListener('submit', (e) => {
 			e.preventDefault();
 			const definition = editor.get();
-			document.querySelector("#presentationDefinitionText").innerText = JSON.stringify(definition);
+			document.querySelector("#dcqlQueryText").innerText = JSON.stringify(definition);
 			e.target.submit();
 		});
 
-	link(rel="stylesheet" href="/styles/edit-presentation-definition.css")
+	link(rel="stylesheet" href="/styles/edit-dcql-query.css")
 	link(rel="stylesheet" href="/styles/jsoneditor.css")

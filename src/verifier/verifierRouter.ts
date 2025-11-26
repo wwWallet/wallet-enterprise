@@ -15,43 +15,6 @@ import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 import Ajv from 'ajv';
 const ajv = new Ajv();
 
-const presentationDefinitionSchema = {
-	type: "object",
-	required: ["id", "input_descriptors"],
-	properties: {
-		id: { type: "string" },
-		input_descriptors: {
-			type: "array",
-			items: {
-				type: "object",
-				required: ["id", "constraints"],
-				properties: {
-					id: { type: "string" },
-					constraints: {
-						type: "object",
-						required: ["fields"],
-						properties: {
-							fields: {
-								type: "array",
-								items: {
-									type: "object",
-									required: ["path"],
-									properties: {
-										path: {
-											type: "array",
-											items: { type: "string" }
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-};
-
 const dcqlQuerySchema = {
 	type: "object",
 	required: ["credentials"],
@@ -137,7 +100,7 @@ verifierRouter.get('/certificates', async (req, res) => {
 })
 
 verifierRouter.get('/import-certificate', async (req, res) => {
-	return res.render('verifier/import_certificate.pug', {
+	return res.render('verifier/import-certificate.pug', {
 		lang: req.lang,
 		locale: locale[req.lang]
 	})
@@ -164,7 +127,7 @@ verifierRouter.post('/import-certificate', async (req, res) => {
 		(config.trustedRootCertificates as string[]).push(normalizedPem.trim());
 		res.redirect('/verifier/import-certificate');
 	} catch (error) {
-		res.render('verifier/import_certificate.pug', {
+		res.render('verifier/import-certificate.pug', {
 			lang: req.lang,
 			locale: locale[req.lang],
 			error: {
@@ -175,7 +138,7 @@ verifierRouter.post('/import-certificate', async (req, res) => {
 });
 
 verifierRouter.get('/public/manage-certificates', async (req, res) => {
-	return res.render('verifier/manage_certificates.pug', {
+	return res.render('verifier/manage-certificates.pug', {
 		lang: req.lang,
 		locale: locale[req.lang]
 	})
@@ -183,9 +146,9 @@ verifierRouter.get('/public/manage-certificates', async (req, res) => {
 
 verifierRouter.get('/public/definitions', async (req, res) => {
 
-	return res.render('verifier/public_definitions.pug', {
+	return res.render('verifier/public-definitions.pug', {
 		lang: req.lang,
-		presentationDefinitions: verifierConfiguration.getPresentationDefinitions(),
+		presentationRequests: verifierConfiguration.getPresentationRequests(),
 		locale: locale[req.lang]
 	})
 })
@@ -287,7 +250,7 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 			locale: locale[req.lang]
 		});
 	}
-	const presentationRequest = verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_request_id)[0];
+	const presentationRequest = verifierConfiguration.getPresentationRequests().filter(pd => pd.id == presentation_request_id)[0];
 	if (!presentationRequest) {
 		return res.render('error', {
 			msg: "No presentation definition was found",
@@ -302,8 +265,8 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 				const label = claim.path.join(".");
 				return [label, claim.path[0]];
 		});
-	return res.render('verifier/configurable_presentation', {
-		presentationDefinitionId: presentationRequest.id,
+	return res.render('verifier/configurable-presentation', {
+		presentationRequestId: presentationRequest.id,
 		dcqlQuery: presentationRequest.dcql_query,
 		selectableFields,
 		lang: req.lang,
@@ -311,19 +274,15 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 	});
 })
 
-verifierRouter.get('/public/definitions/edit-presentation-definition', async (req, res) => {
-	const combinedSchema = {
-		anyOf: [presentationDefinitionSchema, dcqlQuerySchema]
-	};
-
-	return res.render('verifier/edit_presentation_definition', {
+verifierRouter.get('/public/definitions/edit-dcql-query', async (req, res) => {
+	return res.render('verifier/edit-dcql-query', {
 		lang: req.lang,
 		locale: locale[req.lang],
-		schema: combinedSchema
+		schema: dcqlQuerySchema
 	});
 })
 
-verifierRouter.post('/public/definitions/edit-presentation-definition', async (req, res) => {
+verifierRouter.post('/public/definitions/edit-dcql-query', async (req, res) => {
 	if (req.method === "POST" && req.body.action && req.cookies.session_id) {
 		// update is_cross_device --> false since the button was pressed
 		await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder("rp_state")
@@ -332,15 +291,12 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 			.execute();
 		return res.redirect(req.body.action);
 	}
-	let def;
+	let query;
 	let presentationRequest = {}
 	try {
-		def = JSON.parse(req.body.presentationDefinition);
-		const combinedSchema = {
-			anyOf: [presentationDefinitionSchema, dcqlQuerySchema]
-		};
-		const validate = ajv.compile(combinedSchema);
-		if (!validate(def)) {
+		query = JSON.parse(req.body.dcqlQuery);
+		const validate = ajv.compile(dcqlQuerySchema);
+		if (!validate(query)) {
 			return res.render('error.pug', {
 				msg: "Invalid presentation definition format",
 				code: 0,
@@ -351,7 +307,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 		presentationRequest = {
 			id: "EditableDcqlQuery",
 			title: "Editable DCQL Query",
-			dcql_query: def
+			dcql_query: query
 		}
 	} catch (error) {
 		return res.render('error.pug', {
@@ -383,7 +339,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 		wwwalletURL: config.wwwalletURL,
 		authorizationRequestURL: modifiedUrl,
 		authorizationRequestQR,
-		presentationRequest: JSON.stringify(JSON.parse(req.body.presentationDefinition)),
+		presentationRequest: JSON.stringify(JSON.parse(req.body.dcqlQuery)),
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],
@@ -428,7 +384,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_reque
 		// Use the filtered query
 		presentationRequest = { dcql_query: JSON.parse(req.body.dcql_query) };
 	} else {
-		presentationRequest = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_request_id)[0])) as any;
+		presentationRequest = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationRequests().filter(pd => pd.id == presentation_request_id)[0])) as any;
 	}
 	if (!presentationRequest) {
 		return res.render('error', {

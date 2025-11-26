@@ -4,7 +4,7 @@ block layout-content
 	.container2.container-positions
 		h1 Present your Verifiable Credentials
 		.card-container
-			for definition in presentationDefinitions
+			for definition in presentationRequests
 				if definition._selectable === true
 					a.card(href=`/verifier/public/definitions/configurable-presentation-request/${definition.id}`)
 						.card-title #{definition.title}
@@ -14,7 +14,7 @@ block layout-content
 						.card-title #{definition.title}
 						p.card-text #{definition.description}
 
-			a.card(href="/verifier/public/definitions/edit-presentation-definition")
+			a.card(href="/verifier/public/definitions/edit-dcql-query")
 				.card-title Custom Request
 				p.card-text Import the presentation definition or DCQL query of your choice.
 

@@ -6,10 +6,10 @@ const path = window.location.pathname;
 const pathSegments = path.split('/');
 
 const nonEmptySegments = pathSegments.filter(segment => segment !== '');
-const presentationDefinitionId = nonEmptySegments[nonEmptySegments.length - 1];
+const presentationRequestId = nonEmptySegments[nonEmptySegments.length - 1];
 
 setInterval(() => {
-	fetch('/verifier/public/definitions/presentation-request/status/' + presentationDefinitionId, {
+	fetch('/verifier/public/definitions/presentation-request/status/' + presentationRequestId, {
 			method: 'GET',
 		}).then((response) => {
 			if (!response.ok) {
@@ -27,5 +27,3 @@ setInterval(() => {
 			console.error(err);
 		});
 }, 3000);
-
-
