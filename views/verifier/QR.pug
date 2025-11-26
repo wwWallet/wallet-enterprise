@@ -24,11 +24,11 @@ block layout-content
 		- const parsedDefinition = JSON.parse(presentationRequest)
 		- const summaryLabel = 'DCQL Query'
 
-		.presentation-definition-container
+		.dcql-query-container
 			details.details-toggle
 				summary  #{summaryLabel}
-				.presentation-definition-block
-					textarea.presentation-definition(readonly rows="20") !{JSON.stringify(JSON.parse(presentationRequest), null, 2)}
+				.dcql-query-block
+					textarea.dcql-query(readonly rows="20") !{JSON.stringify(JSON.parse(presentationRequest), null, 2)}
 
 
 

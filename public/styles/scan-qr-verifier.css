@@ -120,8 +120,8 @@ button#cancelButton {
 	color: white;
 }
 
-/* Presentation definition collapsible container */
-.presentation-definition-container {
+/* DCQL query collapsible container */
+.dcql-query-container {
 	display: flex;
 	justify-content: center;
 	width: 100%;
@@ -159,11 +159,11 @@ button#cancelButton {
 	transform: rotate(90deg);
 }
 
-.presentation-definition-block {
+.dcql-query-block {
 	width: 100%;
 }
 
-.presentation-definition {
+.dcql-query {
 	width: 100%;
 	font-family: monospace;
 	background-color: #f4f4f4;

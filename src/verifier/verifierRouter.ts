@@ -244,7 +244,7 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 	const presentation_request_id = req.params.presentation_request_id;
 	if (!presentation_request_id) {
 		return res.render('error', {
-			msg: "No presentation definition was selected",
+			msg: "No presentation request was selected",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang]
@@ -253,7 +253,7 @@ verifierRouter.use('/public/definitions/configurable-presentation-request/:prese
 	const presentationRequest = verifierConfiguration.getPresentationRequests().filter(pd => pd.id == presentation_request_id)[0];
 	if (!presentationRequest) {
 		return res.render('error', {
-			msg: "No presentation definition was found",
+			msg: "No presentation request was found",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang]
@@ -298,7 +298,7 @@ verifierRouter.post('/public/definitions/edit-dcql-query', async (req, res) => {
 		const validate = ajv.compile(dcqlQuerySchema);
 		if (!validate(query)) {
 			return res.render('error.pug', {
-				msg: "Invalid presentation definition format",
+				msg: "Invalid DCQL query format",
 				code: 0,
 				lang: req.lang,
 				locale: locale[req.lang],
@@ -311,7 +311,7 @@ verifierRouter.post('/public/definitions/edit-dcql-query', async (req, res) => {
 		}
 	} catch (error) {
 		return res.render('error.pug', {
-			msg: "Error while parsing the presentation definition",
+			msg: "Error while parsing the DCQL query",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang],

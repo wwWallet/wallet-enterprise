@@ -139,7 +139,7 @@ export class RelyingPartyState {
 	@Column({ name: "claims", type: "text", nullable: true })
 	// @ts-ignore
 	/**
-	 * Includes the claims that were requested from the presentation definition
+	 * Includes the claims that were requested from the dcql query
 	 */
 	private _claims?: Buffer;
 	set claims(value: PresentationClaims | null) {
