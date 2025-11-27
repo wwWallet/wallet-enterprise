@@ -198,6 +198,7 @@ export class ExpressAppService {
 				return res.send({ ...metadata, signed_metadata: signedMetadata });
 			});
 
+			const allTypeMetadataByVct = new Map<string, any>();
 			const dynamicVctMap = new Map();
 
 			await new Promise((resolve) => {
@@ -211,6 +212,7 @@ export class ExpressAppService {
 
 							metadataArray.forEach((item: any) => {
 								try {
+									allTypeMetadataByVct.set(item.vct, item);
 									const newUrl = new URL(item.vct);
 									let path = null;
 									if ((newUrl.protocol === "http:" || newUrl.protocol === "https:")) {
@@ -250,7 +252,11 @@ export class ExpressAppService {
 				})
 
 			})
-
+			console.log("✅ Registering route /type-metadata/all VCTs:", Array.from(allTypeMetadataByVct.keys()));
+			app.get('/type-metadata/all', async (_req, res) => {
+				const all = Array.from(allTypeMetadataByVct.values());
+				return res.send(all);
+			});
 		}
 	}
 }
