@@ -56,7 +56,7 @@
     "reflect-metadata": "^0.1.13",
     "ts-results": "^3.3.0",
     "typeorm": "^0.3.9",
-    "wallet-common": "git+https://github.com/wwWallet/wallet-common.git#591380d35d0e1685aaf87f26e73937a4184dea2e",
+    "wallet-common": "git+https://github.com/wwWallet/wallet-common.git#f6013863ab07dabdf3ba41b5b3daebf94b7194c8",
     "winston": "^3.8.2",
     "ws": "^8.9.0",
     "xlsx": "^0.18.5",
