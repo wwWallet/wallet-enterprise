@@ -43,7 +43,7 @@ export interface OpenidForCredentialIssuingAuthorizationServerInterface {
 export interface OpenidForPresentationsReceivingInterface {
 
 	getSignedRequestObject(ctx: { req: Request, res: Response }): Promise<any>;
-	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationDefinition: object, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }>;
+	generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationRequest: object, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }>;
 	getPresentationBySessionIdOrPresentationDuringIssuanceSession(sessionId?: string, presentationDuringIssuanceSession?: string, cleanupSession?: boolean): Promise<{ status: true, rpState: RelyingPartyState, presentations: unknown[], presentationInfo: PresentationInfo } | { status: false, error: Error }>;
 	getPresentationById(id: string): Promise<{ status: boolean, presentationClaims?: PresentationClaims, presentations?: unknown[] }>;
 	responseHandler(ctx: { req: Request, res: Response }): Promise<void>;
@@ -52,7 +52,7 @@ export interface OpenidForPresentationsReceivingInterface {
 
 export interface VerifierConfigurationInterface {
 	getConfiguration(): OpenidForPresentationsConfiguration;
-	getPresentationDefinitions(): any[];
+	getPresentationRequests(): any[];
 }
 
 

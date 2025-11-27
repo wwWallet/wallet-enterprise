@@ -10,7 +10,7 @@ h1 {
 	text-align: center;
 }
 
-label[for="presentationDefinition"],
+label[for="presentationRequest"],
 h4.title {
 	font-size: 16px;
 	font-weight: 600;
@@ -34,7 +34,7 @@ h4.title {
 	margin-bottom: 0.5rem;
 }
 
-#edit-presentation-definition .request-button {
+#edit-dcql-query .request-button {
 	max-width: unset;
 	width: 100%;
 }
@@ -48,7 +48,7 @@ h4.title {
 	resize: vertical;
 }
 
-label[for="presentationDefinition"] {
+label[for="dcqlQuery"] {
 	display: block;
 	font-weight: 600;
 	margin-bottom: 0.5rem;
@@ -59,7 +59,7 @@ label[for="presentationDefinition"] {
 	width: 100%;
 }
 
-textarea[name="presentationDefinition"] {
+textarea[name="dcqlQuery"] {
 	width: 100%;
 	padding: 10px;
 	font-family: monospace;

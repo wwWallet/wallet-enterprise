@@ -21,7 +21,7 @@ import titles from './configuration/titles';
 import { verifierRouter } from './verifier/verifierRouter';
 import { GrantType } from './types/oid4vci';
 import { AuthorizationServerState } from './entities/AuthorizationServerState.entity';
-import { credentialConfigurationRegistryService, openidForCredentialIssuingAuthorizationServerService, openidForPresentationReceivingService } from './services/instances';
+import { credentialConfigurationRegistryService, openidForCredentialIssuingAuthorizationServerService } from './services/instances';
 import _ from 'lodash';
 import * as qrcode from 'qrcode';
 import { configurationExecution } from './configuration/main';
@@ -137,13 +137,6 @@ async function main() {
 		}
 
 	})
-
-	app.post('/demo/presentation-request', async (req: Request, res: Response) => {
-		const { presentation_definition_id, callback_url } = req.body;
-		const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentation_definition_id, callback_url);
-		res.send({ url });
-	});
-
 
 	app.get('/metadata/:filename', (req, res) => {
 		if (req.params.filename !== 'site.webmanifest') {

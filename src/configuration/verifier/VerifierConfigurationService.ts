@@ -10,7 +10,7 @@ import "reflect-metadata";
 export class VerifierConfigurationService implements VerifierConfigurationInterface {
 
 
-	getPresentationDefinitions(): any[] {
+	getPresentationRequests(): any[] {
 		return [
 			{
 				"id": "PidWithDocumentNumber",

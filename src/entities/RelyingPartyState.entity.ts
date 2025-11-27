@@ -39,8 +39,8 @@ export class RelyingPartyState {
 	@Column({ name: "audience", type: "varchar", nullable: false })
 	audience: string = "";
 
-	@Column({ name: "presentation_definition_id", type: "varchar", nullable: false })
-	presentation_definition_id: string = "";
+	@Column({ name: "presentation_request_id", type: "varchar", nullable: false })
+	presentation_request_id: string = "";
 
 	@Column({ name: "presentation_definition", type: "text", nullable: true })
 	// @ts-ignore
@@ -139,7 +139,7 @@ export class RelyingPartyState {
 	@Column({ name: "claims", type: "text", nullable: true })
 	// @ts-ignore
 	/**
-	 * Includes the claims that were requested from the presentation definition
+	 * Includes the claims that were requested from the dcql query
 	 */
 	private _claims?: Buffer;
 	set claims(value: PresentationClaims | null) {

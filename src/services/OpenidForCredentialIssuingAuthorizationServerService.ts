@@ -281,10 +281,10 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			await this.updateAuthorizationServerState(ctx, ctx.req.authorizationServerState);
 
 			// @ts-ignore
-			const preSelectedPresentationDefinitionId = config.issuanceFlow.firstPartyAppDynamicCredentialRequest.presentationDefinitionId;
+			const preSelectedPresentationRequestId = config.issuanceFlow.firstPartyAppDynamicCredentialRequest.presentationRequestId;
 
 			const presentationRequest = await this.presentationReceivingService.generateAuthorizationRequestURL(ctx,
-				this.verifierConfigurationService.getPresentationDefinitions().filter((pd) => pd.id === preSelectedPresentationDefinitionId)[0],
+				this.verifierConfigurationService.getPresentationRequests().filter((pd) => pd.id === preSelectedPresentationRequestId)[0],
 				session_id);
 
 			ctx.res.status(400).send({
@@ -305,10 +305,10 @@ export class OpenidForCredentialIssuingAuthorizationServerService implements Ope
 			if (result.status == true) {
 				const authorization_code = crypto.randomBytes(60).toString('base64url');
 				ctx.req.authorizationServerState.authorization_code = authorization_code;
-				const presentationDefinition = this.verifierConfigurationService.getPresentationDefinitions().filter((pd) => pd.id == result.rpState.presentation_definition_id)[0];
+				const presentationRequest = this.verifierConfigurationService.getPresentationRequests().filter((pd) => pd.id == result.rpState.presentation_request_id)[0];
 
 				// @ts-ignore
-				const claims = result.rpState.claims[presentationDefinition.input_descriptors[0].id];
+				const claims = result.rpState.claims[presentationRequest.dcql_query.credentials[0].id];
 				for (const { key, value } of claims) {
 					// @ts-ignore
 					ctx.req.authorizationServerState[key] = value;

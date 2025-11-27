@@ -71,7 +71,7 @@
 	display: none;
 }
 
-#CreateSubject #presentationDefinition.invalid {
+#CreateSubject #presentationRequest.invalid {
 	transition: 0.3s;
 	border: 2px solid var(--error-red);
 }

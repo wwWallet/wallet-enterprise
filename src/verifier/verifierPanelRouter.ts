@@ -28,20 +28,20 @@ verifierPanelRouter.get('/', async (req, res) => {
 
 	return res.render('verifier/definitions.pug', {
 		lang: req.lang,
-		presentationDefinitions: verifierConfiguration.getPresentationDefinitions(),
+		presentationRequests: verifierConfiguration.getPresentationRequests(),
 		locale: locale[req.lang]
 	})
 })
 
 type VerifiablePresentationWithDetails = RelyingPartyState & { holderInfo?: string, claims?: any };
 
-verifierPanelRouter.get('/filter/by/definition/:definition_id', async (req, res) => {
-	const definition_id = req.params.definition_id;
-	if (!definition_id) {
-		return res.status(500).send({ error: "No definition id was specified" });
+verifierPanelRouter.get('/filter/by/definition/:presentation_id', async (req, res) => {
+	const presentation_id = req.params.presentation_id;
+	if (!presentation_id) {
+		return res.status(500).send({ error: "No presentation id was specified" });
 	}
 	let verifiablePresentations = await rpStateRepository.createQueryBuilder()
-		.where("presentation_definition_id = :definition_id", { definition_id: definition_id })
+		.where("presentation_request_id = :presentation_id", { presentation_id: presentation_id })
 		.getMany();
 
 	const presentationsWithDetails: VerifiablePresentationWithDetails[] = verifiablePresentations.map(vp => {

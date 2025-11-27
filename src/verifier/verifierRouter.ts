@@ -1,7 +1,4 @@
 import { Router } from "express";
-// import { Repository } from "typeorm";
-// import { VerifiablePresentationEntity } from "../entities/VerifiablePresentation.entity";
-// import AppDataSource from "../AppDataSource";
 import { OpenidForPresentationsReceivingInterface, VerifierConfigurationInterface } from "../services/interfaces";
 import { appContainer } from "../services/inversify.config";
 import { TYPES } from "../services/types";
@@ -14,47 +11,9 @@ import { addSessionIdCookieToResponse } from "../sessionIdCookieConfig";
 import AppDataSource from "../AppDataSource";
 import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
-import { buildDcqlQuery } from "../util/buildDcqlQuery";
 
 import Ajv from 'ajv';
 const ajv = new Ajv();
-
-const presentationDefinitionSchema = {
-	type: "object",
-	required: ["id", "input_descriptors"],
-	properties: {
-		id: { type: "string" },
-		input_descriptors: {
-			type: "array",
-			items: {
-				type: "object",
-				required: ["id", "constraints"],
-				properties: {
-					id: { type: "string" },
-					constraints: {
-						type: "object",
-						required: ["fields"],
-						properties: {
-							fields: {
-								type: "array",
-								items: {
-									type: "object",
-									required: ["path"],
-									properties: {
-										path: {
-											type: "array",
-											items: { type: "string" }
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-};
 
 const dcqlQuerySchema = {
 	type: "object",
@@ -129,7 +88,6 @@ export const sanitizeInput = (input: string): string =>
 const MAX_CERT_LENGTH = 5000;
 
 const verifierRouter = Router();
-// const verifiablePresentationRepository: Repository<VerifiablePresentationEntity> = AppDataSource.getRepository(VerifiablePresentationEntity);
 const verifierConfiguration = appContainer.get<VerifierConfigurationInterface>(TYPES.VerifierConfigurationServiceInterface);
 const openidForPresentationReceivingService = appContainer.get<OpenidForPresentationsReceivingInterface>(TYPES.OpenidForPresentationsReceivingService);
 
@@ -142,7 +100,7 @@ verifierRouter.get('/certificates', async (req, res) => {
 })
 
 verifierRouter.get('/import-certificate', async (req, res) => {
-	return res.render('verifier/import_certificate.pug', {
+	return res.render('verifier/import-certificate.pug', {
 		lang: req.lang,
 		locale: locale[req.lang]
 	})
@@ -169,7 +127,7 @@ verifierRouter.post('/import-certificate', async (req, res) => {
 		(config.trustedRootCertificates as string[]).push(normalizedPem.trim());
 		res.redirect('/verifier/import-certificate');
 	} catch (error) {
-		res.render('verifier/import_certificate.pug', {
+		res.render('verifier/import-certificate.pug', {
 			lang: req.lang,
 			locale: locale[req.lang],
 			error: {
@@ -180,7 +138,7 @@ verifierRouter.post('/import-certificate', async (req, res) => {
 });
 
 verifierRouter.get('/public/manage-certificates', async (req, res) => {
-	return res.render('verifier/manage_certificates.pug', {
+	return res.render('verifier/manage-certificates.pug', {
 		lang: req.lang,
 		locale: locale[req.lang]
 	})
@@ -188,9 +146,9 @@ verifierRouter.get('/public/manage-certificates', async (req, res) => {
 
 verifierRouter.get('/public/definitions', async (req, res) => {
 
-	return res.render('verifier/public_definitions.pug', {
+	return res.render('verifier/public-definitions.pug', {
 		lang: req.lang,
-		presentationDefinitions: verifierConfiguration.getPresentationDefinitions(),
+		presentationRequests: verifierConfiguration.getPresentationRequests(),
 		locale: locale[req.lang]
 	})
 })
@@ -282,55 +240,49 @@ verifierRouter.post('/callback', async (req, res) => {
 })
 
 
-verifierRouter.use('/public/definitions/configurable-presentation-request/:presentation_definition_id', async (req, res) => {
-	const presentation_definition_id = req.params.presentation_definition_id;
-	if (!presentation_definition_id) {
+verifierRouter.use('/public/definitions/configurable-presentation-request/:presentation_request_id', async (req, res) => {
+	const presentation_request_id = req.params.presentation_request_id;
+	if (!presentation_request_id) {
 		return res.render('error', {
-			msg: "No presentation definition was selected",
+			msg: "No presentation request was selected",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang]
 		});
 	}
-	const presentationDefinition = verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0];
-	if (!presentationDefinition) {
+	const presentationRequest = verifierConfiguration.getPresentationRequests().filter(pd => pd.id == presentation_request_id)[0];
+	if (!presentationRequest) {
 		return res.render('error', {
-			msg: "No presentation definition was found",
+			msg: "No presentation request was found",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang]
 		});
 	}
-	if (presentationDefinition.input_descriptors.length > 1) {
-		throw new Error("Selectable presentation definition is not supported for more than one descriptors currently");
-	}
-	const selectableFields = presentationDefinition.input_descriptors[0].constraints.fields.map((field: any) => {
-		return [field.name, field.path[0]]
-	});
-
-	console.log("Selectable fields = ", selectableFields)
-	return res.render('verifier/configurable_presentation', {
-		presentationDefinitionId: presentationDefinition.id,
-		presentationDefinitionDescriptorId: presentationDefinition.input_descriptors[0].id,
+	const selectableFields = presentationRequest.dcql_query.credentials
+		.flatMap((credential: any) => credential.claims)
+		.map((claim: any) => {
+				const label = claim.path.join(".");
+				return [label, claim.path[0]];
+		});
+	return res.render('verifier/configurable-presentation', {
+		presentationRequestId: presentationRequest.id,
+		dcqlQuery: presentationRequest.dcql_query,
 		selectableFields,
 		lang: req.lang,
 		locale: locale[req.lang],
 	});
 })
 
-verifierRouter.get('/public/definitions/edit-presentation-definition', async (req, res) => {
-	const combinedSchema = {
-		anyOf: [presentationDefinitionSchema, dcqlQuerySchema]
-	};
-
-	return res.render('verifier/edit_presentation_definition', {
+verifierRouter.get('/public/definitions/edit-dcql-query', async (req, res) => {
+	return res.render('verifier/edit-dcql-query', {
 		lang: req.lang,
 		locale: locale[req.lang],
-		schema: combinedSchema
+		schema: dcqlQuerySchema
 	});
 })
 
-verifierRouter.post('/public/definitions/edit-presentation-definition', async (req, res) => {
+verifierRouter.post('/public/definitions/edit-dcql-query', async (req, res) => {
 	if (req.method === "POST" && req.body.action && req.cookies.session_id) {
 		// update is_cross_device --> false since the button was pressed
 		await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder("rp_state")
@@ -339,24 +291,27 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 			.execute();
 		return res.redirect(req.body.action);
 	}
-	let def;
+	let query;
+	let presentationRequest = {}
 	try {
-		def = JSON.parse(req.body.presentationDefinition);
-		const combinedSchema = {
-			anyOf: [presentationDefinitionSchema, dcqlQuerySchema]
-		};
-		const validate = ajv.compile(combinedSchema);
-		if (!validate(def)) {
+		query = JSON.parse(req.body.dcqlQuery);
+		const validate = ajv.compile(dcqlQuerySchema);
+		if (!validate(query)) {
 			return res.render('error.pug', {
-				msg: "Invalid presentation definition format",
+				msg: "Invalid DCQL query format",
 				code: 0,
 				lang: req.lang,
 				locale: locale[req.lang],
 			});
 		}
+		presentationRequest = {
+			id: "EditableDcqlQuery",
+			title: "Editable DCQL Query",
+			dcql_query: query
+		}
 	} catch (error) {
 		return res.render('error.pug', {
-			msg: "Error while parsing the presentation definition",
+			msg: "Error while parsing the DCQL query",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang],
@@ -366,7 +321,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId);
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, def, newSessionId, config.url + "/verifier/callback");
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationRequest, newSessionId, config.url + "/verifier/callback");
 	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(modifiedUrl.toString(), {
@@ -384,7 +339,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 		wwwalletURL: config.wwwalletURL,
 		authorizationRequestURL: modifiedUrl,
 		authorizationRequestQR,
-		presentationDefinition: JSON.stringify(JSON.parse(req.body.presentationDefinition)),
+		presentationRequest: JSON.stringify(JSON.parse(req.body.dcqlQuery)),
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],
@@ -392,7 +347,7 @@ verifierRouter.post('/public/definitions/edit-presentation-definition', async (r
 })
 
 
-verifierRouter.get('/public/definitions/presentation-request/status/:presentation_definition_id', async (req, res) => {
+verifierRouter.get('/public/definitions/presentation-request/status/:presentation_request_id', async (req, res) => {
 	console.log("session_id : ", req.cookies['session_id'])
 	if (req.cookies['session_id'] && req.method == "GET") {
 		const { status } = await openidForPresentationReceivingService.getPresentationBySessionIdOrPresentationDuringIssuanceSession(req.cookies['session_id'], undefined, false);
@@ -409,14 +364,14 @@ verifierRouter.get('/public/definitions/presentation-request/status/:presentatio
 })
 
 
-verifierRouter.use('/public/definitions/presentation-request/:presentation_definition_id', async (req, res) => {
+verifierRouter.use('/public/definitions/presentation-request/:presentation_request_id', async (req, res) => {
 
-	const presentation_definition_id = req.params.presentation_definition_id;
+	const presentation_request_id = req.params.presentation_request_id;
 
 
-	if (!presentation_definition_id) {
+	if (!presentation_request_id) {
 		return res.render('error', {
-			msg: "No presentation definition was selected",
+			msg: "No presentation request was selected",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang]
@@ -424,78 +379,29 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 	}
 
 
-	let presentationDefinition = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationDefinitions().filter(pd => pd.id == presentation_definition_id)[0])) as any;
-	if (!presentationDefinition) {
+	let presentationRequest;
+	if (req.method === "POST" && req.body.dcql_query) {
+		// Use the filtered query
+		presentationRequest = { dcql_query: JSON.parse(req.body.dcql_query) };
+	} else {
+		presentationRequest = JSON.parse(JSON.stringify(verifierConfiguration.getPresentationRequests().filter(pd => pd.id == presentation_request_id)[0])) as any;
+	}
+	if (!presentationRequest) {
 		return res.render('error', {
-			msg: "No presentation definition was found",
+			msg: "No presentation request was found",
 			code: 0,
 			lang: req.lang,
 			locale: locale[req.lang]
 		});
 	}
 
-	const queryType = req.body.queryType || "dcql";
 	let scheme = "openid4vp://cb";
-	let queryToSend: any = presentationDefinition;
-
-	// If there are selected fields from a POST request, update the constraints accordingly
-	if (req.method === "POST" && req.body.attributes) {
-		let selectedFieldPaths = req.body.attributes;
-		if (!Array.isArray(selectedFieldPaths)) {
-			selectedFieldPaths = [selectedFieldPaths];
-		}
-		const selectedPaths = new Set(selectedFieldPaths);
-		console.log("Selectd paths", selectedPaths);
-		scheme = req.body.scheme
-
-		if (queryType === "dcql") {
-			queryToSend = buildDcqlQuery(presentationDefinition, req.body);
-		} else {
-
-			const availableFields = presentationDefinition.input_descriptors[0].constraints.fields;
-			console.log("Available fields = ", availableFields)
-			const filteredFields = presentationDefinition.input_descriptors[0].constraints.fields.filter((field: any) =>
-				selectedPaths.has(field.path[0])
-			);
-
-			console.log("filtered fields = ", filteredFields)
-			presentationDefinition.input_descriptors[0].constraints.fields = filteredFields;
-			// Determine the presentation format based on the 'type' (sd-jwt or mdoc) provided by the form
-			const selectedType = req.body.type // Default to sd-jwt if type is not provided
-			if (selectedType === "sd-jwt") {
-				const selectedFormat = req.body.format;
-				if (selectedFormat && selectedFormat === "vc+sd-jwt") {
-					presentationDefinition.input_descriptors[0].format = {
-						"vc+sd-jwt": {
-							"sd-jwt_alg_values": ["ES256"],
-							"kb-jwt_alg_values": ["ES256"]
-						},
-					};
-				} else {
-					presentationDefinition.input_descriptors[0].format = {
-						"dc+sd-jwt": {
-							"sd-jwt_alg_values": ["ES256"],
-							"kb-jwt_alg_values": ["ES256"]
-						},
-					};
-				}
-
-			} else if (selectedType === "mdoc") {
-				presentationDefinition.input_descriptors[0].format = {
-					"mso_mdoc": {
-						"sd-jwt_alg_values": ["ES256"],
-						"kb-jwt_alg_values": ["ES256"]
-					},
-				};
-			}
-			presentationDefinition.input_descriptors[0].purpose = req.body.purpose
-			presentationDefinition.input_descriptors[0].id = req.body.descriptorId
-			queryToSend = presentationDefinition;
-		}
+	if (req.method === "POST" && req.body.scheme) {
+		scheme = req.body.scheme;
 	}
-	else if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
-		console.log("Cookie = ", req.cookies)
 
+	if (req.method === "POST" && req.body.action && req.cookies.session_id) { // handle click of "open with..." button
+		console.log("Cookie = ", req.cookies)
 		// update is_cross_device --> false since the button was pressed
 		await AppDataSource.getRepository(RelyingPartyState).createQueryBuilder("rp_state")
 			.update({ is_cross_device: false })
@@ -503,14 +409,9 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 			.execute();
 		return res.redirect(req.body.action);
 	}
-	else { //combined, non-configurable presentation
-		if (queryType === "dcql") {
-			queryToSend = buildDcqlQuery(presentationDefinition);
-		}
-	}
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId); // start session here
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, queryToSend, newSessionId, config.url + "/verifier/callback");
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationRequest, newSessionId, config.url + "/verifier/callback");
 	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(modifiedUrl.toString(), {
@@ -528,7 +429,7 @@ verifierRouter.use('/public/definitions/presentation-request/:presentation_defin
 		wwwalletURL: config.wwwalletURL,
 		authorizationRequestURL: modifiedUrl,
 		authorizationRequestQR,
-		presentationDefinition: JSON.stringify(queryToSend),
+		presentationRequest: JSON.stringify(presentationRequest.dcql_query),
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],
