@@ -13,7 +13,7 @@ import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 
 import Ajv from 'ajv';
-import { ResponseModeSchema } from "../services/OpenidForPresentationReceivingService";
+import { ResponseMode, ResponseModeSchema } from "../services/OpenidForPresentationReceivingService";
 const ajv = new Ajv();
 
 const dcqlQuerySchema = {
@@ -353,6 +353,7 @@ verifierRouter.post('/public/definitions/edit-dcql-query', async (req, res) => {
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],
+		dcApi: response_mode.data === ResponseMode.DC_API_JWT,
 	})
 })
 
