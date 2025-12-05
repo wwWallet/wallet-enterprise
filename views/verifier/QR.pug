@@ -19,7 +19,7 @@ block layout-content
 							button.Btn.Medium.openwithwalletbuttonnative(type="submit" name="action" value=`${authorizationRequestURL}`) Open with a native wallet
 					else
 						.buttons
-							button.Btn.Medium.openWithDcApi(id="open-with-dcapi") Open with DC-API
+							button.Btn.Medium.openWithDcApi(id="open-with-dcapi" type="button") Open with DC-API
 
 					input(type='hidden' name='state' id='state' value=state)
 					input(type='hidden' name='authorizationRequestQR' id='authorizationRequestQR' value=authorizationRequestQR)
