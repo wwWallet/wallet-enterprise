@@ -43,7 +43,7 @@ if (dcApiButtonElement !== null) {
 
 				const verificationResponse = await fetch('/verification/direct_post', {
 					method: 'POST',
-			  		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
 					body: new URLSearchParams({ response: jwe }),
 				}).then((response) => {
 					return response.json();
@@ -87,4 +87,3 @@ setInterval(() => {
 			console.error(err);
 		});
 }, 3000);
-
