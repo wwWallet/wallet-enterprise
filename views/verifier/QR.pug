@@ -12,10 +12,14 @@ block layout-content
 					.qr-url-block
 						p.qr-url(id="qrURLDisplay") #{authorizationRequestURL}
 
-					.buttons
-						- const modifiedURL = authorizationRequestURL.replace("openid4vp://cb", wwwalletURL)
-						button.Btn.Medium.openwithwalletbutton(type="submit" name="action" value=`${modifiedURL}`) Open with wwWallet
-						button.Btn.Medium.openwithwalletbuttonnative(type="submit" name="action" value=`${authorizationRequestURL}`) Open with a native wallet
+					if !dcApi
+						.buttons
+							- const modifiedURL = authorizationRequestURL.replace("openid4vp://cb", wwwalletURL)
+							button.Btn.Medium.openwithwalletbutton(type="submit" name="action" value=`${modifiedURL}`) Open with wwWallet
+							button.Btn.Medium.openwithwalletbuttonnative(type="submit" name="action" value=`${authorizationRequestURL}`) Open with a native wallet
+					else
+						.buttons
+							button.Btn.Medium.openWithDcApi(id="open-with-dcapi" type="button") Open with DC-API
 
 					input(type='hidden' name='state' id='state' value=state)
 					input(type='hidden' name='authorizationRequestQR' id='authorizationRequestQR' value=authorizationRequestQR)

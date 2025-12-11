@@ -13,6 +13,7 @@ import { RelyingPartyState } from "../entities/RelyingPartyState.entity";
 import { initializeCredentialEngine } from "../lib/initializeCredentialEngine";
 
 import Ajv from 'ajv';
+import { ResponseMode, ResponseModeSchema } from "../services/OpenidForPresentationReceivingService";
 const ajv = new Ajv();
 
 const dcqlQuerySchema = {
@@ -321,7 +322,16 @@ verifierRouter.post('/public/definitions/edit-dcql-query', async (req, res) => {
 
 	const newSessionId = generateRandomIdentifier(12);
 	addSessionIdCookieToResponse(res, newSessionId);
-	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationRequest, newSessionId, config.url + "/verifier/callback");
+	const response_mode = ResponseModeSchema.safeParse(req.body.response_mode);
+	if (!response_mode.success) {
+		return res.render('error.pug', {
+			msg: "Invalid Response Mode",
+			code: 0,
+			lang: req.lang,
+			locale: locale[req.lang],
+		});
+	}
+	const { url } = await openidForPresentationReceivingService.generateAuthorizationRequestURL({ req, res }, presentationRequest, newSessionId, config.url + "/verifier/callback", response_mode.data);
 	const modifiedUrl = url.toString().replace("openid4vp://cb", scheme)
 	let authorizationRequestQR = await new Promise((resolve) => {
 		qrcode.toDataURL(modifiedUrl.toString(), {
@@ -343,6 +353,7 @@ verifierRouter.post('/public/definitions/edit-dcql-query', async (req, res) => {
 		state: url.searchParams.get('state'),
 		lang: req.lang,
 		locale: locale[req.lang],
+		dcApi: response_mode.data === ResponseMode.DC_API_JWT,
 	})
 })
 

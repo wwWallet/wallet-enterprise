@@ -24,9 +24,10 @@ import { pemToBase64 } from "../util/pemToBase64";
 const privateKeyPem = fs.readFileSync(path.join(__dirname, "../../../keys/pem.key"), 'utf-8').toString();
 const leafCert = fs.readFileSync(path.join(__dirname, "../../../keys/pem.crt"), 'utf-8').toString();
 
-enum ResponseMode {
+export enum ResponseMode {
 	DIRECT_POST = 'direct_post',
-	DIRECT_POST_JWT = 'direct_post.jwt'
+	DIRECT_POST_JWT = 'direct_post.jwt',
+	DC_API_JWT = 'dc_api.jwt',
 }
 
 const RESERVED_SDJWT_TOPLEVEL = new Set([
@@ -38,10 +39,9 @@ const x5c = [
 	pemToBase64(leafCert),
 ];
 
-const ResponseModeSchema = z.nativeEnum(ResponseMode);
+export const ResponseModeSchema = z.nativeEnum(ResponseMode);
 
 // @ts-ignore
-const response_mode: ResponseMode = config?.presentationFlow?.response_mode ? ResponseModeSchema.parse(config?.presentationFlow?.response_mode) : ResponseMode.DIRECT_POST_JWT;
 
 // const hasherAndAlgorithm: HasherAndAlgorithm = {
 // 	hasher: (input: string) => createHash('sha256').update(input).digest(),
@@ -95,7 +95,7 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 		return ctx.res.send(signedRequest.toString());
 	}
 
-	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationRequest: any, sessionId: string, callbackEndpoint?: string): Promise<{ url: URL; stateId: string }> {
+	async generateAuthorizationRequestURL(ctx: { req: Request, res: Response }, presentationRequest: any, sessionId: string, callbackEndpoint?: string, response_mode: ResponseMode = ResponseMode.DIRECT_POST_JWT): Promise<{ url: URL; stateId: string }> {
 		// create cookie and add it to response
 
 		console.log("Presentation Request: Session id used for authz req ", sessionId);
@@ -143,6 +143,9 @@ export class OpenidForPresentationsReceivingService implements OpenidForPresenta
 			client_id: "x509_san_dns:" + client_id,
 			response_type: "vp_token",
 			response_mode: response_mode,
+			expected_origins: [
+				config.url,
+			],
 			state: state,
 			nonce: nonce,
 			dcql_query: presentationRequest?.dcql_query?.credentials ? serializeDcqlQuery(JSON.parse(JSON.stringify(presentationRequest.dcql_query))) : null,

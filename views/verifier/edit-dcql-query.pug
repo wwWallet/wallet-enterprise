@@ -12,6 +12,16 @@ block layout-content
 			.field
 				h4.title(for="scheme") Scheme
 				textarea#scheme(name="scheme" maxlength="128") openid4vp://cb
+			.field
+				h4.title(for="rmodeTitle") Response Mode Selection
+				p.form-subtitle Choose the response mode to be required in the presenentation request
+
+				input(type="radio" id="direct_post.jwt" name="response_mode" value="direct_post.jwt" checked)
+				label(for="direct_post.jwt") direct_post.jwt
+				br
+				input(type="radio" id="dc_api.jwt" name="response_mode" value="dc_api.jwt")
+				label(for="dc_api.jwt") dc_api.jwt
+				br
 
 			.label-wrapper
 				label(for="dcqlQuery") DCQL Query
