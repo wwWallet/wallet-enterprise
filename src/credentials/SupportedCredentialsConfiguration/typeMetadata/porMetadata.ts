@@ -4,7 +4,7 @@ import { config } from "../../../../config";
 export const porMetadata = {
 	"vct": "urn:eu.europa.ec.eudi:por:1",
 	"name": "POTENTIAL POR SD-JWT VCTM",
-	"description": "POTENTIAL Power of Representation (POR) SD-JWT Verifiable Credential Type Metadata, based on ietf-oauth-sd-jwt-vc (draft 09), using a single language tag (en-US).",
+	"description": "POTENTIAL Power of Representation (POR) SD-JWT Verifiable Credential Type Metadata, based on ietf-oauth-sd-jwt-vc (draft 13), using a single language tag (en-US).",
 	"$comment": "Based on the Power Of Representation Rulebook v1.2 of the LSP POTENTIAL UC1.",
 	"display": [
 		{
